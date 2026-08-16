@@ -1,0 +1,608 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FaBullhorn,
+  FaEllipsisVertical,
+  FaGaugeHigh,
+  FaPen,
+  FaPenToSquare,
+  FaPhone,
+  FaPlus,
+  FaQuestion,
+  FaRegCopy,
+  FaRegTrashCan,
+  FaWandMagicSparkles,
+  FaXmark,
+} from 'react-icons/fa6';
+import { api, type ApiContact, type DealerDashboardDealer, type DealerLead } from '../../api';
+import { useAuth } from '../../auth';
+import { BarChart, DataTable, DonutChart, FunnelChart, LeadStageList, LineChart, NumberCard } from './charts';
+import { AddWidgetDrawer } from './AddWidgetDrawer';
+import { WIDGET_BY_ID, type DashboardDataset, type WidgetData, type WidgetInstance } from './widgets';
+import AssignLeadsModal from './AssignLeadsModal';
+import NotificationsBell from '../NotificationsBell';
+import UserMenu from '../UserMenu';
+
+const STORAGE_KEY = 'evee_dashboard_widgets_v1';
+
+const OWNER_EMAIL = 'yadeapakistan@gmail.com';
+
+const DEFAULT_INSTANCES: WidgetInstance[] = [
+  { uid: 'd1', defId: 'contacts-total', title: 'Total Contacts', size: 'sm' },
+  { uid: 'd2', defId: 'leads-total', title: 'Total Leads Assigned', size: 'sm' },
+  { uid: 'd3', defId: 'leads-status-donut', title: 'Leads by Status', size: 'md' },
+  { uid: 'd4', defId: 'contacts-by-type', title: 'Contacts by Type', size: 'md' },
+  { uid: 'd5', defId: 'contacts-created-line', title: 'Contacts Created', size: 'md' },
+  { uid: 'd6', defId: 'leads-funnel', title: 'Lead Funnel', size: 'md' },
+  { uid: 'd7', defId: 'contacts-recent', title: 'Recent Contacts', size: 'lg' },
+];
+
+const SIZE_CLASS: Record<WidgetInstance['size'], string> = {
+  sm: 'sm:col-span-3',
+  md: 'sm:col-span-6',
+  lg: 'sm:col-span-12',
+};
+
+function WidgetBody({ data, onOpenContact }: { data: WidgetData; onOpenContact?: (id: number) => void }) {
+  switch (data.kind) {
+    case 'number':
+      return <NumberCard value={data.value} sub={data.sub} accent={data.accent} />;
+    case 'donut':
+      return (
+        <DonutChart
+          labels={data.labels}
+          values={data.values}
+          colors={data.colors}
+          centerText={data.centerText}
+          cutout={data.cutout}
+        />
+      );
+    case 'line':
+      return <LineChart labels={data.labels} values={data.values} />;
+    case 'bar':
+      return <BarChart labels={data.labels} values={data.values} colors={data.colors} horizontal={data.horizontal} />;
+    case 'funnel':
+      return <FunnelChart stages={data.stages} />;
+    case 'table': {
+      const contactIds = data.contactIds;
+      if (!contactIds || !onOpenContact) {
+        return <DataTable columns={data.columns} rows={data.rows} />;
+      }
+      return (
+        <DataTable
+          columns={data.columns}
+          rows={data.rows}
+          onRowClick={(row) => {
+            const idx = data.rows.indexOf(row);
+            const id = idx >= 0 ? contactIds[idx] : undefined;
+            if (id) onOpenContact(id);
+          }}
+        />
+      );
+    }
+    case 'stage-list':
+      return <LeadStageList leads={data.leads} onOpenContact={onOpenContact} />;
+    default:
+      return null;
+  }
+}
+
+function WidgetCard({
+  instance,
+  dataset,
+  index,
+  dragIndex,
+  overIndex,
+  menuOpen,
+  editMode,
+  onOpenContact,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onMenuToggle,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: {
+  instance: WidgetInstance;
+  dataset: DashboardDataset;
+  index: number;
+  dragIndex: number | null;
+  overIndex: number | null;
+  menuOpen: boolean;
+  editMode: boolean;
+  onOpenContact?: (id: number) => void;
+  onDragStart: (e: React.DragEvent, index: number) => void;
+  onDragOver: (e: React.DragEvent, index: number) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  onDragEnd: () => void;
+  onMenuToggle: (uid: string) => void;
+  onEdit: (uid: string) => void;
+  onDuplicate: (uid: string) => void;
+  onDelete: (uid: string) => void;
+}) {
+  const def = WIDGET_BY_ID[instance.defId];
+  const data = useMemo(() => (def ? def.compute(dataset) : null), [def, dataset]);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) onMenuToggle(instance.uid);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen, instance.uid, onMenuToggle]);
+
+  if (!def || !data) return null;
+
+  return (
+    <section
+      draggable
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDrop={(e) => onDrop(e, index)}
+      onDragEnd={onDragEnd}
+      className={`group relative bg-white border rounded-xl shadow-xs overflow-hidden flex flex-col min-h-[150px] transition ${
+        SIZE_CLASS[instance.size]
+      } ${editMode ? 'border-blue-400 ring-2 ring-blue-200/60' : 'border-slate-200'} ${
+        overIndex === index && dragIndex !== null && dragIndex !== index ? 'ring-2 ring-blue-400 ring-offset-2' : ''
+      }`}
+    >
+      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-100 cursor-grab active:cursor-grabbing">
+        <h3 className="font-semibold text-slate-700 text-xs truncate">{instance.title}</h3>
+        <div className="relative flex-shrink-0 ml-2">
+          <button
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMenuToggle(instance.uid);
+            }}
+            className={`w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition ${
+              editMode ? 'opacity-100 bg-blue-50 text-blue-600' : 'opacity-0 group-hover:opacity-100'
+            }`}
+            title="Widget options"
+          >
+            <FaEllipsisVertical className="text-xs" />
+          </button>
+          {menuOpen && (
+            <div ref={menuRef} className="absolute right-0 top-7 z-30 bg-white border border-slate-200 rounded-lg shadow-xl py-1 w-44 text-xs">
+              <button
+                onClick={() => onEdit(instance.uid)}
+                className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition"
+              >
+                <FaPen className="text-slate-400 text-[10px]" /> Edit
+              </button>
+              <button
+                onClick={() => onDuplicate(instance.uid)}
+                className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition"
+              >
+                <FaRegCopy className="text-slate-400 text-[10px]" /> Duplicate
+              </button>
+              <button
+                onClick={() => onDelete(instance.uid)}
+                className="w-full text-left px-3 py-2 hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium transition"
+              >
+                <FaRegTrashCan className="text-red-500 text-[10px]" /> Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+      <div className="flex-1 px-4 py-3 min-h-0">
+        <WidgetBody data={data} onOpenContact={onOpenContact} />
+      </div>
+      {dragIndex !== null && overIndex === index && dragIndex !== index && (
+        <div className="absolute inset-x-2 -top-1 h-1 bg-blue-500 rounded-full" />
+      )}
+    </section>
+  );
+}
+
+function DashboardPage({
+  onNotify,
+  onOpenContact,
+  onLogout,
+}: {
+  onNotify: (msg: string) => void;
+  onOpenContact?: (id: number) => void;
+  onLogout?: () => void;
+}) {
+  const { user } = useAuth();
+  const isOwner = user?.user_type === 'Admin' || user?.email?.toLowerCase() === OWNER_EMAIL;
+  const dealerId = user?.user_type === 'Follower' && user.manager_id != null ? user.manager_id : user?.id ?? 0;
+
+  const [contacts, setContacts] = useState<ApiContact[]>([]);
+  const [dealers, setDealers] = useState<DealerDashboardDealer[]>([]);
+  const [unassigned, setUnassigned] = useState(0);
+  const [dealerLeads, setDealerLeads] = useState<DealerLead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+
+  const [instances, setInstances] = useState<WidgetInstance[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as WidgetInstance[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      /* ignore corrupted storage */
+    }
+    return DEFAULT_INSTANCES;
+  });
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editUid, setEditUid] = useState<string | null>(null);
+  const [menuUid, setMenuUid] = useState<string | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const contactRes = await api.listContacts({});
+      setContacts(contactRes.data);
+      if (isOwner) {
+        const sumRes = await api.dealerDashboardSummary();
+        setDealers(sumRes.data.dealers);
+        setUnassigned(sumRes.data.unassigned);
+      } else {
+        const leadsRes = await api.dealerLeads(dealerId);
+        setDealerLeads(leadsRes.data);
+      }
+    } catch (err) {
+      onNotify(`Failed to load dashboard: ${(err as Error).message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [isOwner, dealerId, onNotify]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  // Persist layout.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(instances));
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [instances]);
+
+  const dataset = useMemo<DashboardDataset>(
+    () => ({ isOwner, dealerId, contacts, dealers, unassigned, dealerLeads }),
+    [isOwner, dealerId, contacts, dealers, unassigned, dealerLeads]
+  );
+
+  const addWidget = (defId: string) => {
+    const def = WIDGET_BY_ID[defId];
+    if (!def) return;
+    setInstances((prev) => [
+      ...prev,
+      {
+        uid: `w-${Date.now()}`,
+        defId,
+        title: def.title,
+        size: def.defaultSize,
+      },
+    ]);
+    setDrawerOpen(false);
+    onNotify(`"${def.title}" added to dashboard`);
+  };
+
+  const removeWidget = (uid: string) => {
+    setInstances((prev) => prev.filter((w) => w.uid !== uid));
+    setMenuUid(null);
+  };
+
+  const duplicateWidget = (uid: string) => {
+    setInstances((prev) => {
+      const idx = prev.findIndex((w) => w.uid === uid);
+      if (idx === -1) return prev;
+      const src = prev[idx];
+      const copy: WidgetInstance = { ...src, uid: `w-${Date.now()}`, title: `${src.title} (copy)` };
+      const next = [...prev];
+      next.splice(idx + 1, 0, copy);
+      return next;
+    });
+    setMenuUid(null);
+    onNotify('Widget duplicated');
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (index !== overIndex) setOverIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setOverIndex(null);
+    if (dragIndex === null || dragIndex === index) {
+      setDragIndex(null);
+      return;
+    }
+    setInstances((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(index, 0, moved);
+      return next;
+    });
+    setDragIndex(null);
+  };
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden bg-slate-50 text-slate-800">
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 shadow-xs gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="hidden md:flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">Dashboard View:</span>
+            <select
+              defaultValue="main"
+              className="text-xs border border-slate-300 rounded px-2.5 py-1 font-medium bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="main">Main Overview</option>
+              <option value="sales">Sales Performance</option>
+              <option value="leads">Lead Generation</option>
+            </select>
+          </div>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-xs transition-colors"
+          >
+            <FaPlus className="text-[10px]" />
+            <span>Add Widget</span>
+          </button>
+          {isOwner && (
+            <button
+              onClick={() => setAssignOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-semibold rounded shadow-xs transition-colors"
+            >
+              <FaPlus className="text-[10px]" />
+              <span>Assign Leads</span>
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+          <button
+            onClick={() => {
+              if (!editMode) {
+                setEditMode(true);
+                setDrawerOpen(true);
+              } else {
+                setEditMode(false);
+              }
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded shadow-xs transition-colors ${
+              editMode
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'border border-blue-600 text-blue-600 hover:bg-blue-50'
+            }`}
+            title="Toggle dashboard editing"
+          >
+            <FaPenToSquare className="text-[11px]" />
+            <span>{editMode ? 'Done Editing' : 'Edit Dashboard'}</span>
+          </button>
+
+          <button
+            onClick={() => onNotify('Dialer is not connected yet')}
+            className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors shadow-xs"
+            title="Dialer"
+          >
+            <FaPhone className="text-xs" />
+          </button>
+
+          <button
+            onClick={() => onNotify('Ask AI coming soon')}
+            className="flex items-center gap-1.5 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-full transition-colors shadow-xs"
+          >
+            <FaWandMagicSparkles className="text-[11px]" />
+            <span className="hidden sm:inline">Ask AI</span>
+          </button>
+
+          <button
+            onClick={() => onNotify('No new announcements')}
+            className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-100"
+            title="Announcements"
+          >
+            <FaBullhorn className="text-xs" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full border border-white" />
+          </button>
+
+          <NotificationsBell onNotify={onNotify} />
+
+          <button
+            onClick={() => onNotify('Help center')}
+            className="p-2 text-slate-500 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-100"
+            title="Help"
+          >
+            <FaQuestion className="text-xs" />
+          </button>
+
+          <div className="pl-1 border-l border-slate-100 ml-1">
+            {user && <UserMenu user={user} onLogout={onLogout} />}
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        {editMode && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 text-[11px] rounded-md px-3 py-2 mb-4 flex items-center justify-between gap-2">
+            <span>Editing dashboard — drag widgets to reorder, use the menu on each widget to edit, duplicate, or remove it.</span>
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded shadow-xs transition-colors"
+            >
+              <FaPlus className="text-[10px]" /> Add Widget
+            </button>
+          </div>
+        )}
+
+        {loading && instances.length === 0 ? (
+          <div className="p-10 text-center text-xs text-slate-500">Loading dashboard...</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            {instances.map((w, index) => (
+              <WidgetCard
+                key={w.uid}
+                instance={w}
+                dataset={dataset}
+                index={index}
+                dragIndex={dragIndex}
+                overIndex={overIndex}
+                menuOpen={menuUid === w.uid}
+                editMode={editMode}
+                onOpenContact={onOpenContact}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onDragEnd={() => {
+                  setDragIndex(null);
+                  setOverIndex(null);
+                }}
+                onMenuToggle={(uid) => setMenuUid((v) => (v === uid ? null : uid))}
+                onEdit={(uid) => {
+                  setEditUid(uid);
+                  setMenuUid(null);
+                }}
+                onDuplicate={duplicateWidget}
+                onDelete={removeWidget}
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && instances.length === 0 && (
+          <div className="p-10 text-center">
+            <FaGaugeHigh className="text-2xl text-slate-300 mx-auto mb-2" />
+            <p className="font-semibold text-slate-600 text-xs mb-1">No widgets yet</p>
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="mt-2 text-[11px] text-blue-600 hover:underline font-semibold"
+            >
+              Add your first widget
+            </button>
+          </div>
+        )}
+      </div>
+
+      <AddWidgetDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} isOwner={isOwner} onAdd={addWidget} />
+
+      {editUid && (
+        <EditWidgetModal
+          widget={instances.find((w) => w.uid === editUid)}
+          onClose={() => setEditUid(null)}
+          onSave={(uid, title, size) => {
+            setInstances((prev) => prev.map((w) => (w.uid === uid ? { ...w, title, size } : w)));
+            setEditUid(null);
+            onNotify('Widget updated');
+          }}
+        />
+      )}
+
+      {assignOpen && (
+        <AssignLeadsModal
+          dealers={dealers}
+          onClose={() => setAssignOpen(false)}
+          onNotify={onNotify}
+          onDone={() => {
+            setAssignOpen(false);
+            void load();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditWidgetModal({
+  widget,
+  onClose,
+  onSave,
+}: {
+  widget: WidgetInstance | undefined;
+  onClose: () => void;
+  onSave: (uid: string, title: string, size: WidgetInstance['size']) => void;
+}) {
+  const [title, setTitle] = useState(widget?.title ?? '');
+  const [size, setSize] = useState<WidgetInstance['size']>(widget?.size ?? 'md');
+
+  if (!widget) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+          <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <FaPen className="text-blue-600 text-xs" /> Edit Widget
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-sm">
+            <FaXmark />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <div className="text-[11px] font-semibold text-slate-600 mb-1">Widget title</div>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-600 mb-1">Size</div>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  ['sm', 'Small', 'w-1/4'],
+                  ['md', 'Medium', 'w-1/2'],
+                  ['lg', 'Full', 'w-full'],
+                ] as const
+              ).map(([key, label, preview]) => (
+                <button
+                  key={key}
+                  onClick={() => setSize(key)}
+                  className={`px-3 py-2 rounded-md border text-[11px] font-medium transition ${
+                    size === key
+                      ? 'bg-blue-50 border-blue-400 text-blue-700'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'
+                  }`}
+                >
+                  <span className={`h-1.5 ${preview} bg-slate-300 rounded mb-1.5 mx-auto`} />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-md"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(widget.uid, title.trim() || widget.title, size)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md shadow-sm transition"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default DashboardPage;
