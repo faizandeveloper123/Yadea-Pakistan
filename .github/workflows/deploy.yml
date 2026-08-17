@@ -38,11 +38,7 @@ jobs:
           AWS_ENDPOINT_URL: ${{ secrets.Yadea_Pakistan_Endpoint }}
         run: |
           rm -rf /tmp/site && mkdir -p /tmp/site
-          git archive HEAD --format=tar | tar -x -C /tmp/site
-          aws s3 sync /tmp/site s3://yadea \
-            --endpoint-url "$AWS_ENDPOINT_URL" \
-            --delete \
-            --exclude ".git/*" \
-            --exclude ".github/*"
-          aws s3 rm s3://yadea/assets --endpoint-url "$AWS_ENDPOINT_URL" --recursive || true
-          aws s3 sync dist/ s3://yadea --endpoint-url "$AWS_ENDPOINT_URL"
+          cp -r dist/. /tmp/site/
+          cp logo.svg /tmp/site/ 2>/dev/null || true
+          cp -r api /tmp/site/api
+          aws s3 sync /tmp/site s3://yadea --endpoint-url "$AWS_ENDPOINT_URL" --delete
