@@ -20,9 +20,9 @@ jobs:
 
       - name: Upload files to Contabo
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.YADEA_PAKISTAN_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.YADEA_PAKISTAN_SECRET_KEY }}
-          AWS_ENDPOINT_URL: ${{ secrets.YADEA_PAKISTAN_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.Yadea_Pakistan_Access_Key }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.Yadea_Pakistan_Secret_Key }}
+          AWS_ENDPOINT_URL: ${{ secrets.Yadea_Pakistan_Endpoint }}
         run: |
           aws s3 sync . s3://yadea \
             --endpoint-url "$AWS_ENDPOINT_URL" \
