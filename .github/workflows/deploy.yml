@@ -1,0 +1,31 @@
+name: Deploy to Contabo Object Storage
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
+      - name: Upload files to Contabo
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.YADEA_PAKISTAN_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.YADEA_PAKISTAN_SECRET_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.YADEA_PAKISTAN_ENDPOINT }}
+        run: |
+          aws s3 sync . s3://yadea \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --delete \
+            --exclude ".git/*" \
+            --exclude ".github/*"
