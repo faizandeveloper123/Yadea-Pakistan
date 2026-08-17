@@ -95,7 +95,7 @@ function Sidebar({
         key={item.label}
         type="button"
         onClick={() => onNavigate(item.label)}
-        className={`w-full text-left nav-item flex items-center px-3 py-2 rounded-md transition ${
+        className={`w-full text-left nav-item flex items-center px-3 py-1.5 rounded-md transition ${
           isActive
             ? 'text-xs font-semibold text-white bg-slate-800 shadow-sm border-l-2 border-blue-500'
             : 'text-xs font-medium text-sidebar-text hover:bg-sidebar-hover hover:text-slate-100'
@@ -128,13 +128,13 @@ function Sidebar({
         aria-label="Sidebar navigation"
       >
         {/* Logo Section */}
-        <div className="p-3.5 flex items-center justify-between border-b border-slate-700/50">
+        <div className="p-3 flex items-center justify-between border-b border-slate-700/50">
           <div className="flex items-center space-x-2.5">
             <div className="flex items-center justify-center pl-1">
               {collapsed ? (
-                <YadeaLogo wordmark={false} className="h-6 w-auto" />
+                <YadeaLogo wordmark={false} className="h-5 w-auto" />
               ) : (
-                <YadeaLogo className="h-7 w-auto" />
+                <YadeaLogo className="h-6 w-auto" />
               )}
             </div>
           </div>
@@ -149,8 +149,8 @@ function Sidebar({
 
         {/* Business Location Selector */}
         {!collapsed && (
-          <div className="px-3 pt-3 pb-1">
-            <button className="w-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-lg p-2.5 flex items-center justify-between text-left group transition">
+          <div className="px-3 pt-2 pb-0.5">
+            <button className="w-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-lg p-2 flex items-center justify-between text-left group transition">
               <div className="flex items-center space-x-2.5 min-w-0">
                 <div className="w-7 h-7 rounded bg-slate-700/60 flex items-center justify-center text-slate-300 flex-shrink-0 text-xs">
                   <FaBuildingUser />
@@ -169,7 +169,7 @@ function Sidebar({
 
         {/* Search Box inside Sidebar */}
         {!collapsed && (
-          <div className="px-3 py-2 flex items-center space-x-1.5">
+          <div className="px-3 py-1.5 flex items-center space-x-1.5">
             <div className="relative flex-1">
               <FaMagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
               <input
@@ -212,7 +212,7 @@ function Sidebar({
           {canManageStaff && (
             <button
               onClick={() => onNavigate('Settings')}
-              className="w-full text-left nav-item flex items-center px-3 py-2 text-xs font-medium text-sidebar-text hover:bg-sidebar-hover hover:text-slate-100 rounded-md mb-1"
+              className="w-full text-left nav-item flex items-center px-3 py-1.5 text-xs font-medium text-sidebar-text hover:bg-sidebar-hover hover:text-slate-100 rounded-md mb-1"
             >
               <FaGear className="w-5 text-center mr-2 text-slate-400 shrink-0" />
               {!collapsed && 'Settings'}

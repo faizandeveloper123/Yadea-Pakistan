@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  body {
+    font-weight: 300;
+  }
+}
+
+/* Headings & sub-headings use Inter Regular, overriding bold utilities. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+th {
+  font-weight: 400;
+}
+
+/* Keep all text thin (Inter Light/Regular) across the site, like the phone/email columns. */
+.font-medium,
+.font-semibold,
+.font-bold {
+  font-weight: 400;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;

@@ -54,11 +54,11 @@ function RowActionsMenu({
           setOpen((v) => !v);
         }}
         title="Actions"
-        className={`w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition ${
+        className={`w-5 h-5 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition ${
           open ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
         }`}
       >
-        <FaEllipsisVertical className="text-xs" />
+        <FaEllipsisVertical className="text-[10px]" />
       </button>
       {open && (
         <>
@@ -132,7 +132,7 @@ function ContactsTable({
       <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
         <thead className="bg-slate-50 text-slate-600 font-semibold sticky top-0 z-10 border-b border-slate-200">
           <tr>
-            <th className="py-2.5 px-3 w-10 text-center">
+            <th className="py-1 px-3 w-10 text-center">
               <input
                 type="checkbox"
                 checked={allVisibleSelected}
@@ -148,8 +148,8 @@ function ContactsTable({
                 key={col.id}
                 className={
                   idx === cols.length - 1
-                    ? 'py-2.5 px-3 font-semibold text-slate-700'
-                    : 'py-2.5 px-3 font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer'
+                    ? 'py-1 px-3 font-semibold text-slate-700'
+                    : 'py-1 px-3 font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer'
                 }
               >
                 <div className="flex items-center justify-between">
@@ -171,7 +171,7 @@ function ContactsTable({
                   contact.isHighlighted ? 'bg-blue-50/20' : ''
                 }`}
               >
-                <td className="py-1.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                <td className="py-0.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     className="row-checkbox"
@@ -181,7 +181,7 @@ function ContactsTable({
                   />
                 </td>
                 {cols.map((col) => (
-                  <td key={col.id} className="py-1.5 px-3 text-slate-600">
+                  <td key={col.id} className="py-0.5 px-3 text-slate-600">
                     {col.id === 'contact_name' ? (
                       <div className="flex items-center justify-between gap-2 pr-1">
                         <div className="min-w-0 flex-1">{col.render(contact)}</div>

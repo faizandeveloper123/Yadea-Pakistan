@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ApiContact, ApiFollower } from '../api';
 import { api } from '../api';
-import { formatDbDate, initialsFromName, fileToResizedDataUrl } from '../utils';
+import { formatDbDate, initialsFromName, fileToResizedDataUrl, formSubmissionsOf } from '../utils';
 import { countryCodes } from '../data/formOptions';
 import { TIMEZONES } from '../data/timezones';
 import { useStaff } from '../StaffContext';
@@ -13,7 +13,6 @@ import SearchableSelect from './SearchableSelect';
 import {
   FaAngleDown,
   FaArrowLeft,
-  FaCar,
   FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
@@ -296,13 +295,6 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
     contactType: contact.contact_type || '',
     business: contact.business_name || '',
     website: '',
-    formDate: '',
-    inquiry: '',
-    optin: '',
-    vehicle: '',
-    budget: '',
-    testRide: '',
-    dealership: '',
   });
 
   const [emails, setEmails] = useState<{ id: number; value: string }[]>([
@@ -316,6 +308,8 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
   const [tags, setTags] = useState<string[]>(contact.tags ?? []);
   const [addingTag, setAddingTag] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
+
+  const formSubmissions = useMemo(() => formSubmissionsOf(contact.custom_fields), [contact]);
 
   useEffect(() => {
     setTags(contact.tags ?? []);
@@ -848,39 +842,33 @@ function ContactInfoPanel({ contact, onBack, onNotify, onOpenDrawer, onAvatarUpd
                 </div>
               </Accordion>
 
-              <Accordion title="Form | Form 0" icon={<FaRegFileLines />} searchText={fieldSearch}>
-                <div>
-                  <label className={labelCls}>Form Submission Date</label>
-                  <input type="text" value={fields.formDate} onChange={set('formDate')} readOnly className={`${inputCls} bg-slate-50`} />
-                </div>
-                <div>
-                  <label className={labelCls}>Primary Inquiry Topic</label>
-                  <input type="text" value={fields.inquiry} onChange={set('inquiry')} className={inputCls} placeholder="Electric Bike Models & Pricing" />
-                </div>
-                <div>
-                  <label className={labelCls}>Opt-in Marketing</label>
-                  <input type="text" value={fields.optin} onChange={set('optin')} className={inputCls} placeholder="Yes - Confirmed Email & SMS" />
-                </div>
-              </Accordion>
-
-              <Accordion title="Form | Auto Dealer Contact Us" icon={<FaCar />} searchText={fieldSearch}>
-                <div>
-                  <label className={labelCls}>Vehicle Model Interested</label>
-                  <input type="text" value={fields.vehicle} onChange={set('vehicle')} className={inputCls} placeholder="Evee Electric Scooter S1" />
-                </div>
-                <div>
-                  <label className={labelCls}>Estimated Budget Range</label>
-                  <input type="text" value={fields.budget} onChange={set('budget')} className={inputCls} placeholder="Rs 250,000 - Rs 350,000" />
-                </div>
-                <div>
-                  <label className={labelCls}>Test Ride Requested Date</label>
-                  <input type="text" value={fields.testRide} onChange={set('testRide')} className={inputCls} placeholder="15 August 2026 (10:00 AM)" />
-                </div>
-                <div>
-                  <label className={labelCls}>Preferred Dealership Location</label>
-                  <input type="text" value={fields.dealership} onChange={set('dealership')} className={inputCls} placeholder="Evee Motors Showroom - Blue Area, Islamabad" />
-                </div>
-              </Accordion>
+              {formSubmissions.length === 0 ? (
+                <Accordion title="Form" icon={<FaRegFileLines />} searchText={fieldSearch}>
+                  <p className="text-xs text-slate-400">No form submissions for this contact.</p>
+                </Accordion>
+              ) : (
+                formSubmissions.map((sub, i) => (
+                  <Accordion key={i} title={`Form | ${sub.formName}`} icon={<FaRegFileLines />} searchText={fieldSearch}>
+                    {sub.submittedOn && (
+                      <div>
+                        <label className={labelCls}>Form Submission Date</label>
+                        <input
+                          type="text"
+                          value={new Date(sub.submittedOn).toLocaleString()}
+                          readOnly
+                          className={`${inputCls} bg-slate-50`}
+                        />
+                      </div>
+                    )}
+                    {Object.entries(sub.values).map(([label, value]) => (
+                      <div key={label}>
+                        <label className={labelCls}>{label}</label>
+                        <input type="text" value={value} readOnly className={`${inputCls} bg-slate-50`} />
+                      </div>
+                    ))}
+                  </Accordion>
+                ))
+              )}
             </div>
           </div>
         )}

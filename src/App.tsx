@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaLock, FaXmark } from 'react-icons/fa6';
-import type { Contact, ImportedContactInput } from './types';
+import type { Contact, ImportResult } from './types';
 import { api, type ApiSmartList, type ListParams } from './api';
-import { mapApiContact, matchesFilter, matchesRules } from './utils';
+import { mapApiContact, matchesFilter, matchesRules, pickColumn } from './utils';
 import type { FilterRule } from './data/smartListOptions';
 import { navigate, onHashChange, parseHash, type Route } from './router';
 import { useAuth } from './auth';
@@ -37,6 +37,7 @@ import Pagination from './components/Pagination';
 import AddContactDrawer, { type NewContactData } from './components/AddContactDrawer';
 import { logActivity } from './data/activityLog';
 import { logBulkAction } from './data/bulkActionsStore';
+import { registerImportColumns } from './data/importColumnsStore';
 import ImportWizard from './components/ImportWizard';
 import Toast from './components/Toast';
 import { StaffProvider } from './StaffContext';
@@ -877,28 +878,133 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
     }
   };
 
-  const handleImport = async (batch: ImportedContactInput[]) => {
-    try {
-      for (const item of batch) {
-        const { first, last } = splitName(item.name);
-        const isCustomer = item.tag === 'customer';
-        const isLead = item.tag.includes('lead');
-        await api.createContact({
-          first_name: first,
-          last_name: last,
-          phone: item.phone,
-          email: item.email,
-          business_name: item.business,
-          contact_type: isCustomer ? 'Customer' : isLead ? 'Lead' : '',
-          avatar_color: item.color,
-          tags: [item.tag],
-        });
+  const handleImport = async (result: ImportResult) => {
+    const created: { id: number; city: string | null }[] = [];
+    let importedCount = 0;
+    let failedCount = 0;
+
+    for (const sheet of result.sheets) {
+      const headers = sheet.headers;
+      const firstCol = pickColumn(headers, [/first\s*name/i, /^first$/i]);
+      const lastCol = pickColumn(headers, [/last\s*name/i, /^last$/i]);
+      const fullCol = pickColumn(headers, [/^(full\s*)?name$/i]);
+      const phoneCol = pickColumn(headers, [/phone|mobile|cell/i]);
+      const emailCol = pickColumn(headers, [/e-?mail/i]);
+      const businessCol = pickColumn(headers, [/business|company|organization|firm/i]);
+      const cityCol = result.cityColumn;
+
+      for (const row of sheet.rows) {
+        try {
+          const name =
+            (fullCol && row[fullCol]) ||
+            `${row[firstCol ?? ''] ?? ''} ${row[lastCol ?? ''] ?? ''}`.trim() ||
+            'Imported Lead';
+          const { first, last } = splitName(name);
+          const city = cityCol ? (row[cityCol] ?? '').trim() || null : null;
+
+          const res = await api.createContact({
+            first_name: first || undefined,
+            last_name: last || undefined,
+            phone: phoneCol ? row[phoneCol] || undefined : undefined,
+            email: emailCol ? row[emailCol] || undefined : undefined,
+            business_name: businessCol ? row[businessCol] || undefined : undefined,
+            contact_type: 'Lead',
+            avatar_color: 'bg-slate-200 text-slate-700',
+            tags: ['lead', 'imported'],
+            custom_fields: {
+              import_data: row,
+              import_sheet: sheet.name,
+              ...(city ? { import_city: city } : {}),
+            },
+          });
+          created.push({ id: res.data.id, city });
+          importedCount++;
+        } catch {
+          failedCount++;
+        }
       }
-      await reload();
-      showToast(`Successfully imported ${batch.length} contacts!`);
-      logActivity({ type: 'contact', title: 'Contacts imported', detail: `${batch.length} contact(s)` });
-    } catch (err) {
-      showToast(`Import failed: ${(err as Error).message}`);
+    }
+
+    // Register the uploaded columns so they appear as table columns.
+    const allHeaders = Array.from(new Set(result.sheets.flatMap((s) => s.headers)));
+    registerImportColumns(allHeaders);
+
+    // Auto-add the non-core imported columns so they show up in the table
+    // right away (core fields like name/email/phone already have columns).
+    const importFieldIds = allHeaders
+      .filter((h) => !/^(name|full name|first name|last name|email|phone|mobile|cell|business|company|organization)$/i.test(h.trim()))
+      .map((h) => `import:${h}`);
+    if (importFieldIds.length > 0) {
+      setVisibleFields((prev) => {
+        const merged = [...prev];
+        for (const id of importFieldIds) {
+          if (!merged.some((x) => x.toLowerCase() === id.toLowerCase())) merged.push(id);
+        }
+        return merged;
+      });
+    }
+
+    // Group the newly created leads by city and make one smart list per city.
+    const byCity = new Map<string, number[]>();
+    for (const c of created) {
+      if (!c.city) continue;
+      const key = c.city.toLowerCase();
+      if (!byCity.has(key)) byCity.set(key, []);
+      byCity.get(key)!.push(c.id);
+    }
+
+    if (user) {
+      for (const [key, ids] of byCity.entries()) {
+        const cityName = created.find((c) => c.city && c.city.toLowerCase() === key)?.city ?? key;
+        const listName = cityName;
+        try {
+          await api.createSmartList({
+            user_id: user.id,
+            name: listName,
+            members: ids,
+            shared_all: false,
+          });
+        } catch {
+          // Name clash - merge into the existing list of the same name.
+          try {
+            const existing = await api.listSmartLists(user.id);
+            const hit = existing.data.find((l) => l.name.toLowerCase() === listName.toLowerCase());
+            if (hit) {
+              const merged = Array.from(new Set([...(hit.members ?? []), ...ids]));
+              await api.updateSmartList(hit.id, {
+                user_id: user.id,
+                name: hit.name,
+                filters: hit.filters,
+                sort_by: hit.sort_by,
+                fields: hit.fields,
+                members: merged,
+                dealer_id: hit.dealer_id,
+                shared_all: hit.shared_all,
+                shared_user_ids: hit.shared_user_ids,
+              });
+            }
+          } catch {
+            /* offline / not configured */
+          }
+        }
+      }
+    }
+
+    await reload();
+    await refreshServerLists();
+    showToast(
+      `Imported ${importedCount} lead${importedCount === 1 ? '' : 's'}` +
+        (failedCount > 0 ? `, ${failedCount} failed` : '') +
+        (byCity.size > 0
+          ? ` • ${byCity.size} city smart list${byCity.size === 1 ? '' : 's'} created`
+          : '')
+    );
+    if (importedCount > 0) {
+      logActivity({
+        type: 'contact',
+        title: 'Contacts imported',
+        detail: `${importedCount} contact(s) from ${result.fileName}`,
+      });
     }
   };
 

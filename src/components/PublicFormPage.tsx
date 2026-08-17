@@ -4,6 +4,7 @@ import { api } from '../api';
 import { logActivity } from '../data/activityLog';
 import { ensureCampaignsLoaded, campaignNameById } from '../data/campaigns';
 import { deserializeFormFromUrl, type PublicFormPayload } from '../utils';
+import { recordFormSubmission } from '../data/formsStore';
 
 const DEFAULT_OPTIONS = ['Option 1', 'Option 2', 'Option 3'];
 
@@ -61,6 +62,14 @@ export default function PublicFormPage({ data }: { data: string }) {
       const phone = values[findField(form.elements, /phone/i)?.label ?? ''] ?? undefined;
       const business = values[findField(form.elements, /organization|business|company/i)?.label ?? ''] ?? undefined;
 
+      const submittedAt = new Date().toISOString();
+      const filled: Record<string, string> = {};
+      for (const el of form.elements) {
+        if (el.type === 'button') continue;
+        const v = values[el.label];
+        if (v && v.trim()) filled[el.label] = v.trim();
+      }
+
       const res = await api.createContact({
         first_name: firstName || undefined,
         last_name: lastName || undefined,
@@ -70,7 +79,10 @@ export default function PublicFormPage({ data }: { data: string }) {
         business_name: business || undefined,
         contact_type: 'Lead',
         tags: ['lead', form.name],
+        custom_fields: { form_submissions: [{ formName: form.name, submittedOn: submittedAt, values: filled }] },
       });
+
+      recordFormSubmission(form.name, form.elements);
 
       // Resolve the campaign name (fetched from the server) so the activity
       // tab can show which campaign this form belongs to. On localhost the
@@ -80,7 +92,6 @@ export default function PublicFormPage({ data }: { data: string }) {
       }
       const resolvedCampaign = form.campaignId ? campaignNameById(form.campaignId) : '';
 
-      const submittedAt = new Date().toISOString();
       logActivity({
         type: 'form',
         title: 'Form submitted',

@@ -59,7 +59,7 @@ function UserMenu({ user, onLogout, className }: UserMenuProps) {
         onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`relative w-7 h-7 md:w-8 md:h-8 rounded-full bg-pink-600 text-white text-xs font-semibold flex items-center justify-center border-2 border-white shadow-sm transition hover:ring-2 hover:ring-pink-300 cursor-pointer overflow-hidden flex-shrink-0 ${
+        className={`relative w-8 h-8 rounded-full bg-pink-600 text-white text-xs font-semibold flex items-center justify-center border-2 border-white shadow-sm transition hover:ring-2 hover:ring-pink-300 cursor-pointer overflow-hidden flex-shrink-0 ${
           className ?? ''
         }`}
       >

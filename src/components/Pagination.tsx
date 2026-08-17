@@ -13,7 +13,7 @@ function Pagination({ currentPage, totalPages }: PaginationProps) {
       : 'px-2.5 py-1 border border-slate-200 rounded text-slate-700 hover:bg-slate-50 text-xs font-medium';
 
   return (
-    <footer className="px-4 md:px-6 py-3 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between text-xs text-slate-600 flex-shrink-0 gap-2">
+    <footer className="px-4 md:px-6 py-2 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between text-xs text-slate-600 flex-shrink-0 gap-2">
       <div className="font-medium">
         Page <span>{currentPage}</span> of <span>{totalPages}</span>
       </div>

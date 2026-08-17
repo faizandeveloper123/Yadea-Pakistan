@@ -82,9 +82,9 @@ function PageHeader({
   };
 
   return (
-    <div className="px-4 md:px-6 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 flex-shrink-0 gap-3">
+    <div className="px-4 md:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 flex-shrink-0 gap-2">
       <div className="flex items-center space-x-3">
-        <h1 className="text-base md:text-lg font-bold text-slate-800">Contacts</h1>
+        <h1 className="text-base font-bold text-slate-800">Contacts</h1>
         <span className="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-blue-100">
           {totalCount} Contacts
         </span>
@@ -94,7 +94,7 @@ function PageHeader({
         {canImport && (
           <button
             onClick={onOpenImport}
-            className="px-3.5 py-1.5 border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition"
+            className="px-3 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition"
           >
             <FaDownload className="text-slate-500" />
             <span>Import</span>
@@ -104,7 +104,7 @@ function PageHeader({
         {canAdd && (
           <button
             onClick={onOpenAddContact}
-            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md flex items-center space-x-1.5 shadow-sm transition"
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md flex items-center space-x-1.5 shadow-sm transition"
           >
             <FaPlus />
             <span>Add Contact</span>
@@ -114,7 +114,7 @@ function PageHeader({
         <div className="relative inline-block text-left" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((prev) => !prev)}
-            className="w-8 h-8 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-md flex items-center justify-center text-xs transition"
+            className="w-7 h-7 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-md flex items-center justify-center text-xs transition"
             aria-label="More actions"
             aria-haspopup="menu"
             aria-expanded={menuOpen}

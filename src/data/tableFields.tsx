@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import type { Contact } from '../types';
 import type { FilterGroup } from './smartListOptions';
+import { getForms, type StoredForm } from './formsStore';
+import { getImportColumns } from './importColumnsStore';
 import Avatar from '../components/Avatar';
 import Tag from '../components/Tag';
 import { FaEnvelope, FaPhone } from 'react-icons/fa6';
@@ -22,7 +24,6 @@ export const FIELD_GROUPS: FieldGroup[] = [
   { id: 'contact', label: 'Contact' },
   { id: 'general', label: 'General Info' },
   { id: 'additional', label: 'Additional Info' },
-  { id: 'form', label: 'Form | Auto Dealer Contact Us' },
   { id: 'activity', label: 'Contact activity' },
 ];
 
@@ -31,6 +32,92 @@ const lastOf = (c: Contact) => {
   const parts = c.name.split(' ').filter(Boolean);
   return parts.length > 1 ? parts[parts.length - 1] : '';
 };
+
+/* ----------------------- DYNAMIC FORM FIELDS -----------------------
+ * One dropdown per form: when a form is submitted it is recorded in
+ * formsStore, and every one of its fields becomes an addable table
+ * column that shows what the lead filled in.
+ * ------------------------------------------------------------------- */
+
+const FORM_GROUP_PREFIX = 'form:';
+
+export function formGroupId(formName: string): string {
+  return `${FORM_GROUP_PREFIX}${formName}`;
+}
+
+export function formFieldId(formName: string, label: string): string {
+  return `${FORM_GROUP_PREFIX}${formName}:${label}`;
+}
+
+function formFieldDef(form: StoredForm, label: string): TableField {
+  return {
+    id: formFieldId(form.name, label),
+    label,
+    group: formGroupId(form.name),
+    render: (c: Contact): string => {
+      const subs = c.customFields?.['form_submissions'];
+      if (!Array.isArray(subs)) return '';
+      const sub = subs.find(
+        (s) => !!s && typeof s === 'object' && (s as { formName?: unknown }).formName === form.name
+      );
+      const values = sub && typeof sub === 'object' ? (sub as { values?: unknown }).values : undefined;
+      const v = values && typeof values === 'object' ? (values as Record<string, unknown>)[label] : undefined;
+      return typeof v === 'string' ? v : '';
+    },
+  };
+}
+
+function formGroupFor(form: StoredForm): FieldGroup {
+  return { id: formGroupId(form.name), label: `Form | ${form.name}` };
+}
+
+export function dynamicFormGroups(): FieldGroup[] {
+  return getForms().map(formGroupFor);
+}
+
+/* ----------------------- IMPORTED EXCEL FIELDS -----------------------
+ * Every column present in an uploaded Excel file becomes an addable
+ * table column whose value is read from the contact's import_data.
+ * -------------------------------------------------------------------- */
+
+const IMPORT_GROUP_ID = 'imported';
+const IMPORT_PREFIX = 'import:';
+
+export function importFieldId(label: string): string {
+  return `${IMPORT_PREFIX}${label}`;
+}
+
+function importFieldDef(label: string): TableField {
+  return {
+    id: importFieldId(label),
+    label,
+    group: IMPORT_GROUP_ID,
+    render: (c: Contact): string => {
+      const data = c.customFields?.['import_data'];
+      if (!data || typeof data !== 'object') return '';
+      const rec = data as Record<string, unknown>;
+      if (typeof rec[label] === 'string') return rec[label];
+      const key = Object.keys(rec).find((k) => k.trim().toLowerCase() === label.trim().toLowerCase());
+      const v = key ? rec[key] : undefined;
+      return typeof v === 'string' ? v : '';
+    },
+  };
+}
+
+export function importedFields(): TableField[] {
+  return getImportColumns().map(importFieldDef);
+}
+
+export function importedGroup(): FieldGroup | null {
+  return getImportColumns().length > 0 ? { id: IMPORT_GROUP_ID, label: 'Imported Fields' } : null;
+}
+
+export function allFieldGroups(): FieldGroup[] {
+  const groups = [...FIELD_GROUPS, ...dynamicFormGroups()];
+  const imp = importedGroup();
+  if (imp) groups.push(imp);
+  return groups;
+}
 
 export const TABLE_FIELDS: Record<string, TableField> = {
   contact_name: {
@@ -41,16 +128,16 @@ export const TABLE_FIELDS: Record<string, TableField> = {
     render: (c) => {
       const list = c.followers ?? [];
       return (
-        <div className="flex items-center space-x-2">
-          <Avatar initials={c.initials} color={c.avatarColor} image={c.image} size="w-6 h-6" />
-          <div className="min-w-0 flex items-center gap-1.5">
-            <span className="font-medium text-slate-800 group-hover:text-blue-600 truncate text-[13px]">{c.name}</span>
+        <div className="flex items-center space-x-1.5">
+          <Avatar initials={c.initials} color={c.avatarColor} image={c.image} size="w-5 h-5" />
+          <div className="min-w-0 flex items-center gap-1">
+            <span className="text-slate-800 group-hover:text-blue-600 truncate text-xs">{c.name}</span>
             {c.ownerAvatar && (
               <img
                 src={c.ownerAvatar}
                 alt={c.owner}
                 title={`Owner: ${c.owner}`}
-                className="w-5 h-5 rounded-full object-cover border-2 border-indigo-200 shadow-sm flex-shrink-0"
+                className="w-4 h-4 rounded-full object-cover border-2 border-indigo-200 shadow-sm flex-shrink-0"
               />
             )}
             {list.length > 0 && (
@@ -62,13 +149,13 @@ export const TABLE_FIELDS: Record<string, TableField> = {
                       src={f.avatar_data}
                       alt={f.full_name}
                       title={f.full_name}
-                      className="w-5 h-5 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
+                      className="w-4 h-4 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
                     />
                   ) : (
                     <span
                       key={f.id}
                       title={f.full_name}
-                      className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[8px] font-bold flex items-center justify-center flex-shrink-0"
+                      className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 text-[7px] font-bold flex items-center justify-center flex-shrink-0"
                     >
                       {(f.first_name[0] ?? '').toUpperCase()}
                       {(f.last_name[0] ?? '').toUpperCase()}
@@ -88,8 +175,8 @@ export const TABLE_FIELDS: Record<string, TableField> = {
     group: 'contact',
     render: (c) =>
       c.phone ? (
-        <div className="flex items-center space-x-1.5">
-          <FaPhone className="text-slate-400 text-[10px]" />
+        <div className="flex items-center space-x-1">
+          <FaPhone className="text-slate-400 text-[9px]" />
           <span>{c.phone}</span>
         </div>
       ) : (
@@ -102,8 +189,8 @@ export const TABLE_FIELDS: Record<string, TableField> = {
     group: 'contact',
     render: (c) =>
       c.email ? (
-        <div className="flex items-center space-x-1.5">
-          <FaEnvelope className="text-slate-400 text-[10px]" />
+        <div className="flex items-center space-x-1">
+          <FaEnvelope className="text-slate-400 text-[9px]" />
           <span>{c.email}</span>
         </div>
       ) : (
@@ -120,13 +207,13 @@ export const TABLE_FIELDS: Record<string, TableField> = {
     id: 'created',
     label: 'Created (PKT)',
     group: 'contact',
-    render: (c) => <span className="whitespace-nowrap">{c.createdPkt ?? ''}</span>,
+    render: (c) => <span className="whitespace-nowrap text-[11px]">{c.createdPkt ?? ''}</span>,
   },
   last_activity: {
     id: 'last_activity',
     label: 'Last activity (PKT)',
     group: 'activity',
-    render: (c) => c.lastActivityPkt ?? '',
+    render: (c) => <span className="whitespace-nowrap text-[11px]">{c.lastActivityPkt ?? ''}</span>,
   },
   tags: {
     id: 'tags',
@@ -165,7 +252,7 @@ export const TABLE_FIELDS: Record<string, TableField> = {
   dnd: { id: 'dnd', label: 'DND', group: 'contact', render: () => '' },
   additional_emails: { id: 'additional_emails', label: 'Additional emails', group: 'contact', render: () => '' },
   additional_phones: { id: 'additional_phones', label: 'Additional phones', group: 'contact', render: () => '' },
-  updated: { id: 'updated', label: 'Updated (PKT)', group: 'contact', render: (c) => c.updatedPkt ?? '' },
+  updated: { id: 'updated', label: 'Updated (PKT)', group: 'contact', render: (c) => <span className="whitespace-nowrap text-[11px]">{c.updatedPkt ?? ''}</span> },
   followers: {
     id: 'followers',
     label: 'Followers',
@@ -174,7 +261,7 @@ export const TABLE_FIELDS: Record<string, TableField> = {
       const list = c.followers ?? [];
       if (list.length === 0) return '';
       return (
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-0.5 flex-wrap">
           {list.map((f) =>
             f.avatar_data ? (
               <img
@@ -182,13 +269,13 @@ export const TABLE_FIELDS: Record<string, TableField> = {
                 src={f.avatar_data}
                 alt={f.full_name}
                 title={f.full_name}
-                className="w-5 h-5 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
+                className="w-4 h-4 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
               />
             ) : (
               <span
                 key={f.id}
                 title={f.full_name}
-                className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                className="w-4 h-4 rounded-full bg-blue-100 text-blue-600 text-[7px] font-bold flex items-center justify-center flex-shrink-0"
               >
                 {(f.first_name[0] ?? '').toUpperCase()}
                 {(f.last_name[0] ?? '').toUpperCase()}
@@ -205,16 +292,16 @@ export const TABLE_FIELDS: Record<string, TableField> = {
     group: 'contact',
     render: (c) =>
       c.owner ? (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {c.ownerAvatar ? (
             <img
               src={c.ownerAvatar}
               alt={c.owner}
               title={c.owner}
-              className="w-5 h-5 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
+              className="w-4 h-4 rounded-full object-cover border border-white shadow-sm flex-shrink-0"
             />
           ) : (
-            <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-[8px] font-bold flex items-center justify-center flex-shrink-0">
+            <span className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 text-[7px] font-bold flex items-center justify-center flex-shrink-0">
               {(c.owner[0] ?? '').toUpperCase()}
             </span>
           )}
@@ -264,12 +351,6 @@ export const TABLE_FIELDS: Record<string, TableField> = {
     group: 'additional',
     render: () => '',
   },
-  bike_model: {
-    id: 'bike_model',
-    label: 'Model of The Bike-Evee',
-    group: 'form',
-    render: () => '',
-  },
   workflows_active: { id: 'workflows_active', label: 'Workflows active', group: 'activity', render: () => '' },
   workflows_finished: { id: 'workflows_finished', label: 'Workflows finished', group: 'activity', render: () => '' },
   opportunities: { id: 'opportunities', label: 'Opportunities', group: 'activity', render: () => '' },
@@ -295,14 +376,37 @@ export const DEFAULT_VISIBLE_FIELDS = [
 ];
 
 export function fieldById(id: string): TableField | undefined {
-  return TABLE_FIELDS[id];
+  if (TABLE_FIELDS[id]) return TABLE_FIELDS[id];
+  if (id.startsWith(IMPORT_PREFIX)) {
+    const label = id.slice(IMPORT_PREFIX.length);
+    const match = getImportColumns().find((c) => c.toLowerCase() === label.toLowerCase());
+    return match ? importFieldDef(match) : undefined;
+  }
+  if (!id.startsWith(FORM_GROUP_PREFIX)) return undefined;
+  const rest = id.slice(FORM_GROUP_PREFIX.length);
+  const sep = rest.lastIndexOf(':');
+  if (sep <= 0) return undefined;
+  const formName = rest.slice(0, sep);
+  const label = rest.slice(sep + 1);
+  const form = getForms().find((f) => f.name === formName);
+  if (!form || !form.elements.some((el) => el.label === label)) return undefined;
+  return formFieldDef(form, label);
 }
 
 export function fieldsInGroup(groupId: string): TableField[] {
-  return Object.values(TABLE_FIELDS).filter((f) => f.group === groupId);
+  const staticFields = Object.values(TABLE_FIELDS).filter((f) => f.group === groupId);
+  if (groupId === IMPORT_GROUP_ID) return [...staticFields, ...importedFields()];
+  if (!groupId.startsWith(FORM_GROUP_PREFIX)) return staticFields;
+  const formName = groupId.slice(FORM_GROUP_PREFIX.length);
+  const form = getForms().find((f) => f.name === formName);
+  if (!form) return staticFields;
+  const formFields = form.elements
+    .filter((el) => el.type !== 'button')
+    .map((el) => formFieldDef(form, el.label));
+  return [...staticFields, ...formFields];
 }
 
-export const TABLE_FILTER_GROUPS: FilterGroup[] = FIELD_GROUPS.map((g) => ({
+export const TABLE_FILTER_GROUPS: FilterGroup[] = allFieldGroups().map((g) => ({
   id: g.id,
   label: g.label,
   options: fieldsInGroup(g.id).map((f) => f.label),

@@ -17,7 +17,7 @@ function SmartListTabs({ active, onSelect, customLists, onAdd, hiddenBuiltIns }:
   const visibleBuiltIns = BUILT_INS.filter((list) => !hiddenBuiltIns?.includes(list));
 
   return (
-    <div className="px-4 md:px-6 border-b border-slate-200 flex items-center space-x-4 text-xs font-medium text-slate-600 flex-shrink-0 overflow-x-auto whitespace-nowrap no-scrollbar">
+    <div className="px-4 md:px-6 pt-1 pb-0 border-b border-slate-200 flex items-center space-x-4 text-xs font-medium text-slate-600 flex-shrink-0 overflow-x-auto whitespace-nowrap no-scrollbar">
       {visibleBuiltIns.map((list) => {
         const isActive = active === list;
         return (
@@ -26,8 +26,8 @@ function SmartListTabs({ active, onSelect, customLists, onAdd, hiddenBuiltIns }:
             onClick={() => onSelect(list)}
             className={
               isActive
-                ? 'flex items-center space-x-1.5 pb-2 text-blue-600 font-semibold border-b-2 border-blue-600'
-                : 'flex items-center space-x-1.5 pb-2 hover:text-slate-800'
+                ? 'flex items-center space-x-1.5 pb-1.5 text-blue-600 font-semibold border-b-2 border-blue-600'
+                : 'flex items-center space-x-1.5 pb-1.5 hover:text-slate-800'
             }
           >
             <FaBarsStaggered />
@@ -44,8 +44,8 @@ function SmartListTabs({ active, onSelect, customLists, onAdd, hiddenBuiltIns }:
             onClick={() => onSelect(list.name)}
             className={
               isActive
-                ? 'flex items-center space-x-1.5 pb-2 text-blue-600 font-semibold border-b-2 border-blue-600 cursor-pointer'
-                : 'flex items-center space-x-1.5 pb-2 hover:text-slate-800 cursor-pointer'
+                ? 'flex items-center space-x-1.5 pb-1.5 text-blue-600 font-semibold border-b-2 border-blue-600 cursor-pointer'
+                : 'flex items-center space-x-1.5 pb-1.5 hover:text-slate-800 cursor-pointer'
             }
           >
             <FaBarsStaggered />
@@ -65,7 +65,7 @@ function SmartListTabs({ active, onSelect, customLists, onAdd, hiddenBuiltIns }:
 
       <button
         onClick={onAdd}
-        className="flex items-center space-x-1 pb-2 text-slate-500 hover:text-slate-800"
+        className="flex items-center space-x-1 pb-1.5 text-slate-500 hover:text-slate-800"
       >
         <FaPlus className="text-[10px]" />
         <span>Add Smart List</span>

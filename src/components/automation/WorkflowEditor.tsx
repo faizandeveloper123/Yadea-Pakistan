@@ -13,13 +13,15 @@ import {
   FaRotateLeft,
   FaRotateRight,
   FaWandMagicSparkles,
+  FaXmark,
 } from 'react-icons/fa6';
 import type { Workflow, WorkflowEdge, WorkflowNode, NodeTypeDef } from '../../automation/types';
 import { NODE_CATEGORIES, getNodeType } from '../../automation/nodeCatalog';
 import { makeEdge, makeNode, uid } from '../../automation/workflowStore';
+import { MAILGUN_CONFIG, sendEmailViaMailgun } from '../../services/mailgun';
 
-const NODE_W = 236;
-const NODE_H = 92;
+const NODE_W = 216;
+const NODE_H = 76;
 
 interface Viewport {
   x: number;
@@ -46,15 +48,15 @@ function NodeSettingsFields({ node, onChange }: NodeSettingsFieldProps) {
     onChange({ ...node, settings: { ...node.settings, [key]: value } });
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {def.fields.map((field) => (
         <div key={field.key}>
-          <label className="block text-[11px] font-medium text-slate-500 mb-1">{field.label}</label>
+          <label className="block text-[10px] font-medium text-slate-500 mb-1">{field.label}</label>
           {field.type === 'select' ? (
             <select
               value={node.settings[field.key] ?? def.defaults[field.key] ?? ''}
               onChange={(e) => set(field.key, e.target.value)}
-              className="w-full border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               {field.options?.map((o) => (
                 <option key={o} value={o}>
@@ -64,11 +66,11 @@ function NodeSettingsFields({ node, onChange }: NodeSettingsFieldProps) {
             </select>
           ) : field.type === 'textarea' ? (
             <textarea
-              rows={3}
+              rows={2}
               placeholder={field.placeholder}
               value={node.settings[field.key] ?? def.defaults[field.key] ?? ''}
               onChange={(e) => set(field.key, e.target.value)}
-              className="w-full border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
             />
           ) : (
             <input
@@ -76,7 +78,7 @@ function NodeSettingsFields({ node, onChange }: NodeSettingsFieldProps) {
               placeholder={field.placeholder}
               value={node.settings[field.key] ?? def.defaults[field.key] ?? ''}
               onChange={(e) => set(field.key, e.target.value)}
-              className="w-full border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-md px-2 py-1 text-xs text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           )}
         </div>
@@ -102,33 +104,33 @@ function NodeInspector({
 }) {
   const Icon = def.icon;
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2.5">
-          <span className="w-9 h-9 rounded-md flex items-center justify-center text-white text-sm" style={{ background: def.color }}>
+        <div className="flex items-center space-x-2">
+          <span className="w-8 h-8 rounded-md flex items-center justify-center text-white text-xs" style={{ background: def.color }}>
             <Icon />
           </span>
           <div>
-            <div className="text-xs font-semibold text-slate-800">{def.label}</div>
-            <div className="text-[10px] text-slate-400">{def.kind === 'trigger' ? 'Trigger' : def.kind === 'logic' ? 'Logic' : 'Action'}</div>
+            <div className="text-[11px] font-semibold text-slate-800">{def.label}</div>
+            <div className="text-[9px] text-slate-400">{def.kind === 'trigger' ? 'Trigger' : def.kind === 'logic' ? 'Logic' : 'Action'}</div>
           </div>
         </div>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-0.5">
           <button onClick={() => onDuplicate(node)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded" title="Duplicate">
-            <FaRegCopy className="text-xs" />
+            <FaRegCopy className="text-[11px]" />
           </button>
           <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded" title="Delete">
-            <FaRegTrashCan className="text-xs" />
+            <FaRegTrashCan className="text-[11px]" />
           </button>
         </div>
       </div>
 
       <div>
-        <label className="block text-[11px] font-medium text-slate-500 mb-1">Name</label>
+        <label className="block text-[10px] font-medium text-slate-500 mb-1">Name</label>
         <input
           value={node.name}
           onChange={(e) => onPatchNode({ ...node, name: e.target.value })}
-          className="w-full border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full border border-slate-300 rounded-md px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
 
@@ -232,23 +234,23 @@ function NodeCard({
 
       {/* Card body */}
       <div className="flex flex-col h-full rounded-lg overflow-hidden bg-white">
-        <div className="flex items-center gap-2.5 px-3 pt-2.5 pb-2">
+        <div className="flex items-center gap-2 px-2.5 pt-2 pb-1.5">
           <div
-            className="w-9 h-9 rounded-md flex items-center justify-center text-white text-sm shrink-0"
+            className="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs shrink-0"
             style={{ background: def.color }}
           >
             <Icon />
           </div>
           <div className="min-w-0">
-            <div className="text-xs font-semibold text-slate-800 truncate leading-tight">{node.name}</div>
-            <div className="text-[10px] text-slate-400 truncate">
+            <div className="text-[11px] font-semibold text-slate-800 truncate leading-tight">{node.name}</div>
+            <div className="text-[9px] text-slate-400 truncate">
               {def.kind === 'trigger' ? 'Trigger' : def.kind === 'logic' ? 'Logic' : 'Action'}
               {outputs > 1 ? ' · Branch' : ''}
             </div>
           </div>
         </div>
-        <div className="px-3 pb-2 flex-1 overflow-hidden">
-          <div className="text-[10px] text-slate-500 truncate bg-slate-50 border border-slate-100 rounded px-1.5 py-1 leading-tight">
+        <div className="px-2.5 pb-1.5 flex-1 overflow-hidden">
+          <div className="text-[9px] text-slate-500 truncate bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5 leading-tight">
             {summaryFor(node)}
           </div>
         </div>
@@ -296,6 +298,116 @@ interface HistoryEntry {
   edges: WorkflowEdge[];
 }
 
+interface RunContext {
+  contactName: string;
+  email: string;
+  phone: string;
+  tags: string[];
+}
+
+function evaluateCondition(node: WorkflowNode, ctx: RunContext): boolean {
+  const s = node.settings;
+  const field = s.field || 'Tag';
+  const op = s.operator || 'Contains';
+  const val = s.value || '';
+  const actual = String(
+    field === 'Tag' ? ctx.tags.join(',') : field === 'Email' ? ctx.email : field === 'Phone' ? ctx.phone : ctx.contactName
+  );
+  switch (op) {
+    case 'Contains':
+      return actual.toLowerCase().includes(val.toLowerCase());
+    case 'Is':
+      return actual === val;
+    case 'Is Not':
+      return actual !== val;
+    case 'Is Empty':
+      return actual.trim() === '';
+    default:
+      return true;
+  }
+}
+
+function fmtTemplate(tpl: string, ctx: RunContext): string {
+  return tpl
+    .replace(/\{\{\s*contact\.name\s*\}\}/g, ctx.contactName)
+    .replace(/\{\{\s*contact\.email\s*\}\}/g, ctx.email)
+    .replace(/\{\{\s*contact\.phone\s*\}\}/g, ctx.phone);
+}
+
+async function executeNode(node: WorkflowNode, ctx: RunContext): Promise<{ ok: boolean; message: string }> {
+  const s = node.settings;
+  const def = getNodeType(node.type);
+
+  switch (node.type) {
+    case 'form-submitted':
+    case 'contact-created':
+    case 'tag-added':
+    case 'appointment-booked':
+    case 'incoming-email':
+    case 'incoming-call':
+    case 'schedule':
+    case 'webhook':
+      return { ok: true, message: `Triggered: ${def.label}` };
+
+    case 'send-email': {
+      const to = (s.to || ctx.email).trim();
+      const subject = fmtTemplate(s.subject || def.defaults.subject || '', ctx);
+      const body = fmtTemplate(s.body || def.defaults.body || '', ctx);
+      if (!to) return { ok: false, message: 'Send Email: no recipient configured' };
+      try {
+        const res = await sendEmailViaMailgun({
+          fromEmail: MAILGUN_CONFIG.FROM_EMAIL,
+          fromName: MAILGUN_CONFIG.FROM_NAME,
+          to,
+          subject,
+          html: body,
+          text: body,
+        });
+        return { ok: res.status !== 'failed', message: `Email ${res.status} to ${to}` };
+      } catch (err) {
+        return { ok: false, message: `Email failed: ${(err as Error).message}` };
+      }
+    }
+    case 'send-sms':
+      return { ok: true, message: `SMS queued to ${(s.to || ctx.phone) || '—'}` };
+    case 'send-whatsapp':
+      return { ok: true, message: `WhatsApp queued to ${(s.to || ctx.phone) || '—'}` };
+    case 'add-tag':
+      return { ok: true, message: `Tag "${s.tag || 'VIP'}" added to ${ctx.contactName}` };
+    case 'remove-tag':
+      return { ok: true, message: `Tag "${s.tag || 'VIP'}" removed from ${ctx.contactName}` };
+    case 'create-task':
+      return { ok: true, message: `Task created: "${s.title || 'Follow up'}"${s.assignee ? ` (assignee: ${s.assignee})` : ''}` };
+    case 'create-opportunity':
+      return { ok: true, message: `Opportunity created: "${s.name || ctx.contactName}" (${s.stage || 'New'})` };
+    case 'update-contact':
+      return { ok: true, message: `Contact ${s.field || 'Phone'} set to "${s.value || ''}"` };
+    case 'book-appointment':
+      return { ok: true, message: `Appointment "${s.title || 'Follow-up call'}" booked (+${s.days || '3'} days)` };
+    case 'collect-payment':
+      return { ok: true, message: `Payment of $${s.amount || '0'} collected for "${s.item || 'item'}"` };
+    case 'add-campaign':
+      return { ok: true, message: `Added to campaign "${s.campaign || 'Welcome Automation'}"` };
+    case 'ai-agent':
+      return { ok: true, message: `AI agent ran with ${s.model || 'GPT-4o'}` };
+    case 'delay': {
+      const amt = Math.max(0, Number(s.amount) || 0);
+      const waitMs = Math.min(8000, amt * 600);
+      await new Promise((r) => setTimeout(r, waitMs));
+      return { ok: true, message: `Waited ${amt} ${s.unit || 'Minutes'} (scaled for test)` };
+    }
+    case 'condition': {
+      const res = evaluateCondition(node, ctx);
+      return {
+        ok: true,
+        message: `Condition "${s.field || 'Tag'} ${s.operator || 'Contains'} ${s.value || ''}" → ${res ? 'TRUE' : 'FALSE'} (took ${res ? 'True' : 'False'} branch)`,
+      };
+    }
+    default:
+      return { ok: true, message: `Executed ${def.label}` };
+  }
+}
+
 export default function WorkflowEditor({
   workflow,
   onPatch,
@@ -306,12 +418,14 @@ export default function WorkflowEditor({
   const canvasRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState<Viewport>({ x: 120, y: 60, zoom: 0.9 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [paletteOpen, setPaletteOpen] = useState(true);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
   const [inspectorTab, setInspectorTab] = useState<'node' | 'workflow'>('node');
   const [searchQuery, setSearchQuery] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set());
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
+  const [runLog, setRunLog] = useState<{ nodeId: string; nodeName: string; type: string; ok: boolean; message: string }[]>([]);
 
   const [connect, setConnect] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
 
@@ -352,6 +466,17 @@ export default function WorkflowEditor({
     [onPatch, workflow.edges]
   );
 
+  const setSafeViewport = useCallback((updater: (v: Viewport) => Viewport) => {
+    setViewport((v) => {
+      const n = updater(v);
+      return {
+        x: Number.isFinite(n.x) ? n.x : v.x,
+        y: Number.isFinite(n.y) ? n.y : v.y,
+        zoom: Number.isFinite(n.zoom) ? Math.min(2.5, Math.max(0.2, n.zoom)) : v.zoom,
+      };
+    });
+  }, []);
+
   const screenToWorld = useCallback(
     (clientX: number, clientY: number): { x: number; y: number } => {
       const rect = canvasRef.current?.getBoundingClientRect();
@@ -376,10 +501,13 @@ export default function WorkflowEditor({
 
   // ----- Pointer handlers -----
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
+    if (e.button === 1) e.preventDefault();
     const target = e.target as HTMLElement;
     if (target.closest('[data-node-card]') || target.closest('[data-port]')) return;
     panRef.current = { startX: e.clientX, startY: e.clientY, vx: viewport.x, vy: viewport.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
     setSelectedId(null);
+    setInspectorOpen(false);
   };
 
   const handleNodePointerDown = (e: React.PointerEvent, node: WorkflowNode) => {
@@ -394,6 +522,7 @@ export default function WorkflowEditor({
       moved: false,
     };
     setSelectedId(node.id);
+    setInspectorTab('node');
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -430,7 +559,7 @@ export default function WorkflowEditor({
 
   const handleCanvasPointerMove = (e: React.PointerEvent) => {
     if (panRef.current) {
-      setViewport((v) => ({
+      setSafeViewport((v) => ({
         ...v,
         x: panRef.current!.vx + (e.clientX - panRef.current!.startX),
         y: panRef.current!.vy + (e.clientY - panRef.current!.startY),
@@ -484,6 +613,9 @@ export default function WorkflowEditor({
       connectRef.current = null;
       setConnect(null);
     }
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     panRef.current = null;
   };
 
@@ -517,6 +649,7 @@ export default function WorkflowEditor({
     setNodes((prev) => prev.filter((n) => n.id !== selectedId));
     setEdges((prev) => prev.filter((ed) => ed.from !== selectedId && ed.to !== selectedId));
     setSelectedId(null);
+    setInspectorOpen(false);
     setRunningIds((prev) => { const s = new Set(prev); s.delete(selectedId); return s; });
     setDoneIds((prev) => { const s = new Set(prev); s.delete(selectedId); return s; });
   };
@@ -544,8 +677,8 @@ export default function WorkflowEditor({
   };
 
   const zoomBy = (factor: number, center?: { x: number; y: number }) => {
-    setViewport((v) => {
-      const next = Math.min(1.8, Math.max(0.35, v.zoom * factor));
+    setSafeViewport((v) => {
+      const next = Math.min(2.5, Math.max(0.2, v.zoom * factor));
       if (!center) return { ...v, zoom: next };
       return {
         ...v,
@@ -561,21 +694,27 @@ export default function WorkflowEditor({
       setViewport({ x: 120, y: 60, zoom: 0.9 });
       return;
     }
-    const minX = Math.min(...nodes.map((n) => n.x)) - 60;
-    const minY = Math.min(...nodes.map((n) => n.y)) - 60;
-    const maxX = Math.max(...nodes.map((n) => n.x + NODE_W)) + 60;
-    const maxY = Math.max(...nodes.map((n) => n.y + NODE_H)) + 60;
+    const xs = nodes.map((n) => n.x).filter(Number.isFinite);
+    const ys = nodes.map((n) => n.y).filter(Number.isFinite);
+    if (xs.length === 0 || ys.length === 0) {
+      setViewport({ x: 120, y: 60, zoom: 0.9 });
+      return;
+    }
+    const minX = Math.min(...xs) - 60;
+    const minY = Math.min(...ys) - 60;
+    const maxX = Math.max(...xs) + NODE_W + 60;
+    const maxY = Math.max(...ys) + NODE_H + 60;
     const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const zoom = Math.min(1.2, Math.max(0.35, Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY))));
-    setViewport({
+    if (!rect || rect.width < 10 || rect.height < 10) return;
+    const zoom = Math.min(1.5, Math.max(0.2, Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY))));
+    setSafeViewport(() => ({
       zoom,
       x: (rect.width - (maxX - minX) * zoom) / 2 - minX * zoom,
       y: (rect.height - (maxY - minY) * zoom) / 2 - minY * zoom,
-    });
+    }));
   };
 
-  const runWorkflow = () => {
+  const runWorkflow = async () => {
     const triggerIds = nodes.filter((n) => getNodeType(n.type).kind === 'trigger').map((n) => n.id);
     if (triggerIds.length === 0) {
       onNotify('Add a trigger node to test this workflow');
@@ -587,26 +726,46 @@ export default function WorkflowEditor({
     }
     setRunningIds(new Set());
     setDoneIds(new Set());
+    setRunLog([]);
+
+    const ctx: RunContext = {
+      contactName: 'Test Lead',
+      email: 'lead@example.com',
+      phone: '+92 300 1234567',
+      tags: ['New Lead'],
+    };
+
     const order: string[] = [];
     const visited = new Set<string>();
     const visit = (id: string) => {
       if (visited.has(id)) return;
       visited.add(id);
       order.push(id);
-      edges
-        .filter((ed) => ed.from === id)
-        .forEach((ed) => visit(ed.to));
+      const node = nodes.find((n) => n.id === id);
+      const out = edges.filter((ed) => ed.from === id);
+      if (node && node.type === 'condition') {
+        const res = evaluateCondition(node, ctx);
+        out.forEach((ed) => {
+          if ((res && ed.fromPort === 0) || (!res && ed.fromPort === 1)) visit(ed.to);
+        });
+      } else {
+        out.forEach((ed) => visit(ed.to));
+      }
     };
     triggerIds.forEach(visit);
 
-    order.forEach((id, i) => {
-      window.setTimeout(() => setRunningIds((prev) => new Set(prev).add(id)), i * 450);
-      window.setTimeout(() => {
-        setRunningIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
-        setDoneIds((prev) => new Set(prev).add(id));
-      }, i * 450 + 380);
-    });
-    window.setTimeout(() => onNotify('Workflow executed successfully'), order.length * 450 + 400);
+    let failed = false;
+    for (const id of order) {
+      const node = nodes.find((n) => n.id === id);
+      if (!node) continue;
+      setRunningIds((prev) => new Set(prev).add(id));
+      const res = await executeNode(node, ctx);
+      if (!res.ok) failed = true;
+      setRunningIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+      setDoneIds((prev) => new Set(prev).add(id));
+      setRunLog((prev) => [...prev, { nodeId: node.id, nodeName: node.name, type: node.type, ok: res.ok, message: res.message }]);
+    }
+    onNotify(failed ? 'Workflow finished with errors' : 'Workflow executed successfully');
   };
 
   const generateFromAI = () => {
@@ -670,18 +829,17 @@ export default function WorkflowEditor({
         redo();
       } else if (e.key === 'Escape') {
         setSelectedId(null);
+        setInspectorOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  const minimapScale = 0.06;
-
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-100 text-slate-800 text-sm select-none">
       {/* Editor Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 z-30 shadow-xs">
+      <header className="bg-white border-b border-slate-200 px-4 py-1.5 flex items-center justify-between shrink-0 z-30 shadow-xs">
         <div className="flex items-center space-x-3 min-w-0">
           <button
             onClick={onBack}
@@ -747,7 +905,7 @@ export default function WorkflowEditor({
       </header>
 
       {/* Sub header tabs */}
-      <div className="bg-white border-b border-slate-200 px-4 py-1.5 flex items-center justify-between shrink-0 z-20">
+      <div className="bg-white border-b border-slate-200 px-4 py-1 flex items-center justify-between shrink-0 z-20">
         <div className="flex items-center space-x-4 text-xs font-medium">
           <span className="bg-white border border-slate-200 text-slate-700 text-xs rounded px-2 py-1">Standard builder</span>
           <div className="flex items-center space-x-6 ml-4">
@@ -767,30 +925,30 @@ export default function WorkflowEditor({
         </button>
       </div>
 
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex flex-row-reverse min-h-0">
         {/* Node palette */}
         {paletteOpen && (
           <aside
-            className="w-64 border-r border-slate-200 bg-white flex flex-col shrink-0"
+            className="w-56 border-l border-slate-200 bg-white flex flex-col shrink-0"
             onDragOver={(e) => e.preventDefault()}
             onDrop={handlePaletteDrop}
           >
-            <div className="p-3 border-b border-slate-100">
+            <div className="p-2.5 border-b border-slate-100">
               <div className="relative">
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search nodes"
-                  className="w-full bg-slate-50 border border-slate-200 text-xs rounded-md pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700 placeholder-slate-400"
+                  className="w-full bg-slate-50 border border-slate-200 text-xs rounded-md pl-8 pr-3 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700 placeholder-slate-400"
                 />
               </div>
-              <div className="mt-2 text-[10px] text-slate-400">Drag nodes onto the canvas</div>
+              <div className="mt-1.5 text-[10px] text-slate-400">Drag nodes onto the canvas</div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-2 space-y-3">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-1.5 space-y-2.5">
               {filteredCategories.map((cat) => (
                 <div key={cat.name}>
-                  <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
+                  <div className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
                     <span>{cat.name}</span>
                     <span className="text-slate-300 font-normal">{cat.items.length}</span>
                   </div>
@@ -806,16 +964,16 @@ export default function WorkflowEditor({
                             e.dataTransfer.effectAllowed = 'copy';
                           }}
                           onClick={() => addNodeAtCenter(item.key)}
-                          className="w-full text-left px-2 py-1.5 rounded-md hover:bg-slate-50 flex items-center space-x-2 group transition"
+                          className="w-full text-left px-2 py-1 rounded-md hover:bg-slate-50 flex items-center space-x-2 group transition"
                         >
                           <span
-                            className="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs shrink-0"
+                            className="w-6 h-6 rounded-md flex items-center justify-center text-white text-[10px] shrink-0"
                             style={{ background: item.color }}
                           >
                             <Icon />
                           </span>
-                          <span className="text-xs font-medium text-slate-700 truncate">{item.label}</span>
-                          <FaPlus className="ml-auto text-[10px] text-slate-300 group-hover:text-blue-500" />
+                          <span className="text-[11px] font-medium text-slate-700 truncate">{item.label}</span>
+                          <FaPlus className="ml-auto text-[9px] text-slate-300 group-hover:text-blue-500" />
                         </button>
                       );
                     })}
@@ -834,6 +992,7 @@ export default function WorkflowEditor({
           <div
             ref={canvasRef}
             className="absolute inset-0 overflow-hidden"
+            style={{ touchAction: 'none' }}
             onPointerDown={handleCanvasPointerDown}
             onPointerMove={handleCanvasPointerMove}
             onPointerUp={handleCanvasPointerUp}
@@ -875,7 +1034,10 @@ export default function WorkflowEditor({
                     selected={node.id === selectedId}
                     running={runningIds.has(node.id)}
                     done={doneIds.has(node.id)}
-                    onSelect={setSelectedId}
+                    onSelect={(id) => {
+                      setSelectedId(id);
+                      setInspectorTab('node');
+                    }}
                     onDragStart={handleNodePointerDown}
                     onDragMove={handleNodeDragMove}
                     onDragEnd={handleNodeDragEnd}
@@ -883,6 +1045,7 @@ export default function WorkflowEditor({
                     onDoubleClick={(n) => {
                       setSelectedId(n.id);
                       setInspectorTab('node');
+                      setInspectorOpen(true);
                     }}
                   />
                 </div>
@@ -901,7 +1064,7 @@ export default function WorkflowEditor({
                     </span>
                     <h3 className="text-sm font-bold text-slate-800">What do you want to automate?</h3>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">Build workflows by chatting with AI, or drag nodes from the left</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Build workflows by chatting with AI, or drag nodes from the right</p>
                 </div>
                 <div className="relative bg-white border border-slate-200 rounded-lg p-2.5 shadow-xs focus-within:ring-1 focus-within:ring-purple-500 focus-within:border-purple-500">
                   <textarea
@@ -958,41 +1121,44 @@ export default function WorkflowEditor({
             </button>
           </div>
 
-          {/* Minimap */}
-          {nodes.length > 0 && (
-            <div className="absolute right-3 bottom-3 z-20 bg-white border border-slate-200 rounded-lg shadow-md p-1.5 w-40 h-24">
-              <div className="w-full h-full bg-slate-50 border border-slate-200 rounded relative overflow-hidden">
-                {nodes.map((n) => (
-                  <div
-                    key={n.id}
-                    className="absolute rounded-sm"
-                    style={{
-                      left: n.x * minimapScale,
-                      top: n.y * minimapScale,
-                      width: Math.max(4, NODE_W * minimapScale),
-                      height: Math.max(3, NODE_H * minimapScale),
-                      background: getNodeType(n.type).color,
-                      opacity: 0.7,
-                    }}
-                  />
+          {/* Execution log */}
+          {runLog.length > 0 && (
+            <div className="absolute left-3 bottom-16 z-20 w-80 max-w-[calc(100%-6rem)] bg-white border border-slate-200 rounded-lg shadow-lg p-2.5 evee-pop">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Execution log</span>
+                <button onClick={() => setRunLog([])} className="text-slate-400 hover:text-slate-600 text-xs" title="Close">
+                  <FaXmark />
+                </button>
+              </div>
+              <div className="max-h-40 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+                {runLog.map((e, i) => (
+                  <div key={i} className="flex items-start gap-1.5 text-[11px] text-slate-600 leading-snug">
+                    <span className={`mt-px flex-shrink-0 ${e.ok ? 'text-emerald-500' : 'text-red-500'}`}>{e.ok ? '✓' : '✕'}</span>
+                    <div className="min-w-0">
+                      <span className="text-slate-800 font-medium">{e.nodeName}: </span>
+                      <span className="text-slate-500">{e.message}</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
           )}
+
         </div>
 
-        {/* Inspector */}
-        <aside className="w-80 border-l border-slate-200 bg-white flex flex-col shrink-0">
+        {/* Inspector (node settings drawer) */}
+        {inspectorOpen && (
+        <aside className="w-72 border-r border-slate-200 bg-white flex flex-col shrink-0">
           <div className="flex border-b border-slate-100 text-xs font-medium">
             <button
               onClick={() => setInspectorTab('node')}
-              className={`flex-1 py-2.5 text-center transition ${inspectorTab === 'node' ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`flex-1 py-2 text-center transition ${inspectorTab === 'node' ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
             >
               Node
             </button>
             <button
               onClick={() => setInspectorTab('workflow')}
-              className={`flex-1 py-2.5 text-center transition ${inspectorTab === 'workflow' ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`flex-1 py-2 text-center transition ${inspectorTab === 'workflow' ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
             >
               Workflow
             </button>
@@ -1055,6 +1221,7 @@ export default function WorkflowEditor({
             </div>
           )}
         </aside>
+        )}
       </div>
     </div>
   );

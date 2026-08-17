@@ -13,19 +13,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
       - name: Install AWS CLI
         run: |
           sudo apt-get update
           sudo apt-get install -y awscli
 
-      - name: Upload files to Contabo
+      - name: Upload to Contabo
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.Yadea_Pakistan_Access_Key }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.Yadea_Pakistan_Secret_Key }}
           AWS_ENDPOINT_URL: ${{ secrets.Yadea_Pakistan_Endpoint }}
         run: |
-          aws s3 sync . s3://yadea \
+          rm -rf /tmp/site && mkdir -p /tmp/site
+          git archive HEAD --format=tar | tar -x -C /tmp/site
+          aws s3 sync /tmp/site s3://yadea \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --delete \
             --exclude ".git/*" \
             --exclude ".github/*"
+          aws s3 rm s3://yadea/assets --endpoint-url "$AWS_ENDPOINT_URL" --recursive || true
+          aws s3 sync dist/ s3://yadea --endpoint-url "$AWS_ENDPOINT_URL"

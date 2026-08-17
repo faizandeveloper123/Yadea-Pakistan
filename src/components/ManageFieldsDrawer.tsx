@@ -10,7 +10,8 @@ import {
   FaPlus,
   FaXmark,
 } from 'react-icons/fa6';
-import { FIELD_GROUPS, fieldById, fieldsInGroup, TABLE_FIELDS } from '../data/tableFields';
+import { fieldById, fieldsInGroup, allFieldGroups } from '../data/tableFields';
+import { useForms } from '../data/formsStore';
 
 interface ManageFieldsDrawerProps {
   open: boolean;
@@ -26,6 +27,7 @@ function ManageFieldsDrawer({ open, initialVisible, onClose, onApply, onNotify }
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  useForms();
 
   if (!open) return null;
 
@@ -35,7 +37,7 @@ function ManageFieldsDrawer({ open, initialVisible, onClose, onApply, onNotify }
 
   const activeSet = new Set(active);
 
-  const visibleGroups = FIELD_GROUPS.map((g) => ({
+  const visibleGroups = allFieldGroups().map((g) => ({
     ...g,
     fields: fieldsInGroup(g.id).filter((f) => !activeSet.has(f.id) && f.label.toLowerCase().includes(q)),
   })).filter((g) => g.fields.length > 0);
@@ -63,7 +65,7 @@ function ManageFieldsDrawer({ open, initialVisible, onClose, onApply, onNotify }
     });
   };
 
-  const activeGroupCount = (gid: string) => active.filter((id) => TABLE_FIELDS[id]?.group === gid).length;
+  const activeGroupCount = (gid: string) => active.filter((id) => fieldById(id)?.group === gid).length;
 
   return (
     <div className="fixed inset-0 z-[90] flex justify-end">

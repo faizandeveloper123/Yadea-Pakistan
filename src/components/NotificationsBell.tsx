@@ -168,12 +168,12 @@ function NotificationsBell({ onNotify }: NotificationsBellProps) {
       <button
         ref={bellBtnRef}
         onClick={() => void openDropdown()}
-        className="relative w-7 h-7 md:w-8 md:h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center text-xs shadow-sm transition"
+        className="relative w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center shadow-sm transition flex-shrink-0"
         aria-label={`Notifications (${unread} unread)`}
       >
-        {unread > 0 ? <FaBell className="text-xs" /> : <FaRegBell className="text-xs" />}
+        {unread > 0 ? <FaBell className="text-sm" /> : <FaRegBell className="text-sm" />}
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-600 text-white text-[9px] font-bold flex items-center justify-center border border-white">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
             {unread > 99 ? '99+' : unread}
           </span>
         )}

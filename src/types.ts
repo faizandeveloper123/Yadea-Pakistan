@@ -24,6 +24,12 @@ export interface Contact {
   isHighlighted?: boolean;
 }
 
+export interface FormSubmissionData {
+  formName: string;
+  submittedOn?: string;
+  values: Record<string, string>;
+}
+
 export interface ImportedContactInput {
   name: string;
   phone: string;
@@ -31,4 +37,17 @@ export interface ImportedContactInput {
   business: string;
   tag: string;
   color: string;
+}
+
+export interface ImportSheetData {
+  name: string;
+  headers: string[];
+  rows: Record<string, string>[];
+}
+
+export interface ImportResult {
+  fileName: string;
+  sheets: ImportSheetData[];
+  totalRows: number;
+  cityColumn: string | null;
 }

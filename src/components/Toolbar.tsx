@@ -28,11 +28,11 @@ function Toolbar({
   onAddToList,
 }: ToolbarProps) {
   return (
-    <div className="px-4 md:px-6 py-2 flex flex-col sm:flex-row items-center justify-between border-b border-slate-100 bg-white flex-shrink-0 gap-2">
-      <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
+    <div className="px-4 md:px-6 py-1.5 flex flex-col sm:flex-row items-center justify-between border-b border-slate-100 bg-white flex-shrink-0 gap-1.5">
+      <div className="flex items-center space-x-2 overflow-x-auto pb-0.5 sm:pb-0">
         <button
           onClick={onOpenFilters}
-          className="px-3 py-1.5 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap"
+          className="px-3 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap"
         >
           <FaFilter className="text-slate-500" />
           <span>Filters</span>
@@ -45,7 +45,7 @@ function Toolbar({
 
         <button
           onClick={onOpenSort}
-          className="px-3 py-1.5 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap"
+          className="px-3 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap"
         >
           <FaArrowsUpDown className="text-slate-500" />
           <span>Sort</span>
@@ -81,7 +81,7 @@ function Toolbar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search Contacts"
-            className="w-full sm:w-64 border border-slate-300 rounded-md pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-full sm:w-64 border border-slate-300 rounded-md pl-8 pr-3 py-1 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             aria-label="Search Contacts"
           />
         </div>

@@ -1,4 +1,4 @@
-import type { Contact } from './types';
+import type { Contact, FormSubmissionData } from './types';
 import type { ApiContact } from './api';
 import type { AppliedFilter, FilterRule } from './data/smartListOptions';
 
@@ -139,6 +139,25 @@ export function mapApiContact(a: ApiContact): Contact {
     followers: a.followers,
     isHighlighted: false,
   };
+}
+
+/** Read the form submissions attached to a contact's custom_fields. */
+export function formSubmissionsOf(customFields?: Record<string, unknown> | null): FormSubmissionData[] {
+  const raw = customFields?.['form_submissions'];
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (s): s is FormSubmissionData =>
+      !!s && typeof s === 'object' && typeof (s as Record<string, unknown>).formName === 'string'
+  );
+}
+
+/** Find the first column header that matches any of the given patterns. */
+export function pickColumn(headers: string[], patterns: RegExp[]): string | undefined {
+  for (const p of patterns) {
+    const hit = headers.find((h) => p.test(h.trim()));
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 /* ------------------ SMART LIST FILTER EVALUATION ------------------ */

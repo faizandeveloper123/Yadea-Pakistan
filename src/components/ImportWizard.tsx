@@ -1,24 +1,27 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import * as XLSX from 'xlsx';
 import type { IconType } from 'react-icons';
 import {
   FaBuilding,
   FaCheck,
   FaChevronRight,
-  FaCircleCheck,
   FaClipboardCheck,
   FaCloudArrowUp,
   FaDiagramProject,
-  FaFileCsv,
+  FaFileExcel,
+  FaLocationDot,
+  FaTable,
   FaUserGroup,
   FaXmark,
 } from 'react-icons/fa6';
-import type { ImportedContactInput } from '../types';
+import type { ImportResult, ImportSheetData } from '../types';
+import { pickColumn } from '../utils';
 
 const steps = [
   { num: 1, title: 'Start', subtitle: 'Select objects to import' },
-  { num: 2, title: 'Upload', subtitle: 'Upload file & options' },
-  { num: 3, title: 'Map', subtitle: 'Map columns to fields' },
-  { num: 4, title: 'Verify', subtitle: 'Review & confirm' },
+  { num: 2, title: 'Upload', subtitle: 'Upload Excel file' },
+  { num: 3, title: 'Preview', subtitle: 'Review sheets & columns' },
+  { num: 4, title: 'Verify', subtitle: 'Confirm & create city lists' },
 ];
 
 interface ImportObject {
@@ -49,57 +52,23 @@ const importObjects: ImportObject[] = [
   },
 ];
 
-const mappingRows = [
-  { col: 'First Name', sample: 'Usman', field: 'First Name' },
-  { col: 'Last Name', sample: 'Tariq', field: 'Last Name' },
-  { col: 'Phone', sample: '+92 300 8899771', field: 'Phone Number' },
-  { col: 'Email', sample: 'usman.tariq@apex.com', field: 'Email Address' },
-  { col: 'Business Name', sample: 'Apex Global Logistics', field: 'Business Name' },
-  { col: 'Tags', sample: 'hot lead', field: 'Tags' },
-];
-
-const previewContacts: ImportedContactInput[] = [
-  {
-    name: 'Usman Tariq',
-    phone: '+92 300 8899771',
-    email: 'usman.tariq@apex.com',
-    business: 'Apex Global Logistics',
-    tag: 'hot lead',
-    color: 'bg-amber-200 text-amber-800',
-  },
-  {
-    name: 'Sara Khan',
-    phone: '+92 321 4455662',
-    email: 'sara.k@innovate.pk',
-    business: 'Innovate Digital',
-    tag: 'customer',
-    color: 'bg-purple-200 text-purple-800',
-  },
-  {
-    name: 'Bilal Ahmad',
-    phone: '+92 333 1122334',
-    email: 'bilal@techventures.io',
-    business: 'TechVentures',
-    tag: 'warm lead',
-    color: 'bg-emerald-200 text-emerald-800',
-  },
-];
-
 interface ImportWizardProps {
   open: boolean;
   onClose: () => void;
-  onImport: (batch: ImportedContactInput[]) => void;
+  onImport: (result: ImportResult) => void;
   onNotify: (msg: string) => void;
 }
+
+const PREVIEW_ROWS = 10;
 
 function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) {
   const [step, setStep] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set(['Contacts']));
-  const [fileName, setFileName] = useState('contacts_import_batch.csv');
-  const [fileSizeText, setFileSizeText] = useState('3 leads ready to process');
-  const [fileReady, setFileReady] = useState(false);
-  const [headerRow, setHeaderRow] = useState(true);
-  const [updateExisting, setUpdateExisting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [sheets, setSheets] = useState<ImportSheetData[]>([]);
+  const [cityColumn, setCityColumn] = useState<string | null>(null);
+  const [previewSheet, setPreviewSheet] = useState(0);
   const [consent, setConsent] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -107,50 +76,90 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
     if (open) {
       setStep(1);
       setSelected(new Set(['Contacts']));
-      setFileName('contacts_import_batch.csv');
-      setFileSizeText('3 leads ready to process');
-      setFileReady(false);
+      setFile(null);
+      setSheets([]);
+      setCityColumn(null);
+      setPreviewSheet(0);
       setConsent(true);
+      setParsing(false);
     }
   }, [open]);
 
+  const totalRows = useMemo(() => sheets.reduce((a, s) => a + s.rows.length, 0), [sheets]);
+  const totalCols = useMemo(() => sheets.reduce((a, s) => a + s.headers.length, 0), [sheets]);
+
+  const cityGroups = useMemo(() => {
+    const map = new Map<string, { label: string; count: number }>();
+    if (cityColumn) {
+      for (const s of sheets) {
+        for (const r of s.rows) {
+          const v = (r[cityColumn] ?? '').trim();
+          if (!v) continue;
+          const key = v.toLowerCase();
+          const prev = map.get(key);
+          map.set(key, { label: prev ? prev.label : v, count: (prev?.count ?? 0) + 1 });
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
+  }, [sheets, cityColumn]);
+
   if (!open) return null;
 
-  const toggleObject = (key: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (key === 'Contacts') {
-        next.add(key);
-        return next;
-      }
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+  const parseFile = async (f: File) => {
+    setParsing(true);
+    try {
+      const buf = await f.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const parsed: ImportSheetData[] = wb.SheetNames.map((sheetName) => {
+        const ws = wb.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+        if (json.length === 0) return { name: sheetName, headers: [], rows: [] };
+        const headers = Object.keys(json[0]);
+        const rows = json.map((r) => {
+          const out: Record<string, string> = {};
+          headers.forEach((h) => {
+            const v = r[h];
+            out[h] = v == null ? '' : String(v).trim();
+          });
+          return out;
+        });
+        return { name: sheetName, headers, rows };
+      }).filter((s) => s.headers.length > 0);
+
+      setSheets(parsed);
+      const allHeaders = Array.from(new Set(parsed.flatMap((s) => s.headers)));
+      setCityColumn(pickColumn(allHeaders, [/city/i]) ?? null);
+      setPreviewSheet(0);
+      onNotify(`"${f.name}" read successfully (${parsed.length} sheet${parsed.length === 1 ? '' : 's'})`);
+    } catch (err) {
+      onNotify(`Could not read the file: ${(err as Error).message}`);
+    } finally {
+      setParsing(false);
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setFileName(file.name);
-    setFileSizeText(`${(file.size / 1024).toFixed(1)} KB • Ready to map fields`);
-    setFileReady(true);
-    onNotify(`File "${file.name}" uploaded successfully`);
-  };
-
-  const loadDemoCsv = () => {
-    setFileName('contacts_import_batch.csv');
-    setFileSizeText('3 new records ready for import');
-    setFileReady(true);
-    onNotify('Demo Contacts file loaded!');
+    const f = event.target.files?.[0];
+    if (!f) return;
+    setFile(f);
+    void parseFile(f);
   };
 
   const goToStep = (n: number) => {
+    if (n > 2 && sheets.length === 0) {
+      onNotify('Please upload an Excel file first.');
+      return;
+    }
     setStep(Math.min(4, Math.max(1, n)));
   };
 
   const handleNext = () => {
     if (step < 4) {
+      if (step === 1 && !selected.has('Contacts')) {
+        onNotify('Contacts import is always included.');
+        setSelected((prev) => new Set(prev).add('Contacts'));
+      }
       setStep(step + 1);
     } else {
       executeImport();
@@ -162,18 +171,19 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
       onNotify('Please confirm the consent agreement before importing.');
       return;
     }
-    onImport(previewContacts);
-    onNotify(`Successfully imported ${previewContacts.length} contacts!`);
+    if (!file || sheets.length === 0) {
+      onNotify('Please upload a valid Excel file first.');
+      return;
+    }
+    onImport({ fileName: file.name, sheets, totalRows, cityColumn });
     onClose();
   };
 
   const stepIconClass = (n: number) => {
-    if (n === step) {
+    if (n === step)
       return 'w-7 h-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-sm';
-    }
-    if (n < step) {
+    if (n < step)
       return 'w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center';
-    }
     return 'w-7 h-7 rounded-full border-2 border-slate-300 bg-white text-slate-500 text-xs font-bold flex items-center justify-center';
   };
 
@@ -194,7 +204,9 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
         <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Imports</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Import contacts, opportunities and custom objects</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Upload an Excel file and get city-wise smart lists automatically
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -246,7 +258,15 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
                       return (
                         <div
                           key={obj.key}
-                          onClick={() => toggleObject(obj.key)}
+                          onClick={() => {
+                            if (obj.key === 'Contacts') return;
+                            setSelected((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(obj.key)) next.delete(obj.key);
+                              else next.add(obj.key);
+                              return next;
+                            });
+                          }}
                           className={
                             isSelected
                               ? 'border-2 border-blue-600 bg-blue-50/40 rounded-xl p-4 cursor-pointer relative transition hover:shadow-sm'
@@ -278,31 +298,17 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
                       );
                     })}
                   </div>
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-800 mb-2">Previous imports</h3>
-                  <p className="text-xs text-slate-600 mb-3">
-                    View previous imports in bulk actions.
+                  <p className="text-[11px] text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mt-4">
+                    When you import, all leads are added to Contacts and a smart list is
+                    created for every city found in your file.
                   </p>
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onNotify('Navigating to bulk actions history...');
-                    }}
-                    className="text-xs text-blue-600 hover:underline font-semibold inline-flex items-center gap-1"
-                  >
-                    View bulk actions
-                    <FaChevronRight className="text-[10px]" />
-                  </a>
                 </div>
               </>
             )}
 
             {step === 2 && (
               <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
-                <h3 className="text-sm font-semibold text-slate-800">Upload your file</h3>
+                <h3 className="text-sm font-semibold text-slate-800">Upload your Excel file</h3>
 
                 <div
                   onClick={() => fileInputRef.current?.click()}
@@ -313,124 +319,150 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
                     Click to upload or drag & drop file
                   </p>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Supported formats: .CSV, .XLS, .XLSX (Up to 10MB)
+                    Supported formats: .XLSX, .XLS, .CSV (up to 10MB) - all sheets are read
                   </p>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".csv,.xls,.xlsx"
+                    accept=".xlsx,.xls,.csv"
                     className="hidden"
                     onChange={handleFileSelect}
                     aria-label="Upload import file"
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                  <span className="text-xs text-slate-500">
-                    Don't have a file ready? Use demo test data:
-                  </span>
-                  <button
-                    onClick={loadDemoCsv}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-semibold transition flex items-center gap-1.5"
-                  >
-                    <FaFileCsv className="text-emerald-600" />
-                    Load Demo Contacts File
-                  </button>
-                </div>
-
-                {fileReady && (
-                  <div className="flex bg-emerald-50 border border-emerald-200 rounded-lg p-3.5 items-center justify-between text-xs">
-                    <div className="flex items-center space-x-3">
-                      <FaFileCsv className="text-emerald-600 text-lg" />
-                      <div>
-                        <div className="font-semibold text-slate-800">{fileName}</div>
-                        <div className="text-[11px] text-slate-500">{fileSizeText}</div>
-                      </div>
-                    </div>
-                    <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded font-semibold">
-                      Ready
-                    </span>
+                {parsing && (
+                  <div className="flex items-center justify-center text-xs text-slate-500 py-2">
+                    Reading file...
                   </div>
                 )}
 
-                <div className="pt-4 border-t border-slate-100 space-y-2">
-                  <h4 className="text-xs font-semibold text-slate-700 mb-2">
-                    File Configuration
-                  </h4>
-                  <label className="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={headerRow}
-                      onChange={(e) => setHeaderRow(e.target.checked)}
-                      className="rounded border-slate-300 text-blue-600"
-                    />
-                    <span>First row contains column headers</span>
-                  </label>
-                  <label className="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={updateExisting}
-                      onChange={(e) => setUpdateExisting(e.target.checked)}
-                      className="rounded border-slate-300 text-blue-600"
-                    />
-                    <span>Update existing contacts if phone or email matches</span>
-                  </label>
-                </div>
+                {!parsing && file && sheets.length > 0 && (
+                  <div className="border border-slate-200 rounded-lg overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
+                      <div className="flex items-center space-x-3">
+                        <FaFileExcel className="text-emerald-600 text-lg" />
+                        <div>
+                          <div className="text-xs font-semibold text-slate-800">{file.name}</div>
+                          <div className="text-[11px] text-slate-500">
+                            {(file.size / 1024).toFixed(1)} KB • {sheets.length} sheet
+                            {sheets.length === 1 ? '' : 's'} • {totalRows.toLocaleString()} rows •{' '}
+                            {totalCols} columns
+                          </div>
+                        </div>
+                      </div>
+                      <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded font-semibold">
+                        Ready
+                      </span>
+                    </div>
+
+                    <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="text-slate-400 text-[11px] font-medium">Sheets</div>
+                        <div className="text-lg font-bold text-slate-800">{sheets.length}</div>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="text-slate-400 text-[11px] font-medium">Total rows</div>
+                        <div className="text-lg font-bold text-slate-800">
+                          {totalRows.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="text-slate-400 text-[11px] font-medium">Total columns</div>
+                        <div className="text-lg font-bold text-slate-800">{totalCols}</div>
+                      </div>
+                    </div>
+
+                    {cityColumn ? (
+                      <div className="flex items-start gap-2 px-4 py-3 bg-blue-50/70 border-t border-blue-100 text-xs text-blue-700">
+                        <FaLocationDot className="mt-0.5 flex-shrink-0" />
+                        <span>
+                          City column <b>"{cityColumn}"</b> detected —{' '}
+                          <b>{cityGroups.length}</b> city smart list
+                          {cityGroups.length === 1 ? '' : 's'} will be created automatically.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2 px-4 py-3 bg-amber-50 border-t border-amber-100 text-xs text-amber-700">
+                        <FaLocationDot className="mt-0.5 flex-shrink-0" />
+                        <span>
+                          No <b>City</b> column found. The leads will be imported without
+                          city-wise smart lists.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            {step === 3 && (
+            {step === 3 && sheets.length > 0 && (
               <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-slate-800">
-                      Map CSV Columns to CRM Contact Fields
+                      All columns from the uploaded sheets
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Ensure your file columns correspond correctly with dashboard properties.
+                      Every sheet is shown with all of its columns and data.
                     </p>
                   </div>
                   <span className="bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-100 font-semibold">
-                    6 Columns Mapped
+                    {totalCols} Columns
                   </span>
                 </div>
 
-                <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                {sheets.length > 1 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {sheets.map((s, i) => (
+                      <button
+                        key={s.name}
+                        onClick={() => setPreviewSheet(i)}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition ${
+                          previewSheet === i
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'
+                        }`}
+                      >
+                        <FaTable className="inline mr-1.5 text-[10px]" />
+                        {s.name}
+                        <span className="ml-1 opacity-70">({s.rows.length})</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="overflow-x-auto border border-slate-200 rounded-lg max-h-96">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0">
                       <tr>
-                        <th className="py-2.5 px-4">Column Header in File</th>
-                        <th className="py-2.5 px-4">Sample Data (Row 1)</th>
-                        <th className="py-2.5 px-4">Maps to CRM Field</th>
-                        <th className="py-2.5 px-4 text-center">Status</th>
+                        {sheets[previewSheet].headers.map((h) => (
+                          <th key={h} className="py-2 px-3 whitespace-nowrap">
+                            {h}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {mappingRows.map((row) => (
-                        <tr key={row.col}>
-                          <td className="py-2.5 px-4 font-semibold text-slate-800">{row.col}</td>
-                          <td className="py-2.5 px-4 text-slate-500">{row.sample}</td>
-                          <td className="py-2.5 px-4">
-                            <select
-                              className="w-full border border-slate-300 rounded px-2 py-1 text-xs bg-white"
-                              defaultValue={row.field}
-                            >
-                              <option>{row.field}</option>
-                              <option>Last Name</option>
-                              <option>Phone</option>
-                              <option>Email</option>
-                              <option>Business Name</option>
-                              <option>Tags</option>
-                            </select>
-                          </td>
-                          <td className="py-2.5 px-4 text-center text-emerald-600 font-semibold">
-                            <FaCircleCheck />
-                          </td>
+                      {sheets[previewSheet].rows.slice(0, PREVIEW_ROWS).map((r, i) => (
+                        <tr key={i}>
+                          {sheets[previewSheet].headers.map((h) => (
+                            <td key={h} className="py-1.5 px-3 whitespace-nowrap">
+                              {r[h]}
+                            </td>
+                          ))}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+
+                {sheets[previewSheet].rows.length > PREVIEW_ROWS && (
+                  <p className="text-[11px] text-slate-400">
+                    Showing first {PREVIEW_ROWS} of{' '}
+                    {sheets[previewSheet].rows.length.toLocaleString()} rows.
+                  </p>
+                )}
               </div>
             )}
 
@@ -448,62 +480,59 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <span className="text-slate-400 text-[11px] block font-medium">
-                      Selected Object
-                    </span>
-                    <span className="font-bold text-slate-800">
-                      {[...selected].join(', ') || 'None'}
-                    </span>
+                    <span className="text-slate-400 text-[11px] block font-medium">Source File</span>
+                    <span className="font-bold text-slate-800 truncate block">{file?.name}</span>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <span className="text-slate-400 text-[11px] block font-medium">
-                      Source File
-                    </span>
-                    <span className="font-bold text-slate-800 truncate block">{fileName}</span>
+                    <span className="text-slate-400 text-[11px] block font-medium">Sheets</span>
+                    <span className="font-bold text-slate-800">{sheets.length}</span>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                     <span className="text-slate-400 text-[11px] block font-medium">
                       Records Detected
                     </span>
-                    <span className="font-bold text-emerald-600">3 Valid Records</span>
+                    <span className="font-bold text-emerald-600">
+                      {totalRows.toLocaleString()} Leads
+                    </span>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <span className="text-slate-400 text-[11px] block font-medium">City Lists</span>
+                    <span className="font-bold text-slate-800">
+                      {cityColumn ? cityGroups.length : 0}
+                    </span>
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="text-xs font-semibold text-slate-700 mb-2">
-                    Parsed Contacts Sample Preview
-                  </h4>
-                  <div className="border border-slate-200 rounded-lg overflow-hidden">
-                    <table className="w-full text-xs text-left">
-                      <thead className="bg-slate-50 text-slate-600 font-medium">
-                        <tr>
-                          <th className="p-2.5">Name</th>
-                          <th className="p-2.5">Phone</th>
-                          <th className="p-2.5">Email</th>
-                          <th className="p-2.5">Company</th>
-                          <th className="p-2.5">Tag</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {previewContacts.map((c) => (
-                          <tr key={c.name}>
-                            <td className="p-2.5 font-medium text-slate-800">{c.name}</td>
-                            <td className="p-2.5 text-slate-600">{c.phone}</td>
-                            <td className="p-2.5 text-slate-600">{c.email}</td>
-                            <td className="p-2.5 text-slate-600">{c.business}</td>
-                            <td className="p-2.5">
-                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">
-                                {c.tag}
-                              </span>
-                            </td>
+                {cityColumn && cityGroups.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-slate-700 mb-2">
+                      Smart lists that will be created (by city)
+                    </h4>
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-slate-50 text-slate-600 font-medium">
+                          <tr>
+                            <th className="p-2.5">City</th>
+                            <th className="p-2.5 text-right">Leads</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {cityGroups.map((g) => (
+                            <tr key={g.label}>
+                              <td className="p-2.5 font-medium text-slate-800 flex items-center gap-1.5">
+                                <FaLocationDot className="text-[10px] text-blue-500" />
+                                {g.label}
+                              </td>
+                              <td className="p-2.5 text-right text-slate-600">{g.count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="pt-2">
                   <label className="flex items-start space-x-2 text-xs text-slate-700 cursor-pointer">
@@ -543,11 +572,10 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
             </button>
             <button
               onClick={handleNext}
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm flex items-center space-x-1.5"
+              disabled={step === 2 && (!file || sheets.length === 0)}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition shadow-sm flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>
-                {step === 4 ? 'Confirm & Import Contacts' : 'Next'}
-              </span>
+              <span>{step === 4 ? 'Confirm & Import Leads' : 'Next'}</span>
               {step === 4 ? (
                 <FaCheck className="text-[10px]" />
               ) : (
