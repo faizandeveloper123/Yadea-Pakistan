@@ -6,11 +6,16 @@
 
 declare(strict_types=1);
 
-const DB_HOST = '127.0.0.1';
-const DB_PORT = 3306;
-const DB_NAME = 'evee_crm';
-const DB_USER = 'root';
-const DB_PASS = '';
+/**
+ * Database credentials. Read from environment variables (DB_HOST, DB_PORT,
+ * DB_NAME, DB_USER, DB_PASS) so production servers never need credentials
+ * committed to the repo. Falls back to the XAMPP local defaults below.
+ */
+define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+define('DB_PORT', (int)(getenv('DB_PORT') ?: 3306));
+define('DB_NAME', getenv('DB_NAME') ?: 'evee_crm');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 
 function db(): PDO
 {

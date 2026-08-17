@@ -28,8 +28,8 @@ require __DIR__ . '/config.php';
 
 cors();
 
-/** TODO: Replace with your real Mailgun webhook signing key. */
-const MAILGUN_SIGNING_KEY = 'YOUR_MAILGUN_SIGNING_KEY';
+/** Read from the MAILGUN_SIGNING_KEY env var; placeholder mode until set. */
+define('MAILGUN_SIGNING_KEY', getenv('MAILGUN_SIGNING_KEY') ?: 'YOUR_MAILGUN_SIGNING_KEY');
 
 function verify_mailgun_signature(array $data): bool
 {
