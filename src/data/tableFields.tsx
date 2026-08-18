@@ -3,6 +3,7 @@ import type { Contact } from '../types';
 import type { FilterGroup } from './smartListOptions';
 import { getForms, type StoredForm } from './formsStore';
 import { getImportColumns } from './importColumnsStore';
+import { findCustomValue } from '../utils';
 import Avatar from '../components/Avatar';
 import Tag from '../components/Tag';
 import { FaEnvelope, FaPhone } from 'react-icons/fa6';
@@ -31,6 +32,14 @@ const firstOf = (c: Contact) => c.name.split(' ').filter(Boolean)[0] ?? '';
 const lastOf = (c: Contact) => {
   const parts = c.name.split(' ').filter(Boolean);
   return parts.length > 1 ? parts[parts.length - 1] : '';
+};
+
+/** Read a built-in field's value from the contact's custom fields / form submissions / imported Excel data. */
+const customText = (c: Contact, label: string): string => {
+  const v = findCustomValue(c, label);
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return (v as unknown[]).map(String).join(', ');
+  return '';
 };
 
 /* ----------------------- DYNAMIC FORM FIELDS -----------------------
@@ -105,7 +114,7 @@ function importFieldDef(label: string): TableField {
 }
 
 export function importedFields(): TableField[] {
-  return getImportColumns().map(importFieldDef);
+  return getImportColumns().filter((c) => !isStaticFieldLabel(c)).map(importFieldDef);
 }
 
 export function importedGroup(): FieldGroup | null {
@@ -201,7 +210,7 @@ export const TABLE_FIELDS: Record<string, TableField> = {
     id: 'business_name',
     label: 'Business name',
     group: 'general',
-    render: (c) => c.businessName ?? '',
+    render: (c) => c.businessName ?? customText(c, 'Business name'),
   },
   created: {
     id: 'created',
@@ -234,8 +243,18 @@ export const TABLE_FIELDS: Record<string, TableField> = {
   },
   first_name: { id: 'first_name', label: 'First name', group: 'contact', render: firstOf },
   last_name: { id: 'last_name', label: 'Last name', group: 'contact', render: lastOf },
-  date_of_birth: { id: 'date_of_birth', label: 'Date of birth', group: 'contact', render: () => '' },
-  contact_source: { id: 'contact_source', label: 'Contact source', group: 'contact', render: () => '' },
+  date_of_birth: {
+    id: 'date_of_birth',
+    label: 'Date of birth',
+    group: 'contact',
+    render: (c) => customText(c, 'Date of birth'),
+  },
+  contact_source: {
+    id: 'contact_source',
+    label: 'Contact source',
+    group: 'contact',
+    render: (c) => customText(c, 'Contact source'),
+  },
   contact_type: {
     id: 'contact_type',
     label: 'Contact type',
@@ -312,44 +331,64 @@ export const TABLE_FIELDS: Record<string, TableField> = {
       ),
   },
   valid_whatsapp: { id: 'valid_whatsapp', label: 'Valid WhatsApp', group: 'contact', render: () => '' },
-  street_address: { id: 'street_address', label: 'Street address', group: 'general', render: () => '' },
-  city: { id: 'city', label: 'City', group: 'general', render: () => '' },
-  country: { id: 'country', label: 'Country', group: 'general', render: () => '' },
-  state: { id: 'state', label: 'State', group: 'general', render: () => '' },
-  postal_code: { id: 'postal_code', label: 'Postal code', group: 'general', render: () => '' },
-  website: { id: 'website', label: 'Website', group: 'general', render: () => '' },
-  timezone: { id: 'timezone', label: 'Timezone', group: 'general', render: () => '' },
-  company_name: { id: 'company_name', label: 'Company name', group: 'general', render: () => '' },
-  full_address: { id: 'full_address', label: 'Full address', group: 'general', render: () => '' },
+  street_address: {
+    id: 'street_address',
+    label: 'Street address',
+    group: 'general',
+    render: (c) => customText(c, 'Street address'),
+  },
+  city: { id: 'city', label: 'City', group: 'general', render: (c) => customText(c, 'City') },
+  country: { id: 'country', label: 'Country', group: 'general', render: (c) => customText(c, 'Country') },
+  state: { id: 'state', label: 'State', group: 'general', render: (c) => customText(c, 'State') },
+  postal_code: {
+    id: 'postal_code',
+    label: 'Postal code',
+    group: 'general',
+    render: (c) => customText(c, 'Postal code') || customText(c, 'Postal zip code'),
+  },
+  website: { id: 'website', label: 'Website', group: 'general', render: (c) => customText(c, 'Website') },
+  timezone: { id: 'timezone', label: 'Timezone', group: 'general', render: (c) => customText(c, 'Timezone') },
+  company_name: {
+    id: 'company_name',
+    label: 'Company name',
+    group: 'general',
+    render: (c) => customText(c, 'Company name'),
+  },
+  full_address: {
+    id: 'full_address',
+    label: 'Full address',
+    group: 'general',
+    render: (c) => customText(c, 'Full address'),
+  },
   flooring_interest: {
     id: 'flooring_interest',
     label: 'What Type of Flooring Are You Interested In?',
     group: 'additional',
-    render: () => '',
+    render: (c) => customText(c, 'What Type Of Flooring Are You Interested In?'),
   },
   project_size: {
     id: 'project_size',
     label: 'Approximate Project Size',
     group: 'additional',
-    render: () => '',
+    render: (c) => customText(c, 'Approximate Project Size'),
   },
   start_time: {
     id: 'start_time',
     label: 'When Would You Like to Start?',
     group: 'additional',
-    render: () => '',
+    render: (c) => customText(c, 'When Would You Like To Start?'),
   },
   additional_project_details: {
     id: 'additional_project_details',
     label: 'Additional Project Details',
     group: 'additional',
-    render: () => '',
+    render: (c) => customText(c, 'Additional Project Details'),
   },
   flooring_type: {
     id: 'flooring_type',
     label: 'Project Flooring Type',
     group: 'additional',
-    render: () => '',
+    render: (c) => customText(c, 'Project Flooring Type'),
   },
   workflows_active: { id: 'workflows_active', label: 'Workflows active', group: 'activity', render: () => '' },
   workflows_finished: { id: 'workflows_finished', label: 'Workflows finished', group: 'activity', render: () => '' },
@@ -374,6 +413,18 @@ export const DEFAULT_VISIBLE_FIELDS = [
   'last_activity',
   'tags',
 ];
+
+/** Normalized labels of all built-in table columns (used to avoid duplicate imported columns). */
+const STATIC_FIELD_LABELS = new Set(
+  Object.values(TABLE_FIELDS)
+    .filter((f) => f.group !== null)
+    .map((f) => f.label.trim().toLowerCase())
+);
+
+/** True when an imported column label matches a built-in table column. */
+export function isStaticFieldLabel(label: string): boolean {
+  return STATIC_FIELD_LABELS.has(label.trim().toLowerCase());
+}
 
 export function fieldById(id: string): TableField | undefined {
   if (TABLE_FIELDS[id]) return TABLE_FIELDS[id];

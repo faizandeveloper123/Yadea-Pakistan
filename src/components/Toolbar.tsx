@@ -32,7 +32,7 @@ function Toolbar({
       <div className="flex items-center space-x-2 overflow-x-auto pb-0.5 sm:pb-0">
         <button
           onClick={onOpenFilters}
-          className="px-3 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap"
+          className="h-8 px-3 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap flex-shrink-0"
         >
           <FaFilter className="text-slate-500" />
           <span>Filters</span>
@@ -45,7 +45,7 @@ function Toolbar({
 
         <button
           onClick={onOpenSort}
-          className="px-3 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap"
+          className="h-8 px-3 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap flex-shrink-0"
         >
           <FaArrowsUpDown className="text-slate-500" />
           <span>Sort</span>
@@ -53,7 +53,7 @@ function Toolbar({
         </button>
 
         {selectedCount > 0 && (
-          <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-md text-xs whitespace-nowrap">
+          <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 h-8 rounded-md text-xs whitespace-nowrap flex-shrink-0">
             <span className="font-semibold">{selectedCount} selected</span>
             {onAddToList && (
               <button
@@ -81,14 +81,14 @@ function Toolbar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search Contacts"
-            className="w-full sm:w-64 border border-slate-300 rounded-md pl-8 pr-3 py-1 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-full sm:w-64 h-8 border border-slate-300 rounded-md pl-8 pr-3 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             aria-label="Search Contacts"
           />
         </div>
 
         <button
           onClick={onManageFields}
-          className="text-slate-700 hover:text-slate-900 text-xs font-medium flex items-center space-x-1.5 whitespace-nowrap flex-shrink-0"
+          className="h-8 px-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-md text-xs font-medium flex items-center space-x-1.5 whitespace-nowrap flex-shrink-0 transition"
         >
           <FaGear className="text-slate-500" />
           <span className="hidden sm:inline">Manage fields</span>

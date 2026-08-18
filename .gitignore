@@ -3,3 +3,4 @@ dist
 .vite
 *.local
 Evee.rar
+dev-server.log

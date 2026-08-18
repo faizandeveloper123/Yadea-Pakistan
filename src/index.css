@@ -6,27 +6,6 @@
   html {
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
-  body {
-    font-weight: 300;
-  }
-}
-
-/* Headings & sub-headings use Inter Regular, overriding bold utilities. */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-th {
-  font-weight: 400;
-}
-
-/* Keep all text thin (Inter Light/Regular) across the site, like the phone/email columns. */
-.font-medium,
-.font-semibold,
-.font-bold {
-  font-weight: 400;
 }
 
 /* Custom Scrollbars */
@@ -59,6 +38,26 @@ input[type='checkbox'] {
   width: 16px;
   height: 16px;
   cursor: pointer;
+}
+
+/* Row checkboxes inside tables: consistent size + brand accent */
+input.row-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: #2563eb;
+  border-radius: 4px;
+}
+
+/* Visible keyboard focus on interactive elements */
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
+/* Nicer text selection */
+::selection {
+  background: #bfdbfe;
+  color: #1e3a8a;
 }
 
 /* Transition Effects */

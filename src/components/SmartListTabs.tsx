@@ -26,8 +26,8 @@ function SmartListTabs({ active, onSelect, customLists, onAdd, hiddenBuiltIns }:
             onClick={() => onSelect(list)}
             className={
               isActive
-                ? 'flex items-center space-x-1.5 pb-1.5 text-blue-600 font-semibold border-b-2 border-blue-600'
-                : 'flex items-center space-x-1.5 pb-1.5 hover:text-slate-800'
+                ? 'flex items-center space-x-1.5 py-2 flex-shrink-0 text-blue-600 font-semibold border-b-2 border-blue-600'
+                : 'flex items-center space-x-1.5 py-2 flex-shrink-0 hover:text-slate-800'
             }
           >
             <FaBarsStaggered />
@@ -44,8 +44,8 @@ function SmartListTabs({ active, onSelect, customLists, onAdd, hiddenBuiltIns }:
             onClick={() => onSelect(list.name)}
             className={
               isActive
-                ? 'flex items-center space-x-1.5 pb-1.5 text-blue-600 font-semibold border-b-2 border-blue-600 cursor-pointer'
-                : 'flex items-center space-x-1.5 pb-1.5 hover:text-slate-800 cursor-pointer'
+                ? 'flex items-center space-x-1.5 py-2 flex-shrink-0 text-blue-600 font-semibold border-b-2 border-blue-600 cursor-pointer'
+                : 'flex items-center space-x-1.5 py-2 flex-shrink-0 hover:text-slate-800 cursor-pointer'
             }
           >
             <FaBarsStaggered />
@@ -65,7 +65,7 @@ function SmartListTabs({ active, onSelect, customLists, onAdd, hiddenBuiltIns }:
 
       <button
         onClick={onAdd}
-        className="flex items-center space-x-1 pb-1.5 text-slate-500 hover:text-slate-800"
+        className="my-1.5 h-6 flex items-center space-x-1 px-2.5 border border-slate-300 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-50 flex-shrink-0 transition"
       >
         <FaPlus className="text-[10px]" />
         <span>Add Smart List</span>

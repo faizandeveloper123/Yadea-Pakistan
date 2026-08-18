@@ -3,7 +3,6 @@ import {
   FaArrowLeft,
   FaBars,
   FaCopy,
-  FaGripVertical,
   FaMagnifyingGlass,
   FaPlus,
   FaRegPenToSquare,
@@ -46,6 +45,16 @@ function ManageSmartListsPage({ onNotify, onBack, onListsChanged }: ManageSmartL
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTarget, setShareTarget] = useState<ShareTarget | null>(null);
   const [staff, setStaff] = useState<ApiStaffUser[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  const toggleSelect = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const loadLists = useCallback(async () => {
     setLoading(true);
@@ -68,6 +77,17 @@ function ManageSmartListsPage({ onNotify, onBack, onListsChanged }: ManageSmartL
     if (!q) return lists;
     return lists.filter((l) => l.name.toLowerCase().includes(q));
   }, [lists, search]);
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
+
+  const toggleSelectAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filtered.forEach((l) => next.delete(l.id));
+      else filtered.forEach((l) => next.add(l.id));
+      return next;
+    });
+  };
 
   const openCreate = () => {
     setEditTarget({ list: null, name: '' });
@@ -132,6 +152,25 @@ function ManageSmartListsPage({ onNotify, onBack, onListsChanged }: ManageSmartL
     } catch (err) {
       onNotify((err as Error).message);
     }
+  };
+
+  const bulkRemove = async () => {
+    const targets = [...selected];
+    if (targets.length === 0) return;
+    if (!window.confirm(`Delete ${targets.length} selected smart list${targets.length === 1 ? '' : 's'}?`)) return;
+    let ok = 0;
+    for (const id of targets) {
+      try {
+        await api.deleteSmartList(id, userId);
+        ok++;
+      } catch {
+        /* keep going */
+      }
+    }
+    onNotify(`Deleted ${ok} smart list${ok === 1 ? '' : 's'}`);
+    setSelected(new Set());
+    await loadLists();
+    onListsChanged?.();
   };
 
   const openShare = async (list: ApiSmartList) => {
@@ -281,6 +320,30 @@ function ManageSmartListsPage({ onNotify, onBack, onListsChanged }: ManageSmartL
           </div>
         </div>
 
+        {/* Bulk selection bar */}
+        {selected.size > 0 && (
+          <div className="px-4 py-2.5 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between gap-3 flex-wrap">
+            <span className="text-xs font-semibold text-blue-700">
+              {selected.size} smart list{selected.size === 1 ? '' : 's'} selected
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelected(new Set())}
+                className="px-3 py-1.5 text-xs text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 font-medium rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={bulkRemove}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-xs transition-colors"
+              >
+                <FaRegTrashCan className="text-xs" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto flex-1">
           {loading ? (
@@ -296,7 +359,15 @@ function ManageSmartListsPage({ onNotify, onBack, onListsChanged }: ManageSmartL
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/70 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="py-3 px-4 w-10 text-center"></th>
+                  <th className="py-3 px-4 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      onChange={toggleSelectAll}
+                      title={allFilteredSelected ? 'Deselect all' : 'Select all'}
+                      className="row-checkbox"
+                    />
+                  </th>
                   <th className="py-3 px-4 w-28">Type</th>
                   <th className="py-3 px-4">Smart list name</th>
                   <th className="py-3 px-4">Shared with</th>
@@ -305,9 +376,19 @@ function ManageSmartListsPage({ onNotify, onBack, onListsChanged }: ManageSmartL
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                 {filtered.map((list) => (
-                  <tr key={list.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="py-3 px-4 text-center text-slate-300 cursor-grab">
-                      <FaGripVertical className="text-xs" />
+                  <tr
+                    key={list.id}
+                    className={`transition-colors group ${
+                      selected.has(list.id) ? 'bg-blue-50/40' : 'hover:bg-slate-50/80'
+                    }`}
+                  >
+                    <td className="py-3 px-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(list.id)}
+                        onChange={() => toggleSelect(list.id)}
+                        className="row-checkbox"
+                      />
                     </td>
                     <td className="py-3 px-4">
                       {list.dealer_name ? (

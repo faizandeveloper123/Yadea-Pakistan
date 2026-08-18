@@ -182,12 +182,59 @@ const FILTER_FIELDS: Record<string, (c: Contact) => unknown> = {
   'Last activity': (c) => c.sortActivity,
 };
 
+/** Compare field labels ignoring case, whitespace and punctuation. */
+function normalizeKey(k: string): string {
+  return k
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ');
+}
+
+/** Look a field up case/space-insensitively across custom_fields, form submissions and imports. */
+export function findCustomValue(contact: Contact, name: string): unknown {
+  const custom = contact.customFields;
+  if (!custom) return undefined;
+  const norm = normalizeKey(name);
+  const first = <T>(list: string[], get: (k: string) => T): T | undefined => {
+    for (const k of list) {
+      const v = get(k);
+      if (v !== '' && v !== null && v !== undefined) return v;
+    }
+    return undefined;
+  };
+
+  const customValue = first(Object.keys(custom), (k) =>
+    normalizeKey(k) === norm ? custom[k] : undefined
+  );
+  if (customValue !== undefined) return customValue;
+
+  const subs = custom['form_submissions'];
+  if (Array.isArray(subs)) {
+    for (const sub of subs) {
+      if (!sub || typeof sub !== 'object') continue;
+      const values = (sub as { values?: unknown }).values;
+      if (!values || typeof values !== 'object') continue;
+      const rec = values as Record<string, unknown>;
+      const found = first(Object.keys(rec), (k) => (normalizeKey(k) === norm ? rec[k] : undefined));
+      if (found !== undefined) return found;
+    }
+  }
+
+  const imp = custom['import_data'];
+  if (imp && typeof imp === 'object') {
+    const rec = imp as Record<string, unknown>;
+    const found = first(Object.keys(rec), (k) => (normalizeKey(k) === norm ? rec[k] : undefined));
+    if (found !== undefined) return found;
+  }
+
+  return undefined;
+}
+
 /** Any other filter name is evaluated against the contact's custom fields. */
 function filterFieldValue(contact: Contact, name: string): unknown {
   const accessor = FILTER_FIELDS[name];
   if (accessor) return accessor(contact);
-  if (contact.customFields && name in contact.customFields) return contact.customFields[name];
-  return undefined;
+  return findCustomValue(contact, name);
 }
 
 function stringValue(v: unknown): string {

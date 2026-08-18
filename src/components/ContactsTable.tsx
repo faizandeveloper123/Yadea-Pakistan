@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Contact } from '../types';
-import { fieldById } from '../data/tableFields';
+import { fieldById, type TableField } from '../data/tableFields';
 import { useFollowers, useOwners } from '../data/followersStore';
+import Avatar from './Avatar';
+import Tag from './Tag';
 import {
   FaArrowsUpDown,
   FaEllipsisVertical,
@@ -12,6 +15,46 @@ import {
 } from 'react-icons/fa6';
 
 export type RowActionId = 'book' | 'opportunity' | 'review' | 'delete';
+
+const CARD_FIELD_IDS = new Set([
+  'phone',
+  'email',
+  'business_name',
+  'contact_type',
+  'owner',
+  'created',
+  'last_activity',
+  'tags',
+]);
+
+function cardValue(contact: Contact, id: string): ReactNode {
+  switch (id) {
+    case 'phone':
+      return contact.phone;
+    case 'email':
+      return contact.email;
+    case 'business_name':
+      return contact.businessName;
+    case 'contact_type':
+      return contact.contactType;
+    case 'owner':
+      return contact.owner;
+    case 'created':
+      return contact.createdPkt;
+    case 'last_activity':
+      return contact.lastActivityPkt;
+    case 'tags':
+      return (contact.tags ?? []).length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {(contact.tags ?? []).map((tag) => (
+            <Tag key={tag} label={tag} />
+          ))}
+        </div>
+      ) : null;
+    default:
+      return null;
+  }
+}
 
 interface ContactsTableProps {
   contacts: Contact[];
@@ -54,11 +97,11 @@ function RowActionsMenu({
           setOpen((v) => !v);
         }}
         title="Actions"
-        className={`w-5 h-5 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition ${
-          open ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        className={`w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition ${
+          open ? 'opacity-100' : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'
         }`}
       >
-        <FaEllipsisVertical className="text-[10px]" />
+        <FaEllipsisVertical className="text-xs" />
       </button>
       {open && (
         <>
@@ -105,7 +148,16 @@ function ContactsTable({
   onRowAction,
   canDelete = true,
 }: ContactsTableProps) {
-  const cols = visibleFields.map((id) => fieldById(id)).filter((f) => !!f);
+  const seenStatic = new Set<string>();
+  const cols = visibleFields
+    .map((id) => fieldById(id))
+    .filter((f): f is TableField => {
+      if (!f) return false;
+      const norm = f.label.trim().toLowerCase();
+      if (f.id.startsWith('import:') && seenStatic.has(norm)) return false;
+      if (!f.id.startsWith('import:')) seenStatic.add(norm);
+      return true;
+    });
   const liveFollowers = useFollowers();
   const liveOwners = useOwners();
 
@@ -128,11 +180,66 @@ function ContactsTable({
   });
 
   return (
-    <div className="flex-1 overflow-auto custom-horizontal-scrollbar relative">
-      <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
+    <div className="flex-1 overflow-y-auto sm:overflow-auto custom-horizontal-scrollbar relative">
+      {/* Mobile card list */}
+      <div className="sm:hidden divide-y divide-slate-100 border-t border-slate-200">
+        {rows.map((contact) => {
+          const isSelected = selectedIds.has(contact.id);
+          const details = cols
+            .slice(1)
+            .filter((col) => CARD_FIELD_IDS.has(col.id))
+            .map((col) => ({ label: col.label, value: cardValue(contact, col.id) }))
+            .filter((d) => !!d.value)
+            .slice(0, 4);
+          return (
+            <div
+              key={contact.id}
+              onClick={() => onOpenContact(contact.id)}
+              className={`px-4 py-3 flex flex-col gap-3 cursor-pointer transition ${
+                isSelected ? 'bg-blue-50/50' : 'hover:bg-slate-50'
+              } ${contact.isHighlighted ? 'bg-blue-50/30' : ''}`}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="row-checkbox flex-shrink-0"
+                  checked={isSelected}
+                  onChange={() => onToggleSelect(contact.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`Select ${contact.name}`}
+                />
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <Avatar initials={contact.initials} color={contact.avatarColor} image={contact.image} size="w-8 h-8" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-slate-800 truncate">{contact.name}</div>
+                    {contact.owner && <div className="text-[11px] text-slate-400 truncate">{contact.owner}</div>}
+                  </div>
+                </div>
+                <RowActionsMenu contact={contact} onAction={onRowAction} canDelete={canDelete} />
+              </div>
+
+              {details.length > 0 && (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pl-[42px]">
+                  {details.map((d) => (
+                    <div key={d.label} className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold mb-0.5">
+                        {d.label}
+                      </div>
+                      <div className="text-xs text-slate-700">{d.value}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop / tablet table */}
+      <table className="hidden sm:table w-full text-left border-collapse text-xs min-w-[1100px]">
         <thead className="bg-slate-50 text-slate-600 font-semibold sticky top-0 z-10 border-b border-slate-200">
           <tr>
-            <th className="py-1 px-3 w-10 text-center">
+            <th className="py-2 px-3 w-10 text-center">
               <input
                 type="checkbox"
                 checked={allVisibleSelected}
@@ -147,9 +254,8 @@ function ContactsTable({
               <th
                 key={col.id}
                 className={
-                  idx === cols.length - 1
-                    ? 'py-1 px-3 font-semibold text-slate-700'
-                    : 'py-1 px-3 font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer'
+                  'py-2 px-3 font-semibold text-slate-700' +
+                  (idx === cols.length - 1 ? '' : ' hover:bg-slate-100 cursor-pointer')
                 }
               >
                 <div className="flex items-center justify-between">
@@ -167,11 +273,13 @@ function ContactsTable({
               <tr
                 key={contact.id}
                 onClick={() => onOpenContact(contact.id)}
-                className={`group hover:bg-slate-50 transition border-b border-slate-100 cursor-pointer ${
-                  contact.isHighlighted ? 'bg-blue-50/20' : ''
+                className={`group transition border-b border-slate-100 cursor-pointer ${
+                  isSelected
+                    ? 'bg-blue-50/40 hover:bg-blue-50'
+                    : `hover:bg-slate-50 ${contact.isHighlighted ? 'bg-blue-50/20' : ''}`
                 }`}
               >
-                <td className="py-0.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                <td className="py-1.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     className="row-checkbox"
@@ -181,7 +289,7 @@ function ContactsTable({
                   />
                 </td>
                 {cols.map((col) => (
-                  <td key={col.id} className="py-0.5 px-3 text-slate-600">
+                  <td key={col.id} className="py-1.5 px-3 text-slate-600">
                     {col.id === 'contact_name' ? (
                       <div className="flex items-center justify-between gap-2 pr-1">
                         <div className="min-w-0 flex-1">{col.render(contact)}</div>

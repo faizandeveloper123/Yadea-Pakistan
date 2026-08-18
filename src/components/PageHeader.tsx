@@ -94,7 +94,7 @@ function PageHeader({
         {canImport && (
           <button
             onClick={onOpenImport}
-            className="px-3 py-1 border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition"
+            className="flex-1 sm:flex-none justify-center h-8 px-3 border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold rounded-md flex items-center space-x-1.5 transition"
           >
             <FaDownload className="text-slate-500" />
             <span>Import</span>
@@ -104,7 +104,7 @@ function PageHeader({
         {canAdd && (
           <button
             onClick={onOpenAddContact}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md flex items-center space-x-1.5 shadow-sm transition"
+            className="flex-1 sm:flex-none justify-center h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-md flex items-center space-x-1.5 shadow-sm transition"
           >
             <FaPlus />
             <span>Add Contact</span>
@@ -114,7 +114,7 @@ function PageHeader({
         <div className="relative inline-block text-left" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((prev) => !prev)}
-            className="w-7 h-7 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-md flex items-center justify-center text-xs transition"
+            className="w-8 h-8 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-md flex items-center justify-center text-xs transition"
             aria-label="More actions"
             aria-haspopup="menu"
             aria-expanded={menuOpen}

@@ -41,4 +41,4 @@ jobs:
           cp -r dist/. /tmp/site/
           cp logo.svg /tmp/site/ 2>/dev/null || true
           cp -r api /tmp/site/api
-          aws s3 sync /tmp/site s3://yadea --endpoint-url "$AWS_ENDPOINT_URL" --delete
+          aws s3 sync /tmp/site s3://eveebike --endpoint-url "$AWS_ENDPOINT_URL" --delete

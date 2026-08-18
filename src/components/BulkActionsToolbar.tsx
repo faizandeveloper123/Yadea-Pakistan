@@ -113,8 +113,8 @@ function BulkActionsToolbar({
 
   return (
     <div className="evee-bulkbar flex items-center gap-2 px-4 md:px-6 py-1.5 border-b border-slate-200 bg-white flex-shrink-0 shadow-[0_6px_14px_-10px_rgba(15,23,42,0.25)]">
-      <div className="inline-flex items-center gap-2 rounded-full bg-[#f0f4ff] px-3 py-1.5">
-        <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-600 whitespace-nowrap">
+      <div className="inline-flex items-center gap-2 rounded-full bg-[#f0f4ff] px-3 h-8 flex-shrink-0">
+        <span className="inline-flex items-center rounded-full bg-white px-3 h-6 text-xs font-semibold text-blue-600 whitespace-nowrap">
           {allSelected ? 'All Contacts Selected' : `${selectedCount} Contact${selectedCount === 1 ? '' : 's'} Selected`}
         </span>
 
@@ -133,7 +133,7 @@ function BulkActionsToolbar({
           <button
             key={btn.id}
             onClick={() => run(btn.id)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition ${
+            className={`flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium whitespace-nowrap flex-shrink-0 transition ${
               btn.danger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'
             }`}
           >
@@ -146,7 +146,7 @@ function BulkActionsToolbar({
           <button
             ref={moreBtnRef}
             onClick={toggleMore}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-slate-700 transition ${
+            className={`flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-medium text-slate-700 transition ${
               moreOpen ? 'bg-slate-100' : 'hover:bg-slate-100'
             }`}
           >

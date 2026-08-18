@@ -25,7 +25,7 @@ import BulkActionSuccessModal from './components/BulkActionSuccessModal';
 import BulkActionsPage from './components/BulkActionsPage';
 import AddOpportunityModal, { type OpportunityFormData } from './components/AddOpportunityModal';
 import BookAppointmentModal from './components/BookAppointmentModal';
-import { DEFAULT_VISIBLE_FIELDS } from './data/tableFields';
+import { DEFAULT_VISIBLE_FIELDS, isStaticFieldLabel } from './data/tableFields';
 import LeadDetailPage from './components/LeadDetailPage';
 import FormsDashboard from './components/FormsDashboard';
 import DashboardPage from './components/dashboard/DashboardPage';
@@ -930,9 +930,14 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
     registerImportColumns(allHeaders);
 
     // Auto-add the non-core imported columns so they show up in the table
-    // right away (core fields like name/email/phone already have columns).
+    // right away (core fields like name/email/phone and any other built-in
+    // column like City already have a column that reads this data).
     const importFieldIds = allHeaders
-      .filter((h) => !/^(name|full name|first name|last name|email|phone|mobile|cell|business|company|organization)$/i.test(h.trim()))
+      .filter(
+        (h) =>
+          !/^(name|full name|first name|last name|email|phone|mobile|cell|business|company|organization)$/i.test(h.trim()) &&
+          !isStaticFieldLabel(h)
+      )
       .map((h) => `import:${h}`);
     if (importFieldIds.length > 0) {
       setVisibleFields((prev) => {

@@ -33,7 +33,18 @@ function ManageFieldsDrawer({ open, initialVisible, onClose, onApply, onNotify }
 
   const q = search.trim().toLowerCase();
 
-  const visibleActive = active.filter((id) => fieldById(id)?.label.toLowerCase().includes(q));
+  // Drop imported columns that duplicate a built-in column with the same label.
+  const seenStaticLabels = new Set<string>();
+  const activeList = active.filter((id) => {
+    const f = fieldById(id);
+    if (!f) return true;
+    const norm = f.label.trim().toLowerCase();
+    if (f.id.startsWith('import:') && seenStaticLabels.has(norm)) return false;
+    if (!f.id.startsWith('import:')) seenStaticLabels.add(norm);
+    return true;
+  });
+
+  const visibleActive = activeList.filter((id) => fieldById(id)?.label.toLowerCase().includes(q));
 
   const activeSet = new Set(active);
 
@@ -65,7 +76,7 @@ function ManageFieldsDrawer({ open, initialVisible, onClose, onApply, onNotify }
     });
   };
 
-  const activeGroupCount = (gid: string) => active.filter((id) => fieldById(id)?.group === gid).length;
+  const activeGroupCount = (gid: string) => activeList.filter((id) => fieldById(id)?.group === gid).length;
 
   return (
     <div className="fixed inset-0 z-[90] flex justify-end">
@@ -99,7 +110,7 @@ function ManageFieldsDrawer({ open, initialVisible, onClose, onApply, onNotify }
         <div className="flex-1 overflow-y-auto">
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Fields in table</span>
-            <span className="text-[10px] font-semibold text-[#94A3B8]">{active.length}</span>
+            <span className="text-[10px] font-semibold text-[#94A3B8]">{activeList.length}</span>
           </div>
 
           <div className="px-3 space-y-1.5">
@@ -227,7 +238,7 @@ function ManageFieldsDrawer({ open, initialVisible, onClose, onApply, onNotify }
             </button>
             <button
               onClick={() => {
-                onApply(active);
+                onApply(activeList);
                 onClose();
               }}
               className="px-5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold rounded-md shadow-sm transition"

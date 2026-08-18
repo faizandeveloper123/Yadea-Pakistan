@@ -224,6 +224,13 @@ export function getFilterProperties(name: string): FilterProperty[] {
   return properties;
 }
 
+/**
+ * Filter fields offered in the picker.
+ * Direct contact fields are read via utils.ts FILTER_FIELDS; everything else
+ * is resolved case-insensitively from custom_fields, form submissions and
+ * imported Excel columns (utils.ts findCustomValue), so fields like City,
+ * Country, Website, etc. evaluate whatever data the contact actually has.
+ */
 export const FILTER_GROUPS: FilterGroup[] = [
   {
     id: 'contact',
