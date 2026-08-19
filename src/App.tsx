@@ -1129,7 +1129,7 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
             onLogout={logout}
           />
           <main className="flex-1 min-w-0 h-full overflow-hidden">
-            <DashboardPage onNotify={showToast} onOpenContact={(id) => navigate({ name: 'contact', id })} onLogout={logout} />
+            <DashboardPage onNotify={showToast} onOpenContact={(id) => navigate({ name: 'contact', id })} onLogout={logout} onOpenMobileSidebar={() => setSidebarMobileOpen(true)} />
           </main>
         </div>
       ) : route.name === 'automation' ? (

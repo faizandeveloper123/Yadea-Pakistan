@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  FaBars,
   FaBullhorn,
   FaEllipsisVertical,
   FaGaugeHigh,
@@ -37,9 +38,9 @@ const DEFAULT_INSTANCES: WidgetInstance[] = [
 ];
 
 const SIZE_CLASS: Record<WidgetInstance['size'], string> = {
-  sm: 'sm:col-span-3',
-  md: 'sm:col-span-6',
-  lg: 'sm:col-span-12',
+  sm: 'col-span-6 sm:col-span-3',
+  md: 'col-span-6 sm:col-span-6',
+  lg: 'col-span-12 sm:col-span-12',
 };
 
 function WidgetBody({ data, onOpenContact }: { data: WidgetData; onOpenContact?: (id: number) => void }) {
@@ -149,7 +150,7 @@ function WidgetCard({
         overIndex === index && dragIndex !== null && dragIndex !== index ? 'ring-2 ring-blue-400 ring-offset-2' : ''
       }`}
     >
-      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-100 cursor-grab active:cursor-grabbing">
+      <header className="flex items-center justify-between px-2.5 py-2 sm:px-4 sm:py-3 border-b border-slate-100 cursor-grab active:cursor-grabbing">
         <h3 className="font-semibold text-slate-700 text-xs truncate">{instance.title}</h3>
         <div className="relative flex-shrink-0 ml-2">
           <button
@@ -189,7 +190,7 @@ function WidgetCard({
           )}
         </div>
       </header>
-      <div className="flex-1 px-4 py-3 min-h-0">
+      <div className="flex-1 px-2.5 py-2 sm:px-4 sm:py-3 min-h-0">
         <WidgetBody data={data} onOpenContact={onOpenContact} />
       </div>
       {dragIndex !== null && overIndex === index && dragIndex !== index && (
@@ -203,10 +204,12 @@ function DashboardPage({
   onNotify,
   onOpenContact,
   onLogout,
+  onOpenMobileSidebar,
 }: {
   onNotify: (msg: string) => void;
   onOpenContact?: (id: number) => void;
   onLogout?: () => void;
+  onOpenMobileSidebar?: () => void;
 }) {
   const { user } = useAuth();
   const isOwner = user?.user_type === 'Admin' || user?.email?.toLowerCase() === OWNER_EMAIL;
@@ -352,6 +355,13 @@ function DashboardPage({
     <div className="h-full flex flex-col overflow-hidden bg-slate-50 text-slate-800">
       <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 shadow-xs gap-3">
         <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={onOpenMobileSidebar}
+            className="md:hidden w-8 h-8 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center flex-shrink-0 transition"
+            aria-label="Open sidebar menu"
+          >
+            <FaBars className="text-base" />
+          </button>
           <div className="hidden md:flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">Dashboard View:</span>
             <select
@@ -365,18 +375,18 @@ function DashboardPage({
           </div>
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-xs transition-colors"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] sm:text-xs font-semibold rounded shadow-xs transition-colors"
           >
-            <FaPlus className="text-[10px]" />
-            <span className="hidden sm:inline">Add Widget</span>
+            <FaPlus className="text-[10px] hidden sm:inline" />
+            <span>Add Widget</span>
           </button>
           {isOwner && (
             <button
               onClick={() => setAssignOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-semibold rounded shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 text-[11px] sm:text-xs font-semibold rounded shadow-xs transition-colors"
             >
-              <FaPlus className="text-[10px]" />
-              <span className="hidden sm:inline">Assign Leads</span>
+              <FaPlus className="text-[10px] hidden sm:inline" />
+              <span>Assign Leads</span>
             </button>
           )}
         </div>
@@ -404,7 +414,7 @@ function DashboardPage({
 
           <button
             onClick={() => onNotify('Dialer is not connected yet')}
-            className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors shadow-xs"
+            className="w-8 h-8 rounded-full bg-emerald-500 text-white items-center justify-center hover:bg-emerald-600 transition-colors shadow-xs hidden sm:flex"
             title="Dialer"
           >
             <FaPhone className="text-xs" />
@@ -459,7 +469,7 @@ function DashboardPage({
         {loading && instances.length === 0 ? (
           <div className="p-10 text-center text-xs text-slate-500">Loading dashboard...</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+          <div className="grid grid-cols-12 gap-2 sm:gap-4">
             {instances.map((w, index) => (
               <WidgetCard
                 key={w.uid}

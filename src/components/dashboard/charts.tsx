@@ -116,14 +116,14 @@ export function DonutChart({
   const ref = useChart('doughnut', labels, values, palette, false, cutout);
   const total = values.reduce((s, v) => s + v, 0);
   return (
-    <div className="flex items-center gap-4 py-1 h-full min-h-[150px]">
-      <div className="w-32 h-32 relative flex-shrink-0">
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 py-1 h-full min-h-[150px]">
+      <div className="w-24 h-24 sm:w-32 sm:h-32 relative flex-shrink-0">
         <canvas ref={ref} />
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-2xl font-bold text-slate-800 leading-none">{centerText ?? total}</span>
+          <span className="text-xl sm:text-2xl font-bold text-slate-800 leading-none">{centerText ?? total}</span>
         </div>
       </div>
-      <div className="space-y-2 text-xs min-w-0 flex-1">
+      <div className="w-full sm:w-auto sm:flex-1 sm:min-w-0 space-y-2 text-xs">
         {labels.map((l, i) => (
           <div key={l} className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: palette[i] }} />
@@ -209,7 +209,7 @@ export function NumberCard({
 }) {
   return (
     <div className="h-full flex flex-col justify-center">
-      <div className={`text-3xl font-bold text-slate-800 leading-none ${accent ?? ''}`}>{value}</div>
+      <div className={`text-2xl sm:text-3xl font-bold text-slate-800 leading-none ${accent ?? ''}`}>{value}</div>
       {sub && <div className="text-[11px] text-slate-500 mt-1.5">{sub}</div>}
       {delta !== undefined && (
         <div
