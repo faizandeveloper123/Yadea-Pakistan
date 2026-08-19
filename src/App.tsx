@@ -44,7 +44,7 @@ import { StaffProvider } from './StaffContext';
 
 type ViewMode = string;
 
-const SMART_LIST_STORAGE_KEY = 'evee_smart_lists_v1';
+const SMART_LIST_STORAGE_KEY = 'evee_smart_lists_v2';
 const HIDDEN_BUILTINS_STORAGE_KEY = 'evee_hidden_builtins_v1';
 const TABLE_FIELDS_STORAGE_KEY = 'evee_table_fields_v1';
 const ACTIVE_VIEW_STORAGE_KEY = 'evee_active_view_v1';

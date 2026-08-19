@@ -22,7 +22,7 @@ import AssignLeadsModal from './AssignLeadsModal';
 import NotificationsBell from '../NotificationsBell';
 import UserMenu from '../UserMenu';
 
-const STORAGE_KEY = 'evee_dashboard_widgets_v1';
+const STORAGE_KEY = 'evee_dashboard_widgets_v2';
 
 const OWNER_EMAIL = 'yadeapakistan@gmail.com';
 
@@ -224,7 +224,16 @@ function DashboardPage({
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as WidgetInstance[];
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const valid = parsed.filter(
+            (w) =>
+              w &&
+              typeof w.defId === 'string' &&
+              WIDGET_BY_ID[w.defId] !== undefined &&
+              (!WIDGET_BY_ID[w.defId].ownerOnly || isOwner)
+          );
+          if (valid.length > 0) return valid;
+        }
       }
     } catch {
       /* ignore corrupted storage */
