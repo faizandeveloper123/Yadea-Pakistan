@@ -93,7 +93,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
-      return localStorage.getItem(ACTIVE_VIEW_STORAGE_KEY) || 'All';
+      const saved = localStorage.getItem(ACTIVE_VIEW_STORAGE_KEY);
+      return saved === 'Leads' ? 'All' : saved || 'All';
     } catch {
       return 'All';
     }
@@ -309,6 +310,7 @@ function App() {
       setSelectedIds(new Set());
       showToast(`Deleted ${ids.length} contact(s)`);
       logActivity({ type: 'delete', title: 'Contacts deleted', detail: `${ids.length} contact(s)` });
+      void refreshServerLists();
     } catch (err) {
       showToast(`Delete failed: ${(err as Error).message}`);
     }
@@ -538,7 +540,7 @@ function App() {
 
 const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
     const name = list.name.trim();
-    const RESERVED_NAMES = ['All', 'Leads'];
+    const RESERVED_NAMES = ['All'];
     const clash =
       RESERVED_NAMES.some((n) => n.toLowerCase() === name.toLowerCase()) ||
       customLists.some((l) => l.name.toLowerCase() === name.toLowerCase());
@@ -800,6 +802,7 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
       });
       showToast(`Contact "${contact.name}" deleted`);
       logActivity({ type: 'delete', title: 'Contact deleted', detail: contact.name });
+      void refreshServerLists();
     } catch (err) {
       showToast(`Delete failed: ${(err as Error).message}`);
     }

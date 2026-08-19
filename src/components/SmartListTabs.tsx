@@ -11,7 +11,7 @@ interface SmartListTabsProps {
   hiddenBuiltIns?: string[];
 }
 
-const BUILT_INS = ['All', 'Leads'];
+const BUILT_INS = ['All'];
 
 function SmartListTabs({ active, onSelect, customLists, onAdd, hiddenBuiltIns }: SmartListTabsProps) {
   const visibleBuiltIns = BUILT_INS.filter((list) => !hiddenBuiltIns?.includes(list));

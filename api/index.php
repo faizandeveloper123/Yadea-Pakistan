@@ -341,6 +341,7 @@ function delete_contact(int $id): void
     $stmt = db()->prepare('DELETE FROM contacts WHERE id = :id');
     $stmt->execute([':id' => $id]);
     if ($stmt->rowCount() === 0) fail('Contact not found', 404);
+    prune_smart_lists_when_empty();
     respond(['message' => 'Contact deleted']);
 }
 
@@ -354,7 +355,21 @@ function bulk_delete(array $body): void
     $stmt = db()->prepare("DELETE FROM contacts WHERE id IN ($placeholders)");
     $stmt->execute($ids);
 
+    prune_smart_lists_when_empty();
+
     respond(['message' => 'Deleted ' . $stmt->rowCount() . ' contact(s)']);
+}
+
+/**
+ * When the very last contact is deleted, every smart list becomes meaningless
+ * (there is nothing left to group), so remove them all.
+ */
+function prune_smart_lists_when_empty(): void
+{
+    $count = (int)db()->query('SELECT COUNT(*) FROM contacts')->fetchColumn();
+    if ($count === 0) {
+        db()->exec('DELETE FROM smart_lists');
+    }
 }
 
 /** List all tags. */
