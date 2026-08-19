@@ -327,9 +327,9 @@ export interface UpdateContactInput {
  * (same-origin, no CORS), and when served under Apache it hits the real API
  * directly. The absolute URL is kept as a fallback.
  */
-export const API_BASE = '/Evee/api/index.php';
+export const API_BASE = '/Yadea/api/index.php';
 
-const API_BASE_ALTERNATES: string[] = ['http://localhost/Evee/api/index.php'];
+const API_BASE_ALTERNATES: string[] = ['http://localhost/Yadea/api/index.php'];
 
 let workingBase: string | null = null;
 

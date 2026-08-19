@@ -13,7 +13,7 @@
  *     dashboard.
  *  3. Replace every `YOUR_*` placeholder below with the real value.
  *  4. For INBOUND email, add the Mailgun HTTP webhook URL to your domain:
- *       http://localhost/Evee/api/mailgun-webhook.php
+ *       http://localhost/Yadea/api/mailgun-webhook.php
  *     (or the public URL you host the app on) and route messages to it.
  *
  *  The REST API is documented here: https://documentation.mailgun.com

@@ -6,7 +6,7 @@ export default defineConfig({
   base: './',
   server: {
     proxy: {
-      '/Evee': {
+      '/Yadea': {
         target: 'http://localhost',
         changeOrigin: true,
       },
