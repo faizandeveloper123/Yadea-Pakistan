@@ -143,7 +143,7 @@ function WidgetCard({
       onDragOver={(e) => onDragOver(e, index)}
       onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
-      className={`group relative bg-white border rounded-xl shadow-xs overflow-hidden flex flex-col min-h-[150px] transition ${
+      className={`group relative bg-white border rounded-xl shadow-xs overflow-hidden flex flex-col min-h-[150px] min-w-0 transition ${
         SIZE_CLASS[instance.size]
       } ${editMode ? 'border-blue-400 ring-2 ring-blue-200/60' : 'border-slate-200'} ${
         overIndex === index && dragIndex !== null && dragIndex !== index ? 'ring-2 ring-blue-400 ring-offset-2' : ''
@@ -365,18 +365,18 @@ function DashboardPage({
           </div>
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-xs transition-colors"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-xs transition-colors"
           >
             <FaPlus className="text-[10px]" />
-            <span>Add Widget</span>
+            <span className="hidden sm:inline">Add Widget</span>
           </button>
           {isOwner && (
             <button
               onClick={() => setAssignOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-semibold rounded shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-semibold rounded shadow-xs transition-colors"
             >
               <FaPlus className="text-[10px]" />
-              <span>Assign Leads</span>
+              <span className="hidden sm:inline">Assign Leads</span>
             </button>
           )}
         </div>
@@ -391,7 +391,7 @@ function DashboardPage({
                 setEditMode(false);
               }
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded shadow-xs transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded shadow-xs transition-colors ${
               editMode
                 ? 'bg-blue-600 hover:bg-blue-700 text-white'
                 : 'border border-blue-600 text-blue-600 hover:bg-blue-50'
@@ -399,7 +399,7 @@ function DashboardPage({
             title="Toggle dashboard editing"
           >
             <FaPenToSquare className="text-[11px]" />
-            <span>{editMode ? 'Done Editing' : 'Edit Dashboard'}</span>
+            <span className="hidden sm:inline">{editMode ? 'Done Editing' : 'Edit Dashboard'}</span>
           </button>
 
           <button
@@ -420,7 +420,7 @@ function DashboardPage({
 
           <button
             onClick={() => onNotify('No new announcements')}
-            className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-100"
+            className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-100 hidden sm:flex"
             title="Announcements"
           >
             <FaBullhorn className="text-xs" />
@@ -431,7 +431,7 @@ function DashboardPage({
 
           <button
             onClick={() => onNotify('Help center')}
-            className="p-2 text-slate-500 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-100"
+            className="p-2 text-slate-500 hover:text-slate-800 transition-colors rounded-full hover:bg-slate-100 hidden sm:flex"
             title="Help"
           >
             <FaQuestion className="text-xs" />

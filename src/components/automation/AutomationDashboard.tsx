@@ -270,7 +270,51 @@ export default function AutomationDashboard({ onNotify, onLogout }: AutomationDa
 
         {/* Table */}
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="sm:hidden divide-y divide-slate-100">
+            {filtered.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-xs">
+                No workflows found. Click "Create workflow" to get started.
+              </div>
+            ) : (
+              filtered.map((wf) => (
+                <div key={wf.id} className="px-4 py-3 flex items-start gap-3">
+                  <div className="pt-1">
+                    <input type="checkbox" className="row-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500 h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1" onClick={() => openEditor(wf)}>
+                    <div className="flex items-center gap-2">
+                      <FaCircleNodes className="text-blue-600 text-xs flex-shrink-0" />
+                      <span className="font-medium text-slate-900 text-sm truncate">{wf.name}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border flex-shrink-0 ${
+                          wf.status === 'Published'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {wf.status}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-3 text-[11px] text-slate-500">
+                      <span>{wf.enrolled ?? 0} total</span>
+                      <span>{wf.activeEnrolled ?? 0} active</span>
+                      <span className="truncate">{wf.updatedAt}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => openEditor(wf)} className="p-2 text-slate-400 hover:text-blue-600" title="Open workflow">
+                      <FaArrowUpFromBracket className="text-xs" />
+                    </button>
+                    <button onClick={(e) => openDotsMenu(e, wf)} className="p-2 text-slate-400 hover:text-slate-600" title="More options">
+                      <FaEllipsisVertical />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/50">

@@ -696,7 +696,66 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
           </div>
 
           <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="sm:hidden divide-y divide-slate-100">
+              {loading ? (
+                <div className="py-8 text-center text-slate-400">Loading staff...</div>
+              ) : filteredStaff.length > 0 ? (
+                filteredStaff.map((user) => (
+                  <div key={user.id} className="px-4 py-3 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-purple-600 text-white font-bold flex items-center justify-center text-sm">
+                      {user.avatar_data ? (
+                        <img src={user.avatar_data} alt={user.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        `${user.first_name[0] ?? ''}${user.last_name[0] ?? ''}`.toUpperCase()
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-800 text-sm truncate">{user.full_name}</span>
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border flex-shrink-0 ${
+                            ROLE_BADGE[user.user_type as Role] ?? ROLE_BADGE.Follower
+                          }`}
+                        >
+                          {user.user_type}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                        {user.email || '—'}
+                        {user.phone ? ` · ${user.phone}` : ''}
+                      </div>
+                      {user.user_type === 'Follower' && user.manager_id != null && (
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          Follower of {staff.find((s) => s.id === user.manager_id)?.full_name ?? `user #${user.manager_id}`}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => openEdit(user)}
+                        className="p-2 text-slate-400 hover:text-blue-600 transition"
+                        title="Edit User"
+                      >
+                        <FaRegPenToSquare className="text-sm" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(user)}
+                        className="p-2 text-slate-400 hover:text-red-600 transition"
+                        title="Delete User"
+                      >
+                        <FaTrashCan className="text-sm" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-slate-400">
+                  No staff members found matching search query.
+                </div>
+              )}
+            </div>
+
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
