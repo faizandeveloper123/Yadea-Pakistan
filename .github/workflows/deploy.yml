@@ -1,4 +1,4 @@
-name: Deploy to Contabo Object Storage
+name: Deploy to Contabo XAMPP
 
 on:
   push:
@@ -25,20 +25,21 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Install AWS CLI
-        run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip -q awscliv2.zip
-          sudo ./aws/install --update
-
-      - name: Upload to Contabo
+      - name: Set up SSH key
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.Yadea_Pakistan_Access_Key }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.Yadea_Pakistan_Secret_Key }}
-          AWS_ENDPOINT_URL: ${{ secrets.Yadea_Pakistan_Endpoint }}
+          SSH_KEY: ${{ secrets.CONTABO_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to server
         run: |
           rm -rf /tmp/site && mkdir -p /tmp/site
           cp -r dist/. /tmp/site/
           cp logo.svg /tmp/site/ 2>/dev/null || true
           cp -r api /tmp/site/api
-          aws s3 sync /tmp/site s3://eveebike --endpoint-url "$AWS_ENDPOINT_URL" --delete
+          tar -czf /tmp/site.tar.gz -C /tmp/site .
+          scp -q -i ~/.ssh/id_ed25519 /tmp/site.tar.gz root@169.58.191.84:/tmp/site.tar.gz
+          ssh -i ~/.ssh/id_ed25519 root@169.58.191.84 "rm -rf /opt/lampp/htdocs/Evee && mkdir -p /opt/lampp/htdocs/Evee && tar -xzf /tmp/site.tar.gz -C /opt/lampp/htdocs/Evee && chown -R root:root /opt/lampp/htdocs/Evee && echo DEPLOY_OK"
