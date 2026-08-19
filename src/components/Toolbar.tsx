@@ -28,8 +28,8 @@ function Toolbar({
   onAddToList,
 }: ToolbarProps) {
   return (
-    <div className="px-4 md:px-6 py-1.5 flex flex-col sm:flex-row items-center justify-between border-b border-slate-100 bg-white flex-shrink-0 gap-1.5">
-      <div className="flex items-center space-x-2 overflow-x-auto pb-0.5 sm:pb-0">
+    <div className="px-4 md:px-6 py-1.5 flex items-center justify-between border-b border-slate-100 bg-white flex-shrink-0 gap-2">
+      <div className="flex items-center space-x-2 overflow-x-auto pb-0.5 sm:pb-0 flex-shrink-0">
         <button
           onClick={onOpenFilters}
           className="h-8 px-3 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-md text-xs font-medium flex items-center space-x-1.5 transition whitespace-nowrap flex-shrink-0"
@@ -73,15 +73,15 @@ function Toolbar({
         )}
       </div>
 
-      <div className="flex items-center space-x-3 justify-between sm:justify-end">
-        <div className="relative flex-1 sm:flex-initial">
+      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-shrink-0">
+        <div className="relative">
           <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search Contacts"
-            className="w-full sm:w-64 h-8 border border-slate-300 rounded-md pl-8 pr-3 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-36 sm:w-64 h-8 border border-slate-300 rounded-md pl-8 pr-3 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             aria-label="Search Contacts"
           />
         </div>

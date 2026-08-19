@@ -164,6 +164,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('Smart Lists');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -205,6 +207,7 @@ function App() {
 
   const handleNav = useCallback(
     (label: string) => {
+      setSidebarMobileOpen(false);
       if (label === 'Sites') {
         navigate({ name: 'sites' });
         return;
@@ -227,7 +230,7 @@ function App() {
       }
       showToast(`"${label}" page coming soon`);
     },
-    [showToast]
+    [showToast, setSidebarMobileOpen]
   );
 
   // Persist the active smart-list tab across reloads.
@@ -779,6 +782,34 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
     });
   }, [filteredContacts, sortBy]);
 
+  // Reset to the first page whenever the list changes (search, tab, filters, sort).
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, viewMode, activeRules, sortBy, contacts.length]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedContacts.length / perPage));
+  const pagedContacts = useMemo(
+    () => sortedContacts.slice((page - 1) * perPage, page * perPage),
+    [sortedContacts, page, perPage]
+  );
+  const pageIds = useMemo(() => new Set(pagedContacts.map((c) => c.id)), [pagedContacts]);
+  const pageSelected = useMemo(
+    () => new Set([...selectedIds].filter((id) => pageIds.has(id))),
+    [selectedIds, pageIds]
+  );
+  const allPageSelected = pageSelected.size > 0 && pageSelected.size === pagedContacts.length;
+  const somePageSelected = pageSelected.size > 0 && pageSelected.size < pagedContacts.length;
+
+  const toggleSelectPage = () => {
+    const ids = pagedContacts.map((c) => c.id);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
   const currentIndex = useMemo(() => {
     if (openContactId === null) return -1;
     return sortedContacts.findIndex((c) => c.id === openContactId);
@@ -1274,12 +1305,12 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
                     />
 
                     <ContactsTable
-                      contacts={sortedContacts}
+                      contacts={pagedContacts}
                       selectedIds={selectedIds}
                       onToggleSelect={toggleSelect}
-                      onToggleSelectAll={toggleSelectAll}
-                      allVisibleSelected={allVisibleSelected}
-                      someVisibleSelected={visibleSelected.size > 0}
+                      onToggleSelectAll={toggleSelectPage}
+                      allVisibleSelected={allPageSelected}
+                      someVisibleSelected={somePageSelected}
                       onOpenContact={(id) => navigate({ name: 'contact', id })}
                       visibleFields={visibleFields}
                       onRowAction={handleRowAction}
@@ -1288,7 +1319,19 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
                   </>
                 )}
 
-                <Pagination currentPage={1} totalPages={1} />
+                {sortedContacts.length > 0 && (
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    perPage={perPage}
+                    totalItems={sortedContacts.length}
+                    onPerPageChange={(n) => {
+                      setPerPage(n);
+                      setPage(1);
+                    }}
+                    onPageChange={setPage}
+                  />
+                )}
               </>
             )}
           </main>

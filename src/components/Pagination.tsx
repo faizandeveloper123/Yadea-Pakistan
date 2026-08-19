@@ -1,44 +1,63 @@
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
+  perPage: number;
+  totalItems: number;
+  onPerPageChange: (n: number) => void;
+  onPageChange: (p: number) => void;
 }
 
-function Pagination({ currentPage, totalPages }: PaginationProps) {
+const PER_PAGE_OPTIONS = [10, 50, 100];
+
+function Pagination({
+  currentPage,
+  totalPages,
+  perPage,
+  totalItems,
+  onPerPageChange,
+  onPageChange,
+}: PaginationProps) {
   const isPrevDisabled = currentPage <= 1;
   const isNextDisabled = currentPage >= totalPages;
+  const start = totalItems === 0 ? 0 : (currentPage - 1) * perPage + 1;
+  const end = Math.min(currentPage * perPage, totalItems);
 
   const btnClass = (disabled: boolean) =>
     disabled
-      ? 'h-8 px-3 border border-slate-200 rounded-md text-slate-400 bg-slate-50 text-xs font-medium cursor-not-allowed'
-      : 'h-8 px-3 border border-slate-200 rounded-md text-slate-700 hover:bg-slate-50 text-xs font-medium transition';
+      ? 'h-7 px-2.5 sm:px-3 border border-slate-200 rounded-md text-slate-400 text-[11px] font-medium cursor-not-allowed'
+      : 'h-7 px-2.5 sm:px-3 border border-slate-200 rounded-md text-slate-700 hover:bg-slate-50 text-[11px] font-medium transition';
 
   return (
-    <footer className="px-4 md:px-6 py-2 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between text-xs text-slate-600 flex-shrink-0 gap-2">
+    <footer className="px-3 sm:px-6 py-1.5 border-t border-slate-200 bg-white flex items-center justify-between gap-2 text-[11px] text-slate-500 flex-shrink-0">
       <div className="font-medium whitespace-nowrap">
-        Page <span>{currentPage}</span> of <span>{totalPages}</span>
+        {start}–{end} of {totalItems}
       </div>
 
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center space-x-1">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <label className="flex items-center gap-1.5 text-slate-500">
+          <span className="hidden sm:inline">Per page</span>
           <select
-            defaultValue="20"
-            className="h-8 border border-slate-200 rounded-md px-2 bg-white text-xs font-medium focus:outline-none focus:border-slate-400 cursor-pointer"
+            value={perPage}
+            onChange={(e) => onPerPageChange(Number(e.target.value))}
+            className="h-7 border border-slate-200 rounded-md px-1.5 bg-white text-[11px] font-medium focus:outline-none focus:border-slate-400 cursor-pointer"
             aria-label="Items per page"
           >
-            <option value="20">20</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
+            {PER_PAGE_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
           </select>
-        </div>
+        </label>
 
-        <div className="flex items-center space-x-1">
-          <button disabled={isPrevDisabled} className={btnClass(isPrevDisabled)}>
+        <div className="flex items-center gap-1">
+          <button disabled={isPrevDisabled} onClick={() => onPageChange(currentPage - 1)} className={btnClass(isPrevDisabled)}>
             Prev
           </button>
-          <button className="h-8 px-3 border border-blue-500 bg-white text-blue-600 rounded-md text-xs font-semibold shadow-sm">
-            {currentPage}
-          </button>
-          <button disabled={isNextDisabled} className={btnClass(isNextDisabled)}>
+          <span className="h-7 px-2 flex items-center border border-blue-200 bg-blue-50 text-blue-700 rounded-md text-[11px] font-semibold whitespace-nowrap">
+            {currentPage} / {totalPages}
+          </span>
+          <button disabled={isNextDisabled} onClick={() => onPageChange(currentPage + 1)} className={btnClass(isNextDisabled)}>
             Next
           </button>
         </div>
