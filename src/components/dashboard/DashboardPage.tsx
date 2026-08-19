@@ -375,17 +375,17 @@ function DashboardPage({
           </div>
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] sm:text-xs font-semibold rounded shadow-xs transition-colors"
+            className="flex items-center gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs font-semibold rounded shadow-xs transition-colors"
           >
-            <FaPlus className="text-[10px] hidden sm:inline" />
+            <FaPlus className="text-[9px] hidden sm:inline" />
             <span>Add Widget</span>
           </button>
           {isOwner && (
             <button
               onClick={() => setAssignOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 text-[11px] sm:text-xs font-semibold rounded shadow-xs transition-colors"
+              className="flex items-center gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 text-[10px] sm:text-xs font-semibold rounded shadow-xs transition-colors"
             >
-              <FaPlus className="text-[10px] hidden sm:inline" />
+              <FaPlus className="text-[9px] hidden sm:inline" />
               <span>Assign Leads</span>
             </button>
           )}
