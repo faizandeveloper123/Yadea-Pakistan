@@ -53,6 +53,8 @@ export interface WidgetInstance {
   size: 'sm' | 'md' | 'lg';
 }
 
+export type WidgetRole = 'Admin' | 'Dealer' | 'Follower';
+
 export interface WidgetDef {
   id: string;
   title: string;
@@ -61,7 +63,6 @@ export interface WidgetDef {
   icon: ReactNode;
   description: string;
   defaultSize: 'sm' | 'md' | 'lg';
-  ownerOnly?: boolean;
   horizontal?: boolean;
   compute: (d: DashboardDataset) => WidgetData;
 }
@@ -73,7 +74,8 @@ export type WidgetData =
   | { kind: 'bar'; labels: string[]; values: number[]; colors?: string[]; horizontal?: boolean }
   | { kind: 'funnel'; stages: { label: string; value: number; color: string }[] }
   | { kind: 'table'; columns: string[]; rows: (string | number)[][]; contactIds?: (number | null)[] }
-| { kind: 'stage-list'; leads: { contactId: number; name: string; phone: string | null; status: DealerLeadStatus }[] };
+| { kind: 'stage-list'; leads: { contactId: number; name: string; phone: string | null; status: DealerLeadStatus }[] }
+| { kind: 'lead-list'; leads: { contactId: number; name: string; phone: string | null; status: DealerLeadStatus }[] };
 
 const STATUS_STAGES = ['non_contacted', 'contacted', 'closed', 'customer'] as const;
 const ALL_STATUSES = ['non_contacted', 'contacted', 'closed', 'customer', 'rejected'] as const;
@@ -416,10 +418,16 @@ export const WIDGET_DEFS: WidgetDef[] = [
     icon: '🎯',
     description: 'Leads assigned to dealers',
     defaultSize: 'sm',
-    compute: (d) =>
-      d.isOwner
-        ? { kind: 'number', value: d.dealers.reduce((s, x) => s + x.total, 0), sub: 'assigned to dealers' }
-        : { kind: 'number', value: d.dealerLeads.length, sub: 'your assigned leads' },
+    compute: (d) => {
+      // Admins see the total lead count alongside the assigned leads; dealers
+      // and followers only ever see their own assigned leads (never the total).
+      if (d.isOwner) {
+        const assigned = d.dealers.reduce((s, x) => s + x.total, 0);
+        const totalLeads = d.contacts.filter((c) => c.is_lead === 1 || c.contact_type === 'Lead').length;
+        return { kind: 'number', value: `${assigned} / ${totalLeads}`, sub: 'assigned / total leads' };
+      }
+      return { kind: 'number', value: d.dealerLeads.length, sub: 'your assigned leads' };
+    },
   },
   {
     id: 'leads-unassigned',
@@ -429,7 +437,6 @@ export const WIDGET_DEFS: WidgetDef[] = [
     icon: '🚀',
     description: 'Leads not yet assigned to any dealer',
     defaultSize: 'sm',
-    ownerOnly: true,
     compute: (d) => ({ kind: 'number', value: d.unassigned, sub: 'waiting for assignment' }),
   },
   {
@@ -547,7 +554,6 @@ export const WIDGET_DEFS: WidgetDef[] = [
     icon: '🏪',
     description: 'Assigned leads per dealer',
     defaultSize: 'md',
-    ownerOnly: true,
     horizontal: true,
     compute: (d) => ({
       kind: 'bar',
@@ -578,7 +584,6 @@ export const WIDGET_DEFS: WidgetDef[] = [
     icon: '🪩',
     description: 'Every dealer with their lead pipeline counts',
     defaultSize: 'lg',
-    ownerOnly: true,
     compute: (d) => ({
       kind: 'table',
       columns: ['Dealer', 'Total', 'Non-Contacted', 'Contacted', 'Closed', 'Customer', 'Rejected'],
@@ -599,13 +604,16 @@ export const WIDGET_DEFS: WidgetDef[] = [
     category: 'Opportunities',
     chartType: 'table',
     icon: '📋',
-    description: 'Your assigned leads with status',
+    description: 'Your assigned leads — update their status right from the dashboard',
     defaultSize: 'lg',
     compute: (d) => ({
-      kind: 'table',
-      columns: ['Lead', 'Phone', 'Status'],
-      rows: d.dealerLeads.map((l) => [l.name, l.phone ?? '—', STATUS_META[l.status].label]),
-      contactIds: d.dealerLeads.map((l) => l.contact_id),
+      kind: 'lead-list',
+      leads: d.dealerLeads.map((l) => ({
+        contactId: l.contact_id,
+        name: l.name,
+        phone: l.phone,
+        status: l.status,
+      })),
     }),
   },
   {
@@ -962,6 +970,57 @@ export const CHART_TYPE_LABELS: Record<WidgetChartType, string> = {
   table: 'Table',
 };
 
-export function filterDefsForUser(defs: WidgetDef[], isOwner: boolean): WidgetDef[] {
-  return defs.filter((w) => !w.ownerOnly || isOwner);
+/**
+ * Widgets that Dealers and Followers can use. These all derive from the
+ * signed-in user's own lead pipeline (dealerLeads / their dealer's leads)
+ * so they never expose global CRM data like total contacts, emails or ads.
+ */
+const TEAM_WIDGET_IDS = new Set([
+  'contacts-mine',
+  'leads-total',
+  'leads-customers',
+  'leads-status-donut',
+  'leads-status-bar',
+  'leads-funnel',
+  'leads-created-line',
+  'leads-my-table',
+  'leads-stage-list',
+  'opp-status-donut',
+  'opp-value-bar',
+  'opp-conversion-rate',
+  'opp-stage-dist',
+  'traffic-analytics',
+]);
+
+/** Widgets visible to a role: Admins see everything, Dealers/Followers see only their own leads. */
+export function filterDefsForRole(defs: WidgetDef[], role: WidgetRole): WidgetDef[] {
+  if (role === 'Admin') return defs;
+  return defs.filter((w) => TEAM_WIDGET_IDS.has(w.id));
+}
+
+/** True when a single widget def id may be shown to the given role. */
+export function isWidgetAllowedForRole(defId: string, role: WidgetRole): boolean {
+  return filterDefsForRole(WIDGET_DEFS, role).some((w) => w.id === defId);
+}
+
+const ADMIN_DEFAULT_INSTANCES: WidgetInstance[] = [
+  { uid: 'd1', defId: 'contacts-total', title: 'Total Contacts', size: 'sm' },
+  { uid: 'd2', defId: 'leads-total', title: 'Total Leads Assigned', size: 'sm' },
+  { uid: 'd3', defId: 'leads-status-donut', title: 'Leads by Status', size: 'md' },
+  { uid: 'd4', defId: 'contacts-by-type', title: 'Contacts by Type', size: 'md' },
+  { uid: 'd5', defId: 'contacts-created-line', title: 'Contacts Created', size: 'md' },
+  { uid: 'd6', defId: 'leads-funnel', title: 'Lead Funnel', size: 'md' },
+  { uid: 'd7', defId: 'contacts-recent', title: 'Recent Contacts', size: 'lg' },
+];
+
+const TEAM_DEFAULT_INSTANCES: WidgetInstance[] = [
+  { uid: 'd1', defId: 'leads-total', title: 'Total Leads Assigned', size: 'sm' },
+  { uid: 'd2', defId: 'leads-status-donut', title: 'Leads by Status', size: 'md' },
+  { uid: 'd3', defId: 'leads-funnel', title: 'Lead Funnel', size: 'md' },
+  { uid: 'd4', defId: 'leads-my-table', title: 'My Leads', size: 'lg' },
+];
+
+/** The widgets a role starts with on a fresh dashboard. */
+export function defaultInstancesForRole(role: WidgetRole): WidgetInstance[] {
+  return role === 'Admin' ? ADMIN_DEFAULT_INSTANCES : TEAM_DEFAULT_INSTANCES;
 }

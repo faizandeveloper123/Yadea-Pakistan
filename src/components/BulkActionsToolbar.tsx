@@ -52,7 +52,6 @@ function BulkActionsToolbar({
   allSelected,
   onSelectAll,
   onAction,
-  canDelete = true,
 }: BulkActionsToolbarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreBtnRef = useRef<HTMLButtonElement>(null);
@@ -76,9 +75,7 @@ function BulkActionsToolbar({
     { id: 'trigger-automation', label: 'Trigger automation', icon: <FaPlay className="text-slate-500" /> },
     { id: 'send-email', label: 'Send email', icon: <FaEnvelope className="text-slate-500" /> },
     { id: 'add-tags', label: 'Add tags', icon: <FaTags className="text-slate-500" /> },
-    ...(canDelete
-      ? [{ id: 'delete' as BulkActionId, label: 'Delete', icon: <FaTrash className="text-red-500" />, danger: true }]
-      : []),
+    { id: 'delete', label: 'Delete', icon: <FaTrash className="text-red-500" />, danger: true },
   ];
 
   const groups: MenuItem[][] = [
@@ -100,9 +97,7 @@ function BulkActionsToolbar({
     [
       { id: 'export', label: 'Export', icon: <FaFileExport className="text-slate-400" /> },
       { id: 'merge', label: 'Merge', icon: <FaCodeMerge className="text-slate-400" /> },
-      ...(canDelete
-        ? [{ id: 'delete' as BulkActionId, label: 'Delete', icon: <FaTrash className="text-red-500" />, danger: true }]
-        : []),
+      { id: 'delete', label: 'Delete', icon: <FaTrash className="text-red-500" />, danger: true },
     ],
   ];
 

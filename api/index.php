@@ -1073,8 +1073,8 @@ function notify_staff(int $staffId, ?int $contactId, string $type, string $title
         ':sid' => $staffId,
         ':cid' => $contactId,
         ':type' => $type,
-        ':title' => mb_substr($title, 0, 250),
-        ':detail' => mb_substr($detail, 0, 495),
+        ':title' => text_clip($title, 250),
+        ':detail' => text_clip($detail, 495),
     ]);
     $id = (int)$pdo->lastInsertId();
 
@@ -1248,6 +1248,59 @@ function dealer_leads(int $dealerId, ?string $status = null): void
     respond(['data' => $rows, 'count' => count($rows)]);
 }
 
+/**
+ * The signed-in user's OWN leads only:
+ *  - Dealer   -> leads assigned to them.
+ *  - Follower -> leads assigned to them OR that they follow (never the whole
+ *                managing dealer's pipeline).
+ * Status tracking rows are read from the user's pipeline owner (the dealer),
+ * so a follower sees exactly the status the dealer set on those leads.
+ */
+function my_dealer_leads(int $staffId, ?string $status = null): void
+{
+    $row = db()->prepare('SELECT user_type, manager_id FROM staff_users WHERE id = :id');
+    $row->execute([':id' => $staffId]);
+    $u = $row->fetch();
+    if (!$u) fail('Staff user not found', 404);
+
+    if (($u['user_type'] ?? '') === 'Dealer') {
+        $trackDealer = $staffId;
+        $where = 'v.assigned_to = :me';
+        $params = [':me' => $staffId];
+    } else {
+        $trackDealer = (int)($u['manager_id'] ?? $staffId);
+        $where = '(v.assigned_to = :me OR v.id IN (SELECT contact_id FROM contact_followers WHERE staff_id = :me2))';
+        $params = [':me' => $staffId, ':me2' => $staffId];
+    }
+    $params[':track'] = $trackDealer;
+
+    $sql = "SELECT v.id AS contact_id, v.name, v.phone, v.email, v.business_name, v.created_at,
+                   COALESCE(dls.status, 'non_contacted') AS status,
+                   COALESCE(dls.response_channel, '') AS response_channel,
+                   dls.response_note,
+                   dls.contacted_at, dls.responded_at, dls.closed_at, dls.updated_at,
+                   v.tags, v.tag_ids
+              FROM v_leads v
+              LEFT JOIN dealer_lead_status dls
+                ON dls.contact_id = v.id AND dls.dealer_id = :track
+             WHERE " . $where;
+    if ($status !== null && $status !== '') {
+        $sql .= ' AND COALESCE(dls.status, \'non_contacted\') = :status';
+        $params[':status'] = $status;
+    }
+    $sql .= ' ORDER BY COALESCE(dls.updated_at, v.created_at) DESC';
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+    foreach ($rows as &$row2) {
+        $row2['created_at'] = $row2['created_at'] ?? null;
+        $row2['tags'] = $row2['tags'] !== '' ? explode(',', $row2['tags']) : [];
+        $row2['tag_ids'] = $row2['tag_ids'] !== '' ? array_map('to_int', explode(',', $row2['tag_ids'])) : [];
+    }
+    respond(['data' => $rows, 'count' => count($rows)]);
+}
+
 /** Leads that are not yet assigned to any dealer. */
 function dealer_unassigned_leads(): void
 {
@@ -1328,6 +1381,7 @@ function assign_leads_to_dealer(array $body): void
     $pdo->beginTransaction();
     try {
         $assigned = 0;
+        $assignedIds = [];
         $ins = $pdo->prepare('INSERT INTO dealer_lead_status (contact_id, dealer_id) VALUES (:c, :d)');
         $upd = $pdo->prepare('UPDATE contacts SET assigned_to = :d, last_activity_at = NOW() WHERE id = :c');
         foreach ($contactIds as $cid) {
@@ -1346,11 +1400,31 @@ function assign_leads_to_dealer(array $body): void
             $ins->execute([':c' => $cid, ':d' => $dealerId]);
             $upd->execute([':d' => $dealerId, ':c' => $cid]);
             $assigned++;
+            $assignedIds[] = $cid;
         }
         $pdo->commit();
     } catch (PDOException $e) {
         $pdo->rollBack();
         fail('Database error: ' . $e->getMessage(), 500);
+    }
+
+    // Tell the dealer they got new leads so the bell lights up.
+    if ($assigned > 0) {
+        $contactName = null;
+        if ($assigned === 1 && isset($assignedIds[0])) {
+            $nm = $pdo->prepare('SELECT full_name FROM contacts WHERE id = :id');
+            $nm->execute([':id' => $assignedIds[0]]);
+            $contactName = $nm->fetchColumn() ?: null;
+        }
+        notify_staff(
+            $dealerId,
+            $assigned === 1 ? ($assignedIds[0] ?? null) : null,
+            'lead_assigned',
+            $assigned === 1 ? 'New lead assigned to you' : "$assigned leads assigned to you",
+            $assigned === 1
+                ? ($contactName ?: 'A lead') . ' has been assigned to you.'
+                : "$assigned new lead(s) have been assigned to you. Open your dashboard to start contacting them."
+        );
     }
 
     respond(['data' => ['assigned' => $assigned], 'message' => "$assigned lead(s) assigned"]);
@@ -1415,6 +1489,45 @@ function update_dealer_lead_status(int $contactId, array $body): void
     } catch (PDOException $e) {
         $pdo->rollBack();
         fail('Database error: ' . $e->getMessage(), 500);
+    }
+
+    // Everyone following this lead (other than the dealer doing the update)
+    // gets a heads-up so the team stays in the loop.
+    $statusLabels = [
+        'non_contacted' => 'Non-Contacted',
+        'contacted' => 'Contacted',
+        'closed' => 'Closed',
+        'customer' => 'Customer',
+        'rejected' => 'Rejected',
+    ];
+    $nm = $pdo->prepare('SELECT full_name FROM contacts WHERE id = :id');
+    $nm->execute([':id' => $contactId]);
+    $cname = $nm->fetchColumn() ?: 'A lead';
+    $dn = $pdo->prepare('SELECT full_name FROM staff_users WHERE id = :id');
+    $dn->execute([':id' => $dealerId]);
+    $dname = $dn->fetchColumn() ?: 'A team member';
+    $actorId = to_int((string)($body['actor_id'] ?? 0));
+    if ($actorId > 0 && $actorId !== $dealerId) {
+        $an = $pdo->prepare('SELECT full_name FROM staff_users WHERE id = :id');
+        $an->execute([':id' => $actorId]);
+        $actorName = $an->fetchColumn() ?: $dname;
+        $detail = $actorName . ' marked ' . $cname . ' as ' . $label . '.';
+    } else {
+        $detail = $dname . ' marked ' . $cname . ' as ' . $label . '.';
+    }
+
+    // Everyone following this lead (other than the dealer doing the update)
+    // gets a heads-up so the team stays in the loop.
+    $followers = $pdo->prepare('SELECT staff_id FROM contact_followers WHERE contact_id = :c AND staff_id <> :d');
+    $followers->execute([':c' => $contactId, ':d' => $dealerId]);
+    foreach ($followers->fetchAll() as $f) {
+        notify_staff((int)$f['staff_id'], $contactId, 'lead_assigned', 'Lead status updated', $detail);
+    }
+
+    // Admins are told too so they see pipeline movement without checking manually.
+    $admins = $pdo->query("SELECT id FROM staff_users WHERE user_type = 'Admin'")->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($admins as $aid) {
+        notify_staff((int)$aid, $contactId, 'lead_assigned', 'Lead status updated', $detail);
     }
 
     respond(['message' => 'Lead status updated']);
@@ -1879,6 +1992,10 @@ switch ($resource) {
                 $dealerId = to_int((string)($filters['dealer_id'] ?? 0));
                 if ($dealerId <= 0) fail('dealer_id is required');
                 dealer_leads($dealerId, isset($filters['status']) ? (string)$filters['status'] : null);
+            } elseif ($sub === 'my-leads') {
+                $staffId = to_int((string)($filters['staff_id'] ?? 0));
+                if ($staffId <= 0) fail('staff_id is required');
+                my_dealer_leads($staffId, isset($filters['status']) ? (string)$filters['status'] : null);
             } else {
                 fail('Unknown sub-resource', 404);
             }

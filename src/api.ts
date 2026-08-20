@@ -564,6 +564,11 @@ export const api = {
       `/dealer-dashboard/leads?dealer_id=${dealerId}${status ? `&status=${status}` : ''}`
     ),
 
+  myLeads: (staffId: number, status?: DealerLeadStatus) =>
+    request<{ data: DealerLead[]; count: number }>(
+      `/dealer-dashboard/my-leads?staff_id=${staffId}${status ? `&status=${status}` : ''}`
+    ),
+
   dealerUnassignedLeads: () => request<{ data: ApiContact[]; count: number }>('/dealer-dashboard/unassigned'),
 
   assignLeadsToDealer: (input: { dealer_id: number; contact_ids?: number[]; filter?: DealerLeadFilter }) =>

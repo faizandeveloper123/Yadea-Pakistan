@@ -324,3 +324,85 @@ export function LeadStageList({
     </div>
   );
 }
+
+const STATUS_ACTIONS: DealerLeadStatus[] = ['non_contacted', 'contacted', 'closed', 'customer', 'rejected'];
+
+/**
+ * Interactive lead list for dealers/followers: each row shows the current
+ * status and one-tap buttons to move the lead into any pipeline stage. The
+ * change is saved immediately and the owner (admin) is notified.
+ */
+export function LeadStatusList({
+  leads,
+  onChange,
+  onOpenContact,
+}: {
+  leads: { contactId: number; name: string; phone: string | null; status: DealerLeadStatus }[];
+  onChange?: (contactId: number, status: DealerLeadStatus) => void;
+  onOpenContact?: (id: number) => void;
+}) {
+  return (
+    <div className="h-full overflow-auto">
+      <table className="w-full text-left text-[11px]">
+        <thead className="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200">
+          <tr>
+            <th className="py-2 px-3 pl-4">Lead</th>
+            <th className="py-2 px-3">Status</th>
+            <th className="py-2 px-3 pr-4">Update status</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 text-slate-600">
+          {leads.map((l) => (
+            <tr key={l.contactId} className={onOpenContact ? 'cursor-pointer hover:bg-slate-50 transition' : ''}>
+              <td
+                className="py-2 px-3 pl-4"
+                onClick={() => onOpenContact?.(l.contactId)}
+              >
+                <div className="font-medium text-slate-800 truncate">{l.name}</div>
+                {l.phone && <div className="text-[10px] text-slate-400">{l.phone}</div>}
+              </td>
+              <td className="py-2 px-3">
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-semibold"
+                  style={{ backgroundColor: `${STATUS_COLORS[l.status]}1a`, color: STATUS_COLORS[l.status] }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[l.status] }} />
+                  {STATUS_META[l.status].label}
+                </span>
+              </td>
+              <td className="py-2 px-3 pr-4">
+                <div className="flex items-center gap-1 flex-wrap justify-end">
+                  {STATUS_ACTIONS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (l.status !== s) onChange?.(l.contactId, s);
+                      }}
+                      disabled={l.status === s}
+                      title={l.status === s ? `Already ${STATUS_META[s].label}` : `Mark as ${STATUS_META[s].label}`}
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border transition ${
+                        l.status === s
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default'
+                          : 'text-slate-600 border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700'
+                      }`}
+                    >
+                      {STATUS_META[s].label}
+                    </button>
+                  ))}
+                </div>
+              </td>
+            </tr>
+          ))}
+          {leads.length === 0 && (
+            <tr>
+              <td colSpan={3} className="py-6 text-center text-[11px] text-slate-400">
+                No leads assigned yet.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}

@@ -10,7 +10,7 @@ import {
   FaTableCells,
   FaXmark,
 } from 'react-icons/fa6';
-import { WIDGET_CATEGORIES, WIDGET_DEFS, filterDefsForUser, type WidgetChartType, type WidgetDef } from './widgets';
+import { WIDGET_CATEGORIES, WIDGET_DEFS, filterDefsForRole, type WidgetChartType, type WidgetDef, type WidgetRole } from './widgets';
 
 const TABS = ['Widgets', 'Elements', 'Themes', 'Custom metrics'];
 
@@ -100,20 +100,22 @@ function CategoryGroup({
 export function AddWidgetDrawer({
   open,
   onClose,
-  isOwner,
+  role,
   onAdd,
 }: {
   open: boolean;
   onClose: () => void;
-  isOwner: boolean;
+  role: WidgetRole;
   onAdd: (defId: string) => void;
 }) {
   const [tab, setTab] = useState('Widgets');
   const [search, setSearch] = useState('');
   const [chartType, setChartType] = useState<WidgetChartType | 'all'>('all');
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ Contacts: true });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => ({
+    [role === 'Admin' ? 'Contacts' : 'Opportunities']: true,
+  }));
 
-  const defs = useMemo(() => filterDefsForUser(WIDGET_DEFS, isOwner), [isOwner]);
+  const defs = useMemo(() => filterDefsForRole(WIDGET_DEFS, role), [role]);
 
   const categories = useMemo(() => {
     const map = new Map<string, WidgetDef[]>();

@@ -72,11 +72,9 @@ interface ContactsTableProps {
 function RowActionsMenu({
   contact,
   onAction,
-  canDelete = true,
 }: {
   contact: Contact;
   onAction: (action: RowActionId, contact: Contact) => void;
-  canDelete?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -84,9 +82,7 @@ function RowActionsMenu({
     { id: 'book', label: 'Book appointment', icon: <FaRegCalendarCheck className="text-slate-400" /> },
     { id: 'opportunity', label: 'Create opportunity', icon: <FaPeopleArrows className="text-slate-400" /> },
     { id: 'review', label: 'Send review request', icon: <FaStar className="text-slate-400" /> },
-    ...(canDelete
-      ? [{ id: 'delete' as RowActionId, label: 'Delete Contact', icon: <FaRegTrashCan className="text-red-500" />, danger: true }]
-      : []),
+    { id: 'delete', label: 'Delete Contact', icon: <FaRegTrashCan className="text-red-500" />, danger: true },
   ];
 
   return (
@@ -146,7 +142,6 @@ function ContactsTable({
   onOpenContact,
   visibleFields,
   onRowAction,
-  canDelete = true,
 }: ContactsTableProps) {
   const seenStatic = new Set<string>();
   const cols = visibleFields
@@ -215,7 +210,7 @@ function ContactsTable({
                     {contact.owner && <div className="text-[11px] text-slate-400 truncate">{contact.owner}</div>}
                   </div>
                 </div>
-                <RowActionsMenu contact={contact} onAction={onRowAction} canDelete={canDelete} />
+                <RowActionsMenu contact={contact} onAction={onRowAction} />
               </div>
 
               {details.length > 0 && (
@@ -293,7 +288,7 @@ function ContactsTable({
                     {col.id === 'contact_name' ? (
                       <div className="flex items-center justify-between gap-2 pr-1">
                         <div className="min-w-0 flex-1">{col.render(contact)}</div>
-                        <RowActionsMenu contact={contact} onAction={onRowAction} canDelete={canDelete} />
+                        <RowActionsMenu contact={contact} onAction={onRowAction} />
                       </div>
                     ) : (
                       col.render(contact)

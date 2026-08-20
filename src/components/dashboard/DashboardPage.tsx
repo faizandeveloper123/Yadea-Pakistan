@@ -14,11 +14,20 @@ import {
   FaWandMagicSparkles,
   FaXmark,
 } from 'react-icons/fa6';
-import { api, type ApiContact, type DealerDashboardDealer, type DealerLead } from '../../api';
+import { api, type ApiContact, type DealerDashboardDealer, type DealerLead, type DealerLeadStatus } from '../../api';
 import { useAuth } from '../../auth';
-import { BarChart, DataTable, DonutChart, FunnelChart, LeadStageList, LineChart, NumberCard } from './charts';
+import { BarChart, DataTable, DonutChart, FunnelChart, LeadStageList, LeadStatusList, LineChart, NumberCard } from './charts';
+import { STATUS_META } from './widgetMeta';
 import { AddWidgetDrawer } from './AddWidgetDrawer';
-import { WIDGET_BY_ID, type DashboardDataset, type WidgetData, type WidgetInstance } from './widgets';
+import {
+  WIDGET_BY_ID,
+  defaultInstancesForRole,
+  isWidgetAllowedForRole,
+  type DashboardDataset,
+  type WidgetData,
+  type WidgetInstance,
+  type WidgetRole,
+} from './widgets';
 import AssignLeadsModal from './AssignLeadsModal';
 import NotificationsBell from '../NotificationsBell';
 import UserMenu from '../UserMenu';
@@ -27,23 +36,21 @@ const STORAGE_KEY = 'evee_dashboard_widgets_v2';
 
 const OWNER_EMAIL = 'yadeapakistan@gmail.com';
 
-const DEFAULT_INSTANCES: WidgetInstance[] = [
-  { uid: 'd1', defId: 'contacts-total', title: 'Total Contacts', size: 'sm' },
-  { uid: 'd2', defId: 'leads-total', title: 'Total Leads Assigned', size: 'sm' },
-  { uid: 'd3', defId: 'leads-status-donut', title: 'Leads by Status', size: 'md' },
-  { uid: 'd4', defId: 'contacts-by-type', title: 'Contacts by Type', size: 'md' },
-  { uid: 'd5', defId: 'contacts-created-line', title: 'Contacts Created', size: 'md' },
-  { uid: 'd6', defId: 'leads-funnel', title: 'Lead Funnel', size: 'md' },
-  { uid: 'd7', defId: 'contacts-recent', title: 'Recent Contacts', size: 'lg' },
-];
-
 const SIZE_CLASS: Record<WidgetInstance['size'], string> = {
   sm: 'col-span-6 sm:col-span-3',
   md: 'col-span-6 sm:col-span-6',
   lg: 'col-span-12 sm:col-span-12',
 };
 
-function WidgetBody({ data, onOpenContact }: { data: WidgetData; onOpenContact?: (id: number) => void }) {
+function WidgetBody({
+  data,
+  onOpenContact,
+  onLeadStatusChange,
+}: {
+  data: WidgetData;
+  onOpenContact?: (id: number) => void;
+  onLeadStatusChange?: (contactId: number, status: DealerLeadStatus) => void;
+}) {
   switch (data.kind) {
     case 'number':
       return <NumberCard value={data.value} sub={data.sub} accent={data.accent} />;
@@ -80,6 +87,8 @@ function WidgetBody({ data, onOpenContact }: { data: WidgetData; onOpenContact?:
         />
       );
     }
+    case 'lead-list':
+      return <LeadStatusList leads={data.leads} onChange={onLeadStatusChange} onOpenContact={onOpenContact} />;
     case 'stage-list':
       return <LeadStageList leads={data.leads} onOpenContact={onOpenContact} />;
     default:
@@ -96,6 +105,7 @@ function WidgetCard({
   menuOpen,
   editMode,
   onOpenContact,
+  onLeadStatusChange,
   onDragStart,
   onDragOver,
   onDrop,
@@ -113,6 +123,7 @@ function WidgetCard({
   menuOpen: boolean;
   editMode: boolean;
   onOpenContact?: (id: number) => void;
+  onLeadStatusChange?: (contactId: number, status: DealerLeadStatus) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
   onDragOver: (e: React.DragEvent, index: number) => void;
   onDrop: (e: React.DragEvent, index: number) => void;
@@ -191,7 +202,7 @@ function WidgetCard({
         </div>
       </header>
       <div className="flex-1 px-2.5 py-2 sm:px-4 sm:py-3 min-h-0">
-        <WidgetBody data={data} onOpenContact={onOpenContact} />
+        <WidgetBody data={data} onOpenContact={onOpenContact} onLeadStatusChange={onLeadStatusChange} />
       </div>
       {dragIndex !== null && overIndex === index && dragIndex !== index && (
         <div className="absolute inset-x-2 -top-1 h-1 bg-blue-500 rounded-full" />
@@ -213,7 +224,10 @@ function DashboardPage({
 }) {
   const { user } = useAuth();
   const isOwner = user?.user_type === 'Admin' || user?.email?.toLowerCase() === OWNER_EMAIL;
+  const role: WidgetRole = user?.user_type ?? 'Admin';
   const dealerId = user?.user_type === 'Follower' && user.manager_id != null ? user.manager_id : user?.id ?? 0;
+  // Dashboard layout is saved per user so each role keeps its own widgets.
+  const storageKey = user ? `evee_dashboard_widgets_v2_${user.id}` : STORAGE_KEY;
 
   const [contacts, setContacts] = useState<ApiContact[]>([]);
   const [dealers, setDealers] = useState<DealerDashboardDealer[]>([]);
@@ -224,16 +238,12 @@ function DashboardPage({
 
   const [instances, setInstances] = useState<WidgetInstance[]>(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey);
       if (raw) {
         const parsed = JSON.parse(raw) as WidgetInstance[];
         if (Array.isArray(parsed) && parsed.length > 0) {
           const valid = parsed.filter(
-            (w) =>
-              w &&
-              typeof w.defId === 'string' &&
-              WIDGET_BY_ID[w.defId] !== undefined &&
-              (!WIDGET_BY_ID[w.defId].ownerOnly || isOwner)
+            (w) => w && typeof w.defId === 'string' && isWidgetAllowedForRole(w.defId, role)
           );
           if (valid.length > 0) return valid;
         }
@@ -241,8 +251,16 @@ function DashboardPage({
     } catch {
       /* ignore corrupted storage */
     }
-    return DEFAULT_INSTANCES;
+    return defaultInstancesForRole(role);
   });
+
+  // Re-filter saved widgets whenever the signed-in role changes (e.g. "Login as").
+  useEffect(() => {
+    setInstances((prev) => {
+      const valid = prev.filter((w) => isWidgetAllowedForRole(w.defId, role));
+      return valid.length > 0 ? valid : defaultInstancesForRole(role);
+    });
+  }, [role]);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editUid, setEditUid] = useState<string | null>(null);
@@ -254,14 +272,16 @@ function DashboardPage({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const contactRes = await api.listContacts({});
+      // Non-owners only ever see contacts that belong to them (assigned or
+      // followed) so a dealer/follower never gets global CRM data.
+      const contactRes = await api.listContacts(isOwner ? {} : { restrict_to: user?.id ?? 0 });
       setContacts(contactRes.data);
       if (isOwner) {
         const sumRes = await api.dealerDashboardSummary();
         setDealers(sumRes.data.dealers);
         setUnassigned(sumRes.data.unassigned);
       } else {
-        const leadsRes = await api.dealerLeads(dealerId);
+        const leadsRes = await api.myLeads(user?.id ?? 0);
         setDealerLeads(leadsRes.data);
       }
     } catch (err) {
@@ -269,7 +289,7 @@ function DashboardPage({
     } finally {
       setLoading(false);
     }
-  }, [isOwner, dealerId, onNotify]);
+  }, [isOwner, dealerId, onNotify, user]);
 
   useEffect(() => {
     void load();
@@ -278,11 +298,11 @@ function DashboardPage({
   // Persist layout.
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(instances));
+      localStorage.setItem(storageKey, JSON.stringify(instances));
     } catch {
       /* ignore storage errors */
     }
-  }, [instances]);
+  }, [instances, storageKey]);
 
   const dataset = useMemo<DashboardDataset>(
     () => ({ isOwner, dealerId, contacts, dealers, unassigned, dealerLeads }),
@@ -303,6 +323,16 @@ function DashboardPage({
     ]);
     setDrawerOpen(false);
     onNotify(`"${def.title}" added to dashboard`);
+  };
+
+  const handleLeadStatusChange = async (contactId: number, status: DealerLeadStatus) => {
+    try {
+      await api.updateDealerLeadStatus(contactId, { dealer_id: dealerId, status });
+      onNotify(`Lead marked as ${STATUS_META[status].label}`);
+      void load();
+    } catch (err) {
+      onNotify(`Update failed: ${(err as Error).message}`);
+    }
   };
 
   const removeWidget = (uid: string) => {
@@ -481,6 +511,7 @@ function DashboardPage({
                 menuOpen={menuUid === w.uid}
                 editMode={editMode}
                 onOpenContact={onOpenContact}
+                onLeadStatusChange={handleLeadStatusChange}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
@@ -514,7 +545,7 @@ function DashboardPage({
         )}
       </div>
 
-      <AddWidgetDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} isOwner={isOwner} onAdd={addWidget} />
+      <AddWidgetDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} role={role} onAdd={addWidget} />
 
       {editUid && (
         <EditWidgetModal

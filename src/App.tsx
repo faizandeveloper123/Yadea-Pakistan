@@ -14,7 +14,7 @@ import SmartListTabs from './components/SmartListTabs';
 import SmartListDrawer, { type SmartList } from './components/SmartListDrawer';
 import AddToListModal from './components/AddToListModal';
 import ManageFieldsDrawer from './components/ManageFieldsDrawer';
-import { TableFilterDrawer, TableSortDrawer } from './components/ToolbarDrawers';
+import { TableFilterDrawer } from './components/ToolbarDrawers';
 import Toolbar from './components/Toolbar';
 import ContactsTable, { type RowActionId } from './components/ContactsTable';
 import BulkActionsToolbar, { type BulkActionId } from './components/BulkActionsToolbar';
@@ -45,6 +45,8 @@ import { StaffProvider } from './StaffContext';
 type ViewMode = string;
 
 const SMART_LIST_STORAGE_KEY = 'evee_smart_lists_v2';
+const smartListStorageKey = (id?: number | null) =>
+  id !== undefined && id !== null ? `${SMART_LIST_STORAGE_KEY}_u${id}` : SMART_LIST_STORAGE_KEY;
 const HIDDEN_BUILTINS_STORAGE_KEY = 'evee_hidden_builtins_v1';
 const TABLE_FIELDS_STORAGE_KEY = 'evee_table_fields_v1';
 const ACTIVE_VIEW_STORAGE_KEY = 'evee_active_view_v1';
@@ -127,7 +129,6 @@ function App() {
   const [addToListOpen, setAddToListOpen] = useState(false);
   const [fieldsDrawerOpen, setFieldsDrawerOpen] = useState(false);
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
-  const [sortDrawerOpen, setSortDrawerOpen] = useState(false);
   const [activeRules, setActiveRules] = useState<FilterRule[]>(() => {
     try {
       const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
@@ -244,10 +245,12 @@ function App() {
 
   const load = useCallback(
     async (mode: ViewMode, search: string) => {
-      setLoading(true);
+setLoading(true);
       try {
         const params: ListParams = search.trim() ? { search: search.trim() } : {};
-        if (user && user.restrict_data === 1) params.restrict_to = user.id;
+        // Dealers & Followers only ever see the leads assigned to / followed by
+        // them — never the whole CRM — regardless of the restrict_data flag.
+        if (user && user.user_type !== 'Admin') params.restrict_to = user.id;
         const isLeads = mode === 'Leads';
         const res = isLeads ? await api.listLeads(params) : await api.listContacts(params);
         setContacts(res.data.map(mapApiContact));
@@ -442,14 +445,15 @@ function App() {
 
   const reload = () => load(viewMode, searchQuery);
 
-  // Persist custom smart lists across reloads.
+  // Persist custom smart lists across reloads (scoped per user so one user's
+  // lists never leak to another user logging in on the same browser).
   useEffect(() => {
     try {
-      localStorage.setItem(SMART_LIST_STORAGE_KEY, JSON.stringify(customLists));
+      localStorage.setItem(smartListStorageKey(user?.id), JSON.stringify(customLists));
     } catch {
       /* ignore storage errors */
     }
-  }, [customLists]);
+  }, [customLists, user?.id]);
 
   // Refresh the contacts page tabs with the latest server-side lists. Lists
   // with a non-numeric id are genuinely local (offline / pre-sync) and are kept;
@@ -477,7 +481,7 @@ function App() {
 
     const readLocal = (): SmartList[] => {
       try {
-        const raw = localStorage.getItem(SMART_LIST_STORAGE_KEY);
+        const raw = localStorage.getItem(smartListStorageKey(user.id));
         if (!raw) return [];
         const parsed = JSON.parse(raw) as SmartList[];
         return Array.isArray(parsed) ? parsed : [];
@@ -517,12 +521,19 @@ function App() {
           setCustomLists(again.data.map(toSmartList));
           return;
         }
-        // Merge: local storage lists (created before server sync) win on name clash.
+        // Merge: only keep locally-persisted lists (non-numeric id) that are
+        // NOT already on the server; server lists come strictly from the API
+        // so lists another user owns are never shown to this user.
         setCustomLists((prev) => {
-          const localNames = new Set(prev.map((l) => l.name.toLowerCase()));
-          const merged = res.data.map(toSmartList).filter((l) => !localNames.has(l.name.toLowerCase()));
-          return [...prev, ...merged];
+          const serverIds = new Set(res.data.map((l) => String(l.id)));
+          const localOnly = prev.filter((l) => !/^\d+$/.test(l.id) && !serverIds.has(l.id));
+          return [...localOnly, ...res.data.map(toSmartList)];
         });
+        try {
+          localStorage.removeItem(SMART_LIST_STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
       })
       .catch(() => {
         /* offline / not configured: keep local lists */
@@ -773,8 +784,10 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
 
   const sortedContacts = useMemo(() => {
     if (!sortBy) return filteredContacts;
-    const accessor = SORT_ACCESSORS[sortBy];
-    if (!accessor) return filteredContacts;
+    const accessor = SORT_ACCESSORS[sortBy] ?? ((c: Contact) => {
+      const v = c.customFields?.[sortBy];
+      return typeof v === 'string' ? v : v == null ? '' : String(v);
+    });
     return [...filteredContacts].sort((a, b) => {
       const av = (accessor(a) ?? '').toLowerCase();
       const bv = (accessor(b) ?? '').toLowerCase();
@@ -1243,10 +1256,9 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
                   onDeleteSelected={deleteSelected}
                   onManageFields={() => setFieldsDrawerOpen(true)}
                   onOpenFilters={() => setFiltersDrawerOpen(true)}
-                  onOpenSort={() => setSortDrawerOpen(true)}
+                  onSortChange={handleApplySort}
                   filterCount={activeRules.length}
                   sortBy={sortBy}
-                  canDelete={hasActionPermission('contacts', 'Contacts', 'delete')}
                   onAddToList={() => setAddToListOpen(true)}
                 />
 
@@ -1386,15 +1398,6 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
               initialRules={activeRules}
               onClose={() => setFiltersDrawerOpen(false)}
               onApply={handleApplyRules}
-            />
-          )}
-
-          {sortDrawerOpen && (
-            <TableSortDrawer
-              open={sortDrawerOpen}
-              initialSort={sortBy}
-              onClose={() => setSortDrawerOpen(false)}
-              onApply={handleApplySort}
             />
           )}
 

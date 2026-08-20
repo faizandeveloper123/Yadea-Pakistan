@@ -70,6 +70,12 @@ function normalize_optional(?string $value): ?string
     return $value === '' ? null : $value;
 }
 
+/** Clip a string to a byte/length budget without requiring mbstring. */
+function text_clip(string $value, int $max): string
+{
+    return function_exists('mb_substr') ? mb_substr($value, 0, $max) : substr($value, 0, $max);
+}
+
 /* ----------------------- AUTH / PASSWORD HELPERS ----------------------- */
 
 /** True when the stored value is already a bcrypt/argon2 hash. */

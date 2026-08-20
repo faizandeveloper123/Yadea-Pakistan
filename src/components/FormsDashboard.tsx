@@ -203,6 +203,10 @@ const CHOICE_TYPES = ['single_dropdown', 'multi_dropdown', 'checkbox', 'radio', 
 
 const DEFAULT_OPTIONS = ['Option 1', 'Option 2', 'Option 3'];
 
+// Inline quick-edit on the canvas: which properties each field type exposes.
+const INLINE_PLACEHOLDER_TYPES = [...TEXT_LIKE, 'textarea', 'single_dropdown', 'multi_dropdown', 'select', 'html'];
+const INLINE_OPTION_TYPES = ['single_dropdown', 'multi_dropdown', 'checkbox', 'radio', 'select', 'textbox_list'];
+
 const HEADER_FONT_FAMILIES: { label: string; value: string }[] = [
   { label: 'Arial', value: 'Arial, Helvetica, sans-serif' },
   { label: 'Arial Black', value: '"Arial Black", Gadget, sans-serif' },
@@ -664,18 +668,43 @@ const SUBMISSION_ROWS: SubmissionRow[] = [
 function FieldRenderer({
   element,
   alignment,
+  editable = false,
+  onPatch,
+  onAddOption,
+  onEditOption,
+  onRemoveOption,
 }: {
   element: FormElement;
   alignment?: LabelAlignment;
+  editable?: boolean;
+  onPatch?: (patch: Partial<FormElement>) => void;
+  onAddOption?: () => void;
+  onEditOption?: (index: number, value: string) => void;
+  onRemoveOption?: (index: number) => void;
 }) {
   const t = element.type;
   const opts = element.options && element.options.length > 0 ? element.options : DEFAULT_OPTIONS;
   const isRow = alignment === 'left' || alignment === 'right';
+  const isChoice = INLINE_OPTION_TYPES.includes(t);
+  const canPlaceholder = INLINE_PLACEHOLDER_TYPES.includes(t);
 
-  const labelNode = (withRequired = true) => (
-    <span className="text-xs font-semibold text-slate-700">
-      <span>{element.label}</span>
-      {withRequired && element.required && <span className="text-rose-500">*</span>}
+  const labelInputCls =
+    'w-full min-w-0 bg-transparent text-xs font-semibold text-slate-700 rounded px-1 -mx-1 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 focus:border focus:border-blue-300';
+
+  const labelText = (withRequired = true) => (
+    <span className="inline-flex items-center gap-0.5 w-full">
+      {editable ? (
+        <input
+          type="text"
+          value={element.label}
+          autoFocus
+          onChange={(e) => onPatch?.({ label: e.target.value })}
+          className={labelInputCls}
+        />
+      ) : (
+        <span>{element.label}</span>
+      )}
+      {withRequired && element.required && <span className="text-rose-500 shrink-0">*</span>}
     </span>
   );
 
@@ -683,19 +712,84 @@ function FieldRenderer({
     isRow ? (
       <div className={`flex items-start gap-3 ${alignment === 'right' ? 'flex-row-reverse' : ''}`}>
         <div className="flex-1 min-w-0">{control}</div>
-        <div className="pt-2 text-xs font-semibold text-slate-700 whitespace-nowrap">{labelNode()}</div>
+        <div className={`pt-2 text-xs font-semibold text-slate-700 whitespace-nowrap ${editable ? 'w-40 shrink-0' : ''}`}>
+          {labelText()}
+        </div>
       </div>
     ) : (
       <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">{labelNode()}</label>
+        <label className="block text-xs font-semibold text-slate-700 mb-1">{labelText()}</label>
         {control}
       </div>
     );
 
+  const editInputCls =
+    'w-full px-3 py-2 border border-slate-300 rounded-md text-xs bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500';
+
+  const editOptionRow = (opt: string, idx: number) => (
+    <div key={idx} className="flex items-center gap-1.5">
+      <input
+        type="text"
+        value={opt}
+        onChange={(e) => onEditOption?.(idx, e.target.value)}
+        placeholder={`Option ${idx + 1}`}
+        className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+      />
+      <button
+        type="button"
+        onClick={() => onRemoveOption?.(idx)}
+        className="text-slate-400 hover:text-rose-500 p-1 transition shrink-0"
+        title="Remove option"
+      >
+        <FaRegTrashCan className="w-3 h-3" />
+      </button>
+    </div>
+  );
+
+  // Options editor appears directly under dropdown / multi-dropdown / checkbox /
+  // radio / textbox-list controls so options can be renamed / added / removed
+  // right on the field, without the right-side drawer.
+  const optionsEditor =
+    editable && isChoice ? (
+      <div className="mt-2 pt-2 border-t border-dashed border-blue-200 space-y-1.5">
+        {canPlaceholder && (
+          <input
+            type="text"
+            value={element.placeholder ?? ''}
+            onChange={(e) => onPatch?.({ placeholder: e.target.value })}
+            placeholder="Placeholder text (first option)"
+            className="w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        )}
+        {(element.options ?? []).map(editOptionRow)}
+        {(element.options ?? []).length === 0 && (
+          <div className="text-[10px] text-slate-400 bg-white border border-dashed border-slate-300 rounded px-2 py-1.5">
+            No options yet. Click "Add option" to create choices.
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onAddOption}
+          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-[10px] border border-blue-200 hover:bg-blue-50 rounded px-1.5 py-0.5 transition"
+        >
+          <FaPlus className="w-2 h-2" />
+          Add option
+        </button>
+      </div>
+    ) : null;
+
   let control: ReactNode = null;
 
   if (TEXT_LIKE.includes(t)) {
-    control = (
+    control = editable ? (
+      <input
+        type="text"
+        value={element.placeholder ?? ''}
+        onChange={(e) => onPatch?.({ placeholder: e.target.value })}
+        placeholder="Enter placeholder text"
+        className={editInputCls}
+      />
+    ) : (
       <input
         type="text"
         placeholder={element.placeholder}
@@ -704,7 +798,15 @@ function FieldRenderer({
       />
     );
   } else if (t === 'textarea') {
-    control = (
+    control = editable ? (
+      <textarea
+        rows={3}
+        value={element.placeholder ?? ''}
+        onChange={(e) => onPatch?.({ placeholder: e.target.value })}
+        placeholder="Enter placeholder text"
+        className={editInputCls}
+      />
+    ) : (
       <textarea
         placeholder={element.placeholder}
         rows={3}
@@ -715,9 +817,20 @@ function FieldRenderer({
   } else if (t === 'textbox_list') {
     control = (
       <div className="space-y-2">
-        {opts.slice(0, 3).map((o, i) => (
-          <input key={i} type="text" placeholder={o} disabled className="w-full px-3 py-1.5 border border-slate-300 rounded text-xs bg-slate-50/50" />
-        ))}
+        {opts.slice(0, 3).map((o, i) =>
+          editable ? (
+            <input
+              key={i}
+              type="text"
+              value={element.options?.[i] ?? ''}
+              onChange={(e) => onEditOption?.(i, e.target.value)}
+              placeholder={`Option ${i + 1}`}
+              className={editInputCls}
+            />
+          ) : (
+            <input key={i} type="text" placeholder={o} disabled className="w-full px-3 py-1.5 border border-slate-300 rounded text-xs bg-slate-50/50" />
+          )
+        )}
       </div>
     );
   } else if (t === 'single_dropdown' || t === 'multi_dropdown' || t === 'select') {
@@ -777,7 +890,15 @@ function FieldRenderer({
       </div>
     );
   } else if (t === 'html') {
-    control = (
+    control = editable ? (
+      <textarea
+        rows={4}
+        value={element.placeholder ?? ''}
+        onChange={(e) => onPatch?.({ placeholder: e.target.value })}
+        placeholder="<div>Custom HTML content goes here...</div>"
+        className="w-full p-2.5 bg-slate-900 text-slate-200 font-mono text-[11px] rounded border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
+    ) : (
       <div className="p-3 bg-slate-900 text-slate-200 font-mono text-[11px] rounded border border-slate-700">
         <div className="text-slate-400 text-[10px] uppercase font-sans mb-1">Custom HTML Block</div>
         <div className="break-all">{element.placeholder || '<div>Custom HTML content goes here...</div>'}</div>
@@ -821,9 +942,13 @@ function FieldRenderer({
       <div className="relative">
         <input
           type="text"
-          placeholder="Select date"
-          disabled
-          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-md text-xs bg-slate-50/50"
+          value={editable ? (element.placeholder ?? '') : undefined}
+          onChange={(e) => onPatch?.({ placeholder: e.target.value })}
+          placeholder={editable ? 'Select date (placeholder)' : 'Select date'}
+          disabled={!editable}
+          className={`w-full pl-8 pr-3 py-2 border border-slate-300 rounded-md text-xs ${
+            editable ? 'bg-white text-slate-700' : 'bg-slate-50/50'
+          }`}
         />
         <FaRegCalendar className="absolute left-2.5 top-2.5 text-slate-400 text-xs" />
       </div>
@@ -841,17 +966,200 @@ function FieldRenderer({
   const isLayoutOnly = ['sell_products', 'collect_payment', 'html', 'bot_protection', 'image'].includes(t);
 
   return (
-    <div style={{ width: element.widthUnit === 'px' ? `${element.fieldWidth}px` : `${element.fieldWidth}%` }}>
+    <div
+      style={{
+        width: element.widthUnit === 'px' ? `${element.fieldWidth}px` : `${element.fieldWidth}%`,
+        userSelect: editable ? 'text' : undefined,
+      }}
+    >
       {isLayoutOnly ? (
-        control
+        <div>
+          {control}
+          {optionsEditor}
+        </div>
       ) : t === 'checkbox' || t === 'tnc' ? (
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">{element.label}</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">{labelText()}</label>
           {control}
+          {optionsEditor}
         </div>
       ) : (
-        wrapLabel(control)
+        <div>
+          {wrapLabel(control)}
+          {optionsEditor}
+        </div>
       )}
+    </div>
+  );
+}
+
+/** Inline "Field Settings" quick-edit panel rendered directly under the
+ * selected field on the canvas (matches the HighLevel inline editing mockup). */
+function InlineFieldEditor({
+  element,
+  index,
+  total,
+  onPatch,
+  onMoveUp,
+  onMoveDown,
+  onDuplicate,
+  onDelete,
+  onDone,
+  onAddOption,
+  onEditOption,
+  onRemoveOption,
+}: {
+  element: FormElement;
+  index: number;
+  total: number;
+  onPatch: (patch: Partial<FormElement>) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onDone: () => void;
+  onAddOption: () => void;
+  onEditOption: (index: number, value: string) => void;
+  onRemoveOption: (index: number) => void;
+}) {
+  const isChoice = INLINE_OPTION_TYPES.includes(element.type);
+  const canPlaceholder = INLINE_PLACEHOLDER_TYPES.includes(element.type);
+
+  const fieldInputCls =
+    'w-full px-2.5 py-1.5 border border-slate-300 rounded text-xs text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500';
+
+  return (
+    <div
+      className="mt-2.5 bg-white border border-blue-200 shadow-lg rounded-lg p-3 text-xs space-y-3 cursor-default"
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {/* Header: Field Settings + quick actions */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+        <span className="font-bold text-blue-600 flex items-center space-x-1.5">
+          <FaSliders className="text-[11px]" />
+          <span>Field Settings</span>
+        </span>
+        <div className="flex items-center space-x-0.5">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={index <= 0}
+            className="p-1 hover:bg-slate-100 text-slate-500 rounded disabled:opacity-30 disabled:cursor-not-allowed transition"
+            title="Move Up"
+          >
+            <FaArrowUp className="text-[10px]" />
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={index >= total - 1}
+            className="p-1 hover:bg-slate-100 text-slate-500 rounded disabled:opacity-30 disabled:cursor-not-allowed transition"
+            title="Move Down"
+          >
+            <FaArrowDown className="text-[10px]" />
+          </button>
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="p-1 hover:bg-slate-100 text-blue-600 rounded transition"
+            title="Duplicate field"
+          >
+            <FaCopy className="text-[10px]" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="p-1 hover:bg-rose-50 text-rose-500 rounded transition"
+            title="Delete field"
+          >
+            <FaRegTrashCan className="text-[10px]" />
+          </button>
+        </div>
+      </div>
+
+      {/* Field Label + Placeholder inputs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div>
+          <label className="block text-[10px] font-semibold text-slate-500 mb-1">Field Label</label>
+          <input
+            type="text"
+            value={element.label}
+            onChange={(e) => onPatch({ label: e.target.value })}
+            className={fieldInputCls}
+          />
+        </div>
+        {canPlaceholder && (
+          <div>
+            <label className="block text-[10px] font-semibold text-slate-500 mb-1">Placeholder Text</label>
+            <input
+              type="text"
+              value={element.placeholder ?? ''}
+              onChange={(e) => onPatch({ placeholder: e.target.value })}
+              className={fieldInputCls}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Options editor for choice types */}
+      {isChoice && (
+        <div className="pt-2 border-t border-dashed border-blue-200 space-y-1.5">
+          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Options</div>
+          {(element.options ?? []).map((opt, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={opt}
+                onChange={(e) => onEditOption(i, e.target.value)}
+                placeholder={`Option ${i + 1}`}
+                className={fieldInputCls}
+              />
+              <button
+                type="button"
+                onClick={() => onRemoveOption(i)}
+                className="text-slate-400 hover:text-rose-500 p-1 shrink-0 transition"
+                title="Remove option"
+              >
+                <FaRegTrashCan className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          {(element.options ?? []).length === 0 && (
+            <div className="text-[10px] text-slate-400 bg-white border border-dashed border-slate-300 rounded px-2 py-1.5">
+              No options yet. Click "Add option" to create choices.
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onAddOption}
+            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-[10px] border border-blue-200 hover:bg-blue-50 rounded px-1.5 py-0.5 transition"
+          >
+            <FaPlus className="w-2 h-2" />
+            Add option
+          </button>
+        </div>
+      )}
+
+      {/* Required + Done */}
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+        <label className="flex items-center space-x-2 text-slate-700 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={element.required}
+            onChange={(e) => onPatch({ required: e.target.checked })}
+            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>Required Field</span>
+        </label>
+        <button
+          type="button"
+          onClick={onDone}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold text-[11px] transition"
+        >
+          Done
+        </button>
+      </div>
     </div>
   );
 }
@@ -1212,6 +1520,55 @@ function FormsDashboard() {
       });
       setDraggedCanvasIndex(null);
     }
+  };
+
+  // ---- Inline quick-edit (on the canvas field itself) ----
+  const patchSelectedElement = (patch: Partial<FormElement>) => {
+    setSelectedElement((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const addInlineOption = () => {
+    setSelectedElement((prev) =>
+      prev
+        ? { ...prev, options: [...(prev.options ?? []), `Option ${(prev.options?.length ?? 0) + 1}`] }
+        : prev
+    );
+  };
+
+  const updateInlineOption = (index: number, value: string) => {
+    setSelectedElement((prev) => {
+      if (!prev) return prev;
+      const next = [...(prev.options ?? [])];
+      next[index] = value;
+      return { ...prev, options: next };
+    });
+  };
+
+  const removeInlineOption = (index: number) => {
+    setSelectedElement((prev) => {
+      if (!prev) return prev;
+      const next = [...(prev.options ?? [])];
+      next.splice(index, 1);
+      return { ...prev, options: next };
+    });
+  };
+
+  const duplicateSelectedElement = () => {
+    if (!selectedElement) return;
+    const clone: FormElement = {
+      ...selectedElement,
+      id: Date.now() + Math.random(),
+      label: `${selectedElement.label} (Copy)`,
+    };
+    setActiveForm((prev) => {
+      const idx = prev.elements.findIndex((e) => e.id === selectedElement.id);
+      if (idx === -1) return prev;
+      const next = [...prev.elements];
+      next.splice(idx + 1, 0, clone);
+      return { ...prev, elements: next };
+    });
+    setSelectedElement(clone);
+    triggerToast(`Duplicated "${selectedElement.label}"`);
   };
 
   const publicFormPayload = () => ({
@@ -2590,6 +2947,7 @@ function FormsDashboard() {
               onDragOver={handleCanvasDragOver}
               onDragLeave={handleCanvasDragLeave}
               onDrop={handleCanvasDrop}
+              onClick={() => setSelectedElement(null)}
             >
               <div
                 className={`${
@@ -2606,6 +2964,12 @@ function FormsDashboard() {
                   </div>
                 )}
 
+                {activeForm.elements.length > 0 && (
+                  <div className="text-center text-[10px] text-slate-400 mb-2">
+                    Click any field to Quick Edit it inline. Drag a field to reorder.
+                  </div>
+                )}
+
                 {activeForm.header && <FormHeaderBlock header={activeForm.header} />}
 
                 <div
@@ -2618,17 +2982,31 @@ function FormsDashboard() {
                   {activeForm.elements.map((element, index) => (
                     <div
                       key={element.id}
-                      draggable
+                      draggable={selectedElement?.id !== element.id}
                       onDragStart={(e) => handleElementDragStart(e, index)}
                       onDragOver={handleElementDragOver}
                       onDrop={(e) => handleElementDrop(e, index)}
-                      onClick={() => setSelectedElement(element)}
-                      className={`relative p-2.5 sm:p-3 rounded-lg border transition group cursor-pointer sm:cursor-move bg-white shadow-sm ${
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedElement(element);
+                      }}
+                      className={`relative p-2.5 sm:p-3 rounded-lg border transition group cursor-pointer bg-white shadow-sm ${
                         selectedElement?.id === element.id
                           ? 'ring-2 ring-blue-500 bg-blue-50/20 border-blue-300'
-                          : 'hover:border-slate-300 border-slate-200'
+                          : 'hover:border-slate-300 border-slate-200 sm:cursor-move'
                       }`}
                     >
+                      {selectedElement?.id === element.id && (
+                        <div className="mb-2 -mt-1 flex items-center justify-between bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded px-2 py-1">
+                          <span className="flex items-center gap-1">
+                            <FaPen className="w-2.5 h-2.5" />
+                            Quick Edit
+                          </span>
+                          <span className="font-normal normal-case tracking-normal text-blue-100 text-[9px] hidden sm:inline">
+                            Edit field settings below
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-slate-100 sm:border-none sm:pb-0 sm:mb-0">
                         <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider sm:hidden flex items-center space-x-1">
                           <FaGripVertical />
@@ -2680,7 +3058,29 @@ function FormsDashboard() {
                         alignment={
                           element.labelAlignment?.[editorDevice === 'desktop' ? 'desktop' : 'mobile'] ?? 'default'
                         }
+                        editable={false}
+                        onPatch={patchSelectedElement}
+                        onAddOption={addInlineOption}
+                        onEditOption={updateInlineOption}
+                        onRemoveOption={removeInlineOption}
                       />
+
+                      {selectedElement?.id === element.id && (
+                        <InlineFieldEditor
+                          element={element}
+                          index={index}
+                          total={activeForm.elements.length}
+                          onPatch={patchSelectedElement}
+                          onMoveUp={() => moveElementUp(index)}
+                          onMoveDown={() => moveElementDown(index)}
+                          onDuplicate={duplicateSelectedElement}
+                          onDelete={() => removeElement(element.id)}
+                          onDone={() => setSelectedElement(null)}
+                          onAddOption={addInlineOption}
+                          onEditOption={updateInlineOption}
+                          onRemoveOption={removeInlineOption}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
