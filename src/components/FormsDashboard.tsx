@@ -1,8 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { logActivity } from '../data/activityLog';
 import { useCampaigns } from '../data/campaigns';
-import { fileToDataUrl, serializeFormForUrl } from '../utils';
+import { api } from '../api';
+import { useForms, type StoredForm } from '../data/formsStore';
+import {
+  fileToDataUrl,
+  serializeFormForUrl,
+  formSubmissionsOf,
+  formatDbDate,
+  initialsFromName,
+} from '../utils';
 import TemplateLibrary, {
   type FormTemplate,
   handleImageError,
@@ -152,19 +160,14 @@ interface SubmissionColumn {
 interface SubmissionRow {
   id: number;
   formName: string;
-  submittedAt: string;
+  submittedOn: string;
+  contactId: number;
   contactInitials: string;
   contactBg: string;
   fullName: string;
-  name: string;
   email: string;
   phone: string;
-  attr1: string;
-  attr2: string;
-  attr3: string;
-  terms: string;
-  timezone: string;
-  ip: string;
+  values: Record<string, string>;
 }
 
 interface ElementDef {
@@ -565,57 +568,31 @@ function makeDefaultFields(): FormElement[] {
 }
 
 const SUBMISSION_COLUMNS: SubmissionColumn[] = [
+  { key: 'formName', label: 'Form', locked: false, visible: true },
   { key: 'submittedAt', label: 'Submitted at', locked: true, visible: true },
   { key: 'contact', label: 'Contact', locked: false, visible: true },
   { key: 'fullName', label: 'Full name', locked: false, visible: true },
-  { key: 'name', label: 'Name', locked: false, visible: true },
   { key: 'email', label: 'Email', locked: false, visible: true },
   { key: 'phone', label: 'Phone', locked: false, visible: true },
-  { key: 'attr1', label: 'GDBBZS5GbwJBbO2HvM6j', locked: false, visible: true },
-  { key: 'attr2', label: 'FjoMrgO0F5D9cLGpDjgE', locked: false, visible: true },
-  { key: 'attr3', label: 'LS60uapBTky9tSPV38AA', locked: false, visible: true },
-  { key: 'terms', label: 'Terms and Conditions', locked: false, visible: true },
-  { key: 'timezone', label: 'Timezone', locked: false, visible: true },
-  { key: 'ip', label: 'IP', locked: false, visible: true },
 ];
 
-// Submissions tab mock rows.
-const SUBMISSION_ROWS: SubmissionRow[] = [
-  {
-    id: 101,
-    formName: 'Auto Dealer Contact Us',
-    submittedAt: 'Aug 13, 2026 04:16 PM',
-    contactInitials: 'MF',
-    contactBg: 'bg-emerald-200 text-emerald-800',
-    fullName: 'Muhammad Faizan',
-    name: 'Muhammad Faizan',
-    email: 'gunb07912@gmail.com',
-    phone: '+923145654326',
-    attr1: 'Used',
-    attr2: '-',
-    attr3: 'Lead_001',
-    terms: 'Accepted',
-    timezone: 'Asia/Karachi',
-    ip: '111.119.187.1',
-  },
-  {
-    id: 102,
-    formName: 'Auto Dealer Contact Us',
-    submittedAt: 'Aug 11, 2026 11:20 AM',
-    contactInitials: 'AB',
-    contactBg: 'bg-purple-200 text-purple-800',
-    fullName: 'Asad Zaman',
-    name: 'Asad Zaman',
-    email: 'asad.zaman@example.com',
-    phone: '+923001234567',
-    attr1: 'New',
-    attr2: 'Yes',
-    attr3: 'Lead_002',
-    terms: 'Accepted',
-    timezone: 'Asia/Karachi',
-    ip: '111.119.187.2',
-  },
-];
+/** Build the submission table columns: fixed identity columns + the selected form's field labels. */
+function submissionColumnsFor(formName: string, registeredForms: StoredForm[]): SubmissionColumn[] {
+  const fixed = SUBMISSION_COLUMNS.filter((c) =>
+    ['formName', 'submittedAt', 'contact', 'fullName', 'email', 'phone'].includes(c.key)
+  );
+  const names = formName === 'all' ? registeredForms.map((f) => f.name) : [formName];
+  const labels: string[] = [];
+  for (const n of names) {
+    const f = registeredForms.find((x) => x.name === n);
+    if (!f) continue;
+    for (const el of f.elements) {
+      if (el.type === 'button') continue;
+      if (!labels.includes(el.label)) labels.push(el.label);
+    }
+  }
+  return [...fixed, ...labels.map((label) => ({ key: label, label, locked: false, visible: true }))];
+}
 
 function FieldRenderer({
   element,
@@ -1157,11 +1134,11 @@ function FormsDashboard() {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
 
-  // ---- Submissions tab state (matches HighLevel HTML) ----
+  // ---- Submissions tab state ----
   const [submissionFormFilter, setSubmissionFormFilter] = useState<string>('all');
   const [submissionSearch, setSubmissionSearch] = useState('');
-  const [submissionStartDate, setSubmissionStartDate] = useState('14 / 07 / 2026');
-  const [submissionEndDate, setSubmissionEndDate] = useState('14 / 08 / 2026');
+  const [submissionStartDate, setSubmissionStartDate] = useState('');
+  const [submissionEndDate, setSubmissionEndDate] = useState('');
   const [manageColsOpen, setManageColsOpen] = useState(false);
   const [tempCols, setTempCols] = useState<SubmissionColumn[]>([]);
 
@@ -1175,7 +1152,52 @@ function FormsDashboard() {
     JSON.parse(JSON.stringify(SUBMISSION_COLUMNS))
   );
 
-  const submissionData = SUBMISSION_ROWS;
+  const [submissionRows, setSubmissionRows] = useState<SubmissionRow[]>([]);
+  const [submissionLoading, setSubmissionLoading] = useState(false);
+
+  // Forms that have at least one real submission (from the DB) power the filter
+  // dropdown and the table columns.
+  const registeredForms = useForms();
+
+  const loadSubmissions = useCallback(async () => {
+    setSubmissionLoading(true);
+    try {
+      const res = await api.listContacts({});
+      const rows: SubmissionRow[] = [];
+      for (const c of res.data) {
+        const subs = formSubmissionsOf(c.custom_fields);
+        subs.forEach((s, i) => {
+          rows.push({
+            id: c.id * 1000 + i,
+            formName: s.formName,
+            submittedOn: s.submittedOn ?? c.created_at ?? '',
+            contactId: c.id,
+            contactInitials: initialsFromName(c.name),
+            contactBg: 'bg-slate-200 text-slate-700',
+            fullName: c.name,
+            email: c.email ?? '',
+            phone: c.phone ?? '',
+            values: s.values ?? {},
+          });
+        });
+      }
+      rows.sort((a, b) => (a.submittedOn < b.submittedOn ? 1 : -1));
+      setSubmissionRows(rows);
+    } catch {
+      triggerToast('Failed to load submissions');
+    } finally {
+      setSubmissionLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSubmissions();
+  }, [loadSubmissions]);
+
+  // Rebuild the visible columns whenever the selected form changes.
+  useEffect(() => {
+    setSubmissionCols(submissionColumnsFor(submissionFormFilter, registeredForms));
+  }, [submissionFormFilter, registeredForms]);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -1210,16 +1232,31 @@ function FormsDashboard() {
     ? forms.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : forms;
 
-  const filteredSubmissions = submissionData.filter((sub) => {
+  const filteredSubmissions = submissionRows.filter((sub) => {
     const formMatch = submissionFormFilter === 'all' || sub.formName === submissionFormFilter;
+    if (!formMatch) return false;
     const q = submissionSearch.trim().toLowerCase();
-    const searchMatch =
-      !q ||
-      sub.fullName.toLowerCase().includes(q) ||
-      sub.email.toLowerCase().includes(q) ||
-      sub.phone.toLowerCase().includes(q) ||
-      sub.name.toLowerCase().includes(q);
-    return formMatch && searchMatch;
+    const hay = [sub.formName, sub.fullName, sub.email, sub.phone, ...Object.values(sub.values)]
+      .join(' ')
+      .toLowerCase();
+    const searchMatch = !q || hay.includes(q);
+    if (!searchMatch) return false;
+    const parseDate = (t: string) => {
+      const m = t.match(/^(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})$/);
+      if (!m) return null;
+      return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    };
+    const s = parseDate(submissionStartDate);
+    const e = parseDate(submissionEndDate);
+    if (!s && !e) return true;
+    const d = new Date(sub.submittedOn);
+    if (s && d < s) return false;
+    if (e) {
+      const endOfDay = new Date(e);
+      endOfDay.setHours(23, 59, 59, 999);
+      if (d > endOfDay) return false;
+    }
+    return true;
   });
 
   const triggerToast = (msg: string) => {
@@ -1619,7 +1656,9 @@ function FormsDashboard() {
   const renderSubmissionCell = (colKey: string, sub: SubmissionRow) => {
     switch (colKey) {
       case 'submittedAt':
-        return <span className="text-slate-600 font-medium">{sub.submittedAt}</span>;
+        return <span className="text-slate-600 font-medium">{formatDbDate(sub.submittedOn) || '-'}</span>;
+      case 'formName':
+        return <span className="text-slate-600">{sub.formName}</span>;
       case 'contact':
         return (
           <span
@@ -1630,32 +1669,65 @@ function FormsDashboard() {
         );
       case 'fullName':
         return <span className="font-semibold text-slate-800">{sub.fullName}</span>;
-      case 'name':
-        return <span className="text-slate-700">{sub.name}</span>;
       case 'email':
-        return (
+        return sub.email ? (
           <a href={`mailto:${sub.email}`} className="hover:text-blue-600 flex items-center gap-1.5">
             <FaRegEnvelope className="text-slate-400" />
             <span>{sub.email}</span>
           </a>
+        ) : (
+          <span className="text-slate-300">-</span>
         );
       case 'phone':
-        return (
+        return sub.phone ? (
           <a href={`tel:${sub.phone}`} className="hover:text-blue-600 flex items-center gap-1.5">
             <FaPhone className="text-slate-400 text-[10px]" />
             <span>{sub.phone}</span>
           </a>
+        ) : (
+          <span className="text-slate-300">-</span>
         );
       default:
-        return <span className="text-slate-600">{sub[colKey as keyof SubmissionRow] || '-'}</span>;
+        return <span className="text-slate-600">{sub.values[colKey] || '-'}</span>;
     }
   };
 
   const exportSubmissionsCSV = () => {
-    triggerToast('Exporting submissions to CSV file...');
+    if (filteredSubmissions.length === 0) {
+      triggerToast('No submissions to export');
+      return;
+    }
+    const cols = submissionCols.filter((c) => c.visible).map((c) => c.label);
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [
+      cols.join(','),
+      ...filteredSubmissions.map((sub) =>
+        submissionCols
+          .filter((c) => c.visible)
+          .map((c) => {
+            if (c.key === 'submittedAt') return esc(formatDbDate(sub.submittedOn) ?? '');
+            if (c.key === 'formName') return esc(sub.formName);
+            if (c.key === 'fullName') return esc(sub.fullName);
+            if (c.key === 'email') return esc(sub.email);
+            if (c.key === 'phone') return esc(sub.phone);
+            if (c.key === 'contact') return esc(sub.contactInitials);
+            return esc(sub.values[c.key]);
+          })
+          .join(',')
+      ),
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `submissions-${submissionFormFilter === 'all' ? 'all' : submissionFormFilter}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    triggerToast('Submissions exported to CSV');
   };
 
   const refreshSubmissions = () => {
+    loadSubmissions();
     triggerToast('Submissions list refreshed');
   };
 
@@ -2088,7 +2160,7 @@ function FormsDashboard() {
                           className="bg-white border border-slate-300 text-slate-700 text-xs rounded-md pl-3 pr-8 py-2 font-medium focus:outline-none focus:border-blue-500 shadow-xs appearance-none cursor-pointer"
                         >
                           <option value="all">All Forms</option>
-                          {forms.map((f) => (
+                          {registeredForms.map((f) => (
                             <option key={f.id} value={f.name}>
                               {f.name}
                             </option>
@@ -2196,7 +2268,9 @@ function FormsDashboard() {
                               className="py-8 text-center text-slate-400"
                             >
                               <FaRegFolderOpen className="text-2xl mb-2 block mx-auto" />
-                              No submissions found for selected filters.
+                              {submissionLoading
+                                ? 'Loading submissions...'
+                                : 'No submissions found for selected filters.'}
                             </td>
                           </tr>
                         )}
