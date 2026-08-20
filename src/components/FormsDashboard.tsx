@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { logActivity } from '../data/activityLog';
 import { useCampaigns } from '../data/campaigns';
-import { fileToResizedDataUrl, serializeFormForUrl } from '../utils';
+import { fileToDataUrl, serializeFormForUrl } from '../utils';
 import TemplateLibrary, {
   type FormTemplate,
   handleImageError,
@@ -1239,7 +1239,7 @@ function FormsDashboard() {
   const handleHeaderImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    fileToResizedDataUrl(file)
+    fileToDataUrl(file)
       .then((data) =>
         setActiveForm((prev) =>
           prev.header ? { ...prev, header: { ...prev.header, image: data } } : prev

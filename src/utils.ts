@@ -72,6 +72,16 @@ export function formatDbDate(value: string | null): string | undefined {
 export const AVATAR_MAX_DIM = 400;
 const AVATAR_MAX_DATA_URL = 650_000;
 
+/** Returns the file's original data URL without resizing or re-compression. */
+export function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Unable to read the image file'));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function fileToResizedDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
