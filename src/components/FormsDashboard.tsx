@@ -34,6 +34,7 @@ import {
   FaBox,
   FaBuilding,
   FaBullhorn,
+  FaCalendarCheck,
   FaCaretDown,
   FaChartLine,
   FaChevronDown,
@@ -48,6 +49,7 @@ import {
   FaDownload,
   FaEllipsisVertical,
   FaFileContract,
+  FaFileInvoiceDollar,
   FaFolderPlus,
   FaFilter,
   FaFont,
@@ -122,6 +124,8 @@ interface FormElement {
     mobile: LabelAlignment;
   };
   options?: string[];
+  buttonColor?: string;
+  buttonTextColor?: string;
 }
 
 interface FormSubmission {
@@ -177,6 +181,7 @@ interface ElementDef {
   type: string;
   icon: ReactNode;
   placeholder: string;
+  buttonColor?: string;
 }
 
 interface ElementCategory {
@@ -286,6 +291,8 @@ function withGeneralSettings(el: Partial<FormElement> & Pick<FormElement, 'id' |
     labelAlignment: { ...DEFAULT_ALIGNMENT },
     shortLabel: el.label,
     queryKey: '',
+    buttonColor: el.type === 'button' ? (el.buttonColor ?? '#2563EB') : undefined,
+    buttonTextColor: el.type === 'button' ? (el.buttonTextColor ?? '#FFFFFF') : undefined,
     ...(options !== undefined ? { options } : {}),
   };
 }
@@ -304,6 +311,8 @@ function toGeneralSettings(el: FormElement): GeneralSettingsState {
     isRequired: el.required,
     isHidden: el.isHidden ?? false,
     options: el.options ? [...el.options] : undefined,
+    buttonColor: el.buttonColor,
+    buttonTextColor: el.buttonTextColor,
   };
 }
 
@@ -324,7 +333,12 @@ const elementCategories: ElementCategory[] = [
     name: 'Submit',
     updated: false,
     items: [
-      { key: 'submit', label: 'Submit', type: 'button', icon: <FaRectangleAd className="text-sm sm:text-base" />, placeholder: 'Submit' },
+      { key: 'submit', label: 'Submit', type: 'button', icon: <FaRectangleAd className="text-sm sm:text-base" />, placeholder: 'Submit', buttonColor: '#2563EB' },
+      { key: 'register_now', label: 'Register Now', type: 'button', icon: <FaRectangleAd className="text-sm sm:text-base" />, placeholder: 'Register Now', buttonColor: '#2563EB' },
+      { key: 'call_now', label: 'Call Now', type: 'button', icon: <FaPhone className="text-sm sm:text-base" />, placeholder: 'Call Now', buttonColor: '#059669' },
+      { key: 'book_now', label: 'Book Now', type: 'button', icon: <FaCalendarCheck className="text-sm sm:text-base" />, placeholder: 'Book Now', buttonColor: '#2563EB' },
+      { key: 'contact_us', label: 'Contact Us', type: 'button', icon: <FaMessage className="text-sm sm:text-base" />, placeholder: 'Contact Us', buttonColor: '#2563EB' },
+      { key: 'get_quote', label: 'Get a Quote', type: 'button', icon: <FaFileInvoiceDollar className="text-sm sm:text-base" />, placeholder: 'Get a Quote', buttonColor: '#2563EB' },
     ],
   },
   {
@@ -512,7 +526,7 @@ const AUTO_DEALER_TEMPLATE: FormElement[] = [
     required: true,
     options: ['I Consent to Receive SMS Notifications'],
   }),
-  withGeneralSettings({ id: 8, label: 'Contact Us Today', type: 'button', placeholder: 'Contact Us Today', required: false }),
+  withGeneralSettings({ id: 8, label: 'Contact Us Today', type: 'button', placeholder: 'Contact Us Today', required: false, buttonColor: '#2563EB', buttonTextColor: '#FFFFFF' }),
 ];
 
 function buildAnalytics(forms: Form[], mode: 'all' | number = 'all') {
@@ -564,7 +578,7 @@ function makeDefaultFields(): FormElement[] {
     withGeneralSettings({ id: now + 2, label: 'Last Name', type: 'text', placeholder: 'Enter your last name', required: false }),
     withGeneralSettings({ id: now + 3, label: 'Phone', type: 'phone', placeholder: '+1 (555) 000-0000', required: true }),
     withGeneralSettings({ id: now + 4, label: 'Email', type: 'email', placeholder: 'your@email.com', required: true }),
-    withGeneralSettings({ id: now + 5, label: 'Submit', type: 'button', placeholder: 'Submit', required: false }),
+    withGeneralSettings({ id: now + 5, label: 'Submit', type: 'button', placeholder: 'Submit', required: false, buttonColor: '#2563EB', buttonTextColor: '#FFFFFF' }),
   ];
 }
 
@@ -796,7 +810,10 @@ function FieldRenderer({
     );
   } else if (t === 'button') {
     control = (
-      <button className="w-full bg-blue-600 text-white font-medium py-2 rounded-md text-xs shadow-sm">
+      <button
+        className="w-full font-medium py-2 rounded-md text-xs shadow-sm"
+        style={{ backgroundColor: element.buttonColor || '#2563EB', color: element.buttonTextColor || '#FFFFFF' }}
+      >
         {element.label}
       </button>
     );
@@ -1031,6 +1048,33 @@ function InlineFieldEditor({
           </div>
         )}
       </div>
+
+      {/* Button style editor */}
+      {element.type === 'button' && (
+        <div className="pt-2 border-t border-dashed border-blue-200">
+          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Button Style</div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Button Color</label>
+              <input
+                type="color"
+                value={element.buttonColor || '#2563EB'}
+                onChange={(e) => onPatch({ buttonColor: e.target.value })}
+                className="w-full h-9 rounded border border-slate-300 bg-white cursor-pointer"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-slate-500 mb-1">Text Color</label>
+              <input
+                type="color"
+                value={element.buttonTextColor || '#FFFFFF'}
+                onChange={(e) => onPatch({ buttonTextColor: e.target.value })}
+                className="w-full h-9 rounded border border-slate-300 bg-white cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Options editor for choice types */}
       {isChoice && (
@@ -1411,6 +1455,7 @@ function FormsDashboard() {
         type: item.type,
         placeholder: item.placeholder,
         required: false,
+        buttonColor: item.buttonColor,
       },
       CHOICE_TYPES.includes(item.type) ? DEFAULT_OPTIONS : undefined
     );
@@ -1452,6 +1497,7 @@ function FormsDashboard() {
         type: item.type,
         placeholder: item.placeholder,
         required: false,
+        buttonColor: item.buttonColor,
       },
       CHOICE_TYPES.includes(item.type) ? DEFAULT_OPTIONS : undefined
     );
@@ -1575,6 +1621,8 @@ function FormsDashboard() {
         required: el.required,
         placeholder: el.placeholder,
         options: el.options,
+        buttonColor: el.type === 'button' ? el.buttonColor : undefined,
+        buttonTextColor: el.type === 'button' ? el.buttonTextColor : undefined,
       })),
   });
 
@@ -1612,6 +1660,8 @@ function FormsDashboard() {
           required: el.required,
           placeholder: el.placeholder,
           options: el.options,
+          buttonColor: el.type === 'button' ? el.buttonColor : undefined,
+          buttonTextColor: el.type === 'button' ? el.buttonTextColor : undefined,
         })),
     }));
     const url = `${window.location.origin}${window.location.pathname}#/form/${token}`;
@@ -1798,6 +1848,8 @@ function FormsDashboard() {
             required: el.required,
             placeholder: el.placeholder,
             options: el.options,
+            buttonColor: el.type === 'button' ? el.buttonColor : undefined,
+            buttonTextColor: el.type === 'button' ? el.buttonTextColor : undefined,
           })),
       }));
       return `${window.location.origin}${window.location.pathname}#/form/${token}`;
@@ -3143,6 +3195,7 @@ function FormsDashboard() {
                     key={selectedElement.id}
                     initialConfig={toGeneralSettings(selectedElement)}
                     allowOptions={CHOICE_TYPES.includes(selectedElement.type)}
+                    isButton={selectedElement.type === 'button'}
                     onChange={(updated: GeneralSettingsState) =>
                       setSelectedElement((prev) =>
                         prev
@@ -3161,6 +3214,8 @@ function FormsDashboard() {
                                 mobile: updated.labelAlignment.mobile,
                               },
                               options: updated.options,
+                              buttonColor: updated.buttonColor,
+                              buttonTextColor: updated.buttonTextColor,
                             }
                           : prev
                       )

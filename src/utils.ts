@@ -22,6 +22,8 @@ export interface PublicFormPayload {
     required: boolean;
     placeholder?: string;
     options?: string[];
+    buttonColor?: string;
+    buttonTextColor?: string;
   }[];
 }
 

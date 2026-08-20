@@ -29,11 +29,14 @@ export interface GeneralSettingsState {
   isRequired: boolean;
   isHidden: boolean;
   options?: string[];
+  buttonColor?: string;
+  buttonTextColor?: string;
 }
 
 interface GeneralSettingsProps {
   initialConfig?: Partial<GeneralSettingsState>;
   allowOptions?: boolean;
+  isButton?: boolean;
   onChange: (updatedSettings: GeneralSettingsState) => void;
 }
 
@@ -56,6 +59,7 @@ const DEFAULT_SETTINGS: GeneralSettingsState = {
 export function GeneralSettingsAccordion({
   initialConfig,
   allowOptions = false,
+  isButton = false,
   onChange,
 }: GeneralSettingsProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -298,6 +302,41 @@ export function GeneralSettingsAccordion({
               className={inputCls}
             />
           </div>
+
+          {isButton && (
+            <div className="space-y-3">
+              <div>
+                <label className={labelCls}>Button Text</label>
+                <input
+                  type="text"
+                  value={settings.label}
+                  onChange={(e) => updateSetting('label', e.target.value)}
+                  placeholder="Button label"
+                  className={inputCls}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Button Color</label>
+                  <input
+                    type="color"
+                    value={settings.buttonColor || '#2563EB'}
+                    onChange={(e) => updateSetting('buttonColor', e.target.value)}
+                    className="w-full h-9 rounded border border-slate-300 bg-white cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Text Color</label>
+                  <input
+                    type="color"
+                    value={settings.buttonTextColor || '#FFFFFF'}
+                    onChange={(e) => updateSetting('buttonTextColor', e.target.value)}
+                    className="w-full h-9 rounded border border-slate-300 bg-white cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className={labelCls}>Short Label</label>

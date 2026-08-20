@@ -248,13 +248,34 @@ export default function PublicFormPage({ data }: { data: string }) {
               <p className="text-xs text-rose-600 mt-2">{errorMsg || 'Something went wrong. Please try again.'}</p>
             )}
 
-            <button
-              type="submit"
-              disabled={status === 'submitting'}
-              className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium py-2.5 rounded-md text-sm transition"
-            >
-              {status === 'submitting' ? 'Submitting...' : 'Submit'}
-            </button>
+            {(() => {
+              const buttons = form.elements.filter((el) => el.type === 'button');
+              if (buttons.length > 0) {
+                return buttons.map((el) => (
+                  <button
+                    key={el.label}
+                    type="submit"
+                    disabled={status === 'submitting'}
+                    className="w-full mt-4 disabled:opacity-60 font-medium py-2.5 rounded-md text-sm transition"
+                    style={{
+                      backgroundColor: el.buttonColor || '#2563EB',
+                      color: el.buttonTextColor || '#FFFFFF',
+                    }}
+                  >
+                    {status === 'submitting' ? 'Submitting...' : el.label}
+                  </button>
+                ));
+              }
+              return (
+                <button
+                  type="submit"
+                  disabled={status === 'submitting'}
+                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium py-2.5 rounded-md text-sm transition"
+                >
+                  {status === 'submitting' ? 'Submitting...' : 'Submit'}
+                </button>
+              );
+            })()}
           </form>
         )}
       </div>
