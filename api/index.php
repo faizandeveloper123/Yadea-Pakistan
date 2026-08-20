@@ -179,6 +179,30 @@ function decode_custom_fields(?string $raw): array
     return is_array($decoded) ? $decoded : [];
 }
 
+/**
+ * Merge an incoming custom_fields JSON value into the value already stored on
+ * the contact. 'form_submissions' arrays are APPENDED so a repeat submission
+ * never wipes the earlier history (what was filled before stays saved);
+ * every other key simply overwrites its previous value.
+ */
+function merge_custom_fields(?string $existingRaw, ?string $incomingRaw): ?string
+{
+    $base = decode_custom_fields($existingRaw);
+    $inc = decode_custom_fields($incomingRaw);
+    if (!$inc) return $existingRaw;
+
+    $result = $base;
+    foreach ($inc as $key => $value) {
+        if ($key === 'form_submissions' && is_array($value)) {
+            $existingSubs = is_array($result['form_submissions'] ?? null) ? $result['form_submissions'] : [];
+            $result['form_submissions'] = array_merge($existingSubs, $value);
+        } else {
+            $result[$key] = $value;
+        }
+    }
+    return encode_json_field($result);
+}
+
 /** Create a contact (accepts first_name/last_name or a combined name). */
 function create_contact(array $body): void
 {
@@ -271,7 +295,18 @@ function create_contact(array $body): void
             if ($contactType !== '') { $updates[] = 'contact_type = :contact_type'; $params[':contact_type'] = $contactType; }
             if ($isLead) { $updates[] = 'is_lead = :is_lead'; $params[':is_lead'] = 1; }
             if ($avatarData !== null) { $updates[] = 'avatar_data = :avatar_data'; $params[':avatar_data'] = $avatarData; }
-            if ($customFields !== null) { $updates[] = 'custom_fields = :custom_fields'; $params[':custom_fields'] = $customFields; }
+            if ($customFields !== null) {
+                // Append the new form submission to any existing history instead
+                // of replacing custom_fields, so no filled data is ever lost.
+                $existingCf = $pdo->prepare('SELECT custom_fields FROM contacts WHERE id = :id');
+                $existingCf->execute([':id' => $existingId]);
+                $existingRaw = $existingCf->fetchColumn();
+                $updates[] = 'custom_fields = :custom_fields';
+                $params[':custom_fields'] = merge_custom_fields(
+                    $existingRaw !== false ? (string)$existingRaw : null,
+                    $customFields
+                );
+            }
             $updates[] = 'last_activity_at = NOW()';
             if ($updates) {
                 $pdo->prepare('UPDATE contacts SET ' . implode(', ', $updates) . ' WHERE id = :id')

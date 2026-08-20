@@ -426,6 +426,20 @@ export function isStaticFieldLabel(label: string): boolean {
   return STATIC_FIELD_LABELS.has(label.trim().toLowerCase());
 }
 
+/** Name-ish labels that map to the contact's name columns instead of a table column. */
+const NAME_LIKE_LABEL = /^(full\s*)?name$/i;
+
+export function isNameLikeLabel(label: string): boolean {
+  return NAME_LIKE_LABEL.test(label.trim());
+}
+
+/** True when a form field maps to an existing built-in column (e.g. Email,
+ *  Phone, City) or to the contact name. Such fields must reuse the existing
+ *  column and NEVER generate a duplicate form-specific column. */
+export function isCoreFieldLabel(label: string): boolean {
+  return isStaticFieldLabel(label) || isNameLikeLabel(label);
+}
+
 export function fieldById(id: string): TableField | undefined {
   if (TABLE_FIELDS[id]) return TABLE_FIELDS[id];
   if (id.startsWith(IMPORT_PREFIX)) {
@@ -439,6 +453,7 @@ export function fieldById(id: string): TableField | undefined {
   if (sep <= 0) return undefined;
   const formName = rest.slice(0, sep);
   const label = rest.slice(sep + 1);
+  if (isCoreFieldLabel(label)) return undefined;
   const form = getForms().find((f) => f.name === formName);
   if (!form || !form.elements.some((el) => el.label === label)) return undefined;
   return formFieldDef(form, label);
@@ -452,7 +467,7 @@ export function fieldsInGroup(groupId: string): TableField[] {
   const form = getForms().find((f) => f.name === formName);
   if (!form) return staticFields;
   const formFields = form.elements
-    .filter((el) => el.type !== 'button')
+    .filter((el) => el.type !== 'button' && !isCoreFieldLabel(el.label))
     .map((el) => formFieldDef(form, el.label));
   return [...staticFields, ...formFields];
 }

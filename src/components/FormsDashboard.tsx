@@ -564,37 +564,6 @@ function makeDefaultFields(): FormElement[] {
   ];
 }
 
-const seedForm: Form = {
-  id: 0,
-  name: 'Form 0',
-  updatedOn: 'Aug 09, 2026 03:52 PM',
-  updatedBy: 'Asad B Zaman',
-  elements: makeDefaultFields(),
-  submissions: [
-    {
-      id: 1,
-      submittedOn: 'Aug 09, 2026 03:48 PM',
-      values: {
-        'First Name': 'John',
-        'Last Name': 'Doe',
-        Phone: '+1 (555) 123-4567',
-        Email: 'john.doe@example.com',
-      },
-    },
-    {
-      id: 2,
-      submittedOn: 'Aug 09, 2026 03:12 PM',
-      values: {
-        'First Name': 'Jane',
-        'Last Name': 'Smith',
-        Phone: '+1 (555) 987-6543',
-        Email: 'jane.smith@example.com',
-      },
-    },
-  ],
-};
-
-// Submissions tab columns (12 columns matching the HighLevel HTML mockup).
 const SUBMISSION_COLUMNS: SubmissionColumn[] = [
   { key: 'submittedAt', label: 'Submitted at', locked: true, visible: true },
   { key: 'contact', label: 'Contact', locked: false, visible: true },
@@ -645,23 +614,6 @@ const SUBMISSION_ROWS: SubmissionRow[] = [
     terms: 'Accepted',
     timezone: 'Asia/Karachi',
     ip: '111.119.187.2',
-  },
-  {
-    id: 103,
-    formName: 'Form 0',
-    submittedAt: 'Aug 09, 2026 08:30 PM',
-    contactInitials: 'SK',
-    contactBg: 'bg-blue-200 text-blue-800',
-    fullName: 'Sami Khan',
-    name: 'Sami Khan',
-    email: 'sami.khan@gmail.com',
-    phone: '+923215558899',
-    attr1: 'Pending',
-    attr2: 'No',
-    attr3: 'Lead_003',
-    terms: 'Accepted',
-    timezone: 'Asia/Karachi',
-    ip: '111.119.187.3',
   },
 ];
 
@@ -1191,7 +1143,7 @@ function FormsDashboard() {
     elements: [],
     submissions: [],
   });
-  const [forms, setForms] = useState<Form[]>([seedForm]);
+  const [forms, setForms] = useState<Form[]>([]);
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>('all');
   const [activeMetric, setActiveMetric] = useState<MetricKey>('views');
   const [analyticsMode, setAnalyticsMode] = useState<'all' | number>('all');
@@ -3221,21 +3173,21 @@ function FormsDashboard() {
                 </div>
 
                 {selectedOption === 'template' ? (
-                  <div className="bg-gradient-to-br from-indigo-50 via-white to-blue-50 rounded-lg h-24 sm:h-36 p-3 sm:p-4 relative overflow-hidden flex flex-col justify-between border border-blue-100">
+                  <div className="bg-gradient-to-br from-orange-50 via-white to-orange-50 rounded-lg h-24 sm:h-36 p-3 sm:p-4 relative overflow-hidden flex flex-col justify-between border border-orange-200">
                     <div className="z-10">
                       <div className="font-bold text-slate-800 text-xs sm:text-sm leading-tight">
-                        Auto Dealer Contact Us
+                        Dealership Registration
                       </div>
                       <div className="text-[10px] text-slate-500 mt-1">
-                        Full Name · Phone · Email · Preferred Contact Method · Looking for · Preferred Features · T&C
+                        Name · Phone · Email · Dealership Code · Whatsapp · City · Area
                       </div>
                     </div>
                     <div className="flex items-center justify-between z-10">
-                      <span className="text-[9px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-full">
+                      <span className="text-[9px] font-semibold text-[#EB5F1B] bg-orange-100 px-1.5 py-0.5 rounded-full">
                         Yadea Form
                       </span>
                       <div className="flex -space-x-1.5">
-                        {['bg-indigo-200', 'bg-sky-200', 'bg-emerald-200'].map((c) => (
+                        {['bg-orange-200', 'bg-amber-200', 'bg-slate-200'].map((c) => (
                           <div key={c} className={`w-5 h-5 rounded-full ${c} border-2 border-white`} />
                         ))}
                       </div>

@@ -13,45 +13,24 @@ export interface StoredForm {
 
 const STORAGE_KEY = 'evee_crm_forms';
 
-function defaultForms(): StoredForm[] {
-  return [
-    {
-      id: 'form-0',
-      name: 'Form 0',
-      elements: [
-        { label: 'First Name', type: 'text' },
-        { label: 'Last Name', type: 'text' },
-        { label: 'Phone', type: 'phone' },
-        { label: 'Email', type: 'email' },
-      ],
-    },
-    {
-      id: 'auto-dealer-contact-us',
-      name: 'Auto Dealer Contact Us',
-      elements: [
-        { label: 'Full Name', type: 'text' },
-        { label: 'Phone', type: 'phone' },
-        { label: 'Email', type: 'email' },
-        { label: 'Preferred Contact Method', type: 'single_dropdown' },
-        { label: 'Are you looking for', type: 'single_dropdown' },
-        { label: 'Preferred Features (check all that apply)', type: 'multi_dropdown' },
-        { label: 'I Consent to Receive SMS Notifications', type: 'checkbox' },
-      ],
-    },
-  ];
-}
+const LEGACY_DEFAULT_IDS = new Set(['form-0', 'auto-dealer-contact-us', 'dealership-registration']);
 
 function load(): StoredForm[] {
+  let parsed: StoredForm[] | null = null;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as unknown;
-      if (Array.isArray(parsed)) return parsed as StoredForm[];
+      const p = JSON.parse(raw) as unknown;
+      if (Array.isArray(p)) parsed = p as StoredForm[];
     }
   } catch {
     /* ignore malformed storage */
   }
-  return defaultForms();
+  if (!parsed) return [];
+  // Drop legacy seed/default forms (Form 0 etc.) shipped by older versions so no
+  // placeholder form shows by default. Real forms registered via submissions
+  // (id "form-<name>") are preserved.
+  return parsed.filter((f) => !LEGACY_DEFAULT_IDS.has(f.id));
 }
 
 let forms: StoredForm[] = load();

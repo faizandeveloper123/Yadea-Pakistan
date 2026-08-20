@@ -56,11 +56,16 @@ export default function PublicFormPage({ data }: { data: string }) {
       const lastName = values[findField(form.elements, /last\s*name/i)?.label ?? ''] ?? '';
       const fullNameEl = findField(form.elements, /^(full\s*)?name$/i);
       const fullName = values[fullNameEl?.label ?? ''] ?? '';
-      const name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : (fullName || 'Form Lead');
+      let name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : (fullName || '');
 
       const email = values[findField(form.elements, /email/i)?.label ?? ''] ?? undefined;
       const phone = values[findField(form.elements, /phone/i)?.label ?? ''] ?? undefined;
       const business = values[findField(form.elements, /organization|business|company/i)?.label ?? ''] ?? undefined;
+
+      // A contact always needs a name; fall back to the email local part (or a
+      // generic label) so forms without a name field still create the lead.
+      if (!name && email) name = email.split('@')[0];
+      if (!name) name = 'Form Lead';
 
       const submittedAt = new Date().toISOString();
       const filled: Record<string, string> = {};
@@ -73,7 +78,7 @@ export default function PublicFormPage({ data }: { data: string }) {
       const res = await api.createContact({
         first_name: firstName || undefined,
         last_name: lastName || undefined,
-        name: name !== 'Form Lead' ? name : undefined,
+        name,
         email: email || undefined,
         phone: phone || undefined,
         business_name: business || undefined,
