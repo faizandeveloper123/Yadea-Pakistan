@@ -1,5 +1,6 @@
 import type { Contact, FormSubmissionData } from './types';
 import type { ApiContact } from './api';
+import { api, API_BASE } from './api';
 import type { AppliedFilter, FilterRule } from './data/smartListOptions';
 
 /** Minimal serializable shape of a form that can live in a shareable URL. */
@@ -40,6 +41,38 @@ export function deserializeFormFromUrl(data: string): PublicFormPayload | null {
   } catch {
     return null;
   }
+}
+
+const hostedImageCache = new Map<string, string>();
+
+/**
+ * When a form header image is a huge base64 data URI (kept at original quality)
+ * it blows up the shareable URL. Upload it once to the server and return a short
+ * `/Yadea/api/index.php/form-images/{id}` reference instead. Remote URLs and
+ * tiny SVGs pass through untouched.
+ */
+export async function hostFormImage(image: string | undefined | null): Promise<string | undefined> {
+  if (!image) return image ?? undefined;
+  if (!image.startsWith('data:image/') || !image.includes(';base64,')) return image;
+  const cached = hostedImageCache.get(image);
+  if (cached) return cached;
+  try {
+    const res = await api.uploadFormImage(image);
+    const short = `${API_BASE}/form-images/${res.data.id}`;
+    hostedImageCache.set(image, short);
+    return short;
+  } catch {
+    // Fall back to the embedded data URI so sharing still works offline.
+    return image;
+  }
+}
+
+/** Build a shareable payload, replacing any data-URI header image with a short hosted URL. */
+export async function publicPayloadWithHostedImage(payload: PublicFormPayload): Promise<PublicFormPayload> {
+  if (!payload.header) return payload;
+  const image = await hostFormImage(payload.header.image);
+  if (image === undefined || image === payload.header.image) return payload;
+  return { ...payload, header: { ...payload.header, image } };
 }
 
 export function initialsFromName(name: string): string {

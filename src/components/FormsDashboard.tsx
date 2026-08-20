@@ -10,6 +10,7 @@ import {
   formSubmissionsOf,
   formatDbDate,
   initialsFromName,
+  publicPayloadWithHostedImage,
 } from '../utils';
 import TemplateLibrary, {
   type FormTemplate,
@@ -1144,6 +1145,7 @@ function FormsDashboard() {
 
   // ---- Share modal state ----
   const [shareModalForm, setShareModalForm] = useState<Form | null>(null);
+  const [shareModalUrl, setShareModalUrl] = useState('');
 
   // ---- Move to folder modal state ----
   const [moveFolderForm, setMoveFolderForm] = useState<Form | null>(null);
@@ -1576,17 +1578,18 @@ function FormsDashboard() {
       })),
   });
 
-  const publicFormUrl = () => {
-    const token = serializeFormForUrl(publicFormPayload());
+  const publicFormUrl = async () => {
+    const payload = await publicPayloadWithHostedImage(publicFormPayload());
+    const token = serializeFormForUrl(payload);
     return `${window.location.origin}${window.location.pathname}#/form/${token}`;
   };
 
-  const openPublicPreview = () => {
-    window.open(publicFormUrl(), '_blank', 'noopener,noreferrer');
+  const openPublicPreview = async () => {
+    window.open(await publicFormUrl(), '_blank', 'noopener,noreferrer');
   };
 
   const sharePublicLink = async () => {
-    const url = publicFormUrl();
+    const url = await publicFormUrl();
     try {
       await navigator.clipboard.writeText(url);
       triggerToast('Public form link copied!');
@@ -1595,8 +1598,8 @@ function FormsDashboard() {
     }
   };
 
-  const openFormPreview = (form: Form) => {
-    const token = serializeFormForUrl({
+  const openFormPreview = async (form: Form) => {
+    const token = serializeFormForUrl(await publicPayloadWithHostedImage({
       name: form.name,
       columns: form.columns,
       campaignId: form.campaignId,
@@ -1610,7 +1613,7 @@ function FormsDashboard() {
           placeholder: el.placeholder,
           options: el.options,
         })),
-    });
+    }));
     const url = `${window.location.origin}${window.location.pathname}#/form/${token}`;
     window.open(url, '_blank', 'noopener,noreferrer');
     setOpenMenuFor(null);
@@ -1759,12 +1762,6 @@ function FormsDashboard() {
   const getShareUrlFor = (form: Form) =>
     `https://app.gohighlevel.com/v2/location/hifi/forms/${form.id}`;
 
-  const openShareModal = (form: Form) => {
-    setOpenMenuFor(null);
-    setMenuPos(null);
-    setShareModalForm(form);
-  };
-
   const openMoveToFolderModal = (form: Form) => {
     setOpenMenuFor(null);
     setMenuPos(null);
@@ -1785,15 +1782,15 @@ function FormsDashboard() {
     triggerToast(`Showing submissions for "${form.name}"`);
   };
 
-  const buildShareModalUrl = () => {
-    if (!shareModalForm) return '';
+  const buildShareModalUrl = async (form: Form) => {
+    if (!form) return '';
     try {
-      const token = serializeFormForUrl({
-        name: shareModalForm.name,
-        columns: shareModalForm.columns,
-        campaignId: shareModalForm.campaignId,
-        header: shareModalForm.header,
-        elements: shareModalForm.elements
+      const token = serializeFormForUrl(await publicPayloadWithHostedImage({
+        name: form.name,
+        columns: form.columns,
+        campaignId: form.campaignId,
+        header: form.header,
+        elements: form.elements
           .filter((el) => !el.isHidden)
           .map((el) => ({
             label: el.label,
@@ -1802,16 +1799,24 @@ function FormsDashboard() {
             placeholder: el.placeholder,
             options: el.options,
           })),
-      });
+      }));
       return `${window.location.origin}${window.location.pathname}#/form/${token}`;
     } catch {
-      return getShareUrlFor(shareModalForm);
+      return getShareUrlFor(form);
     }
+  };
+
+  const openShareModal = async (form: Form) => {
+    setOpenMenuFor(null);
+    setMenuPos(null);
+    setShareModalForm(form);
+    setShareModalUrl('');
+    buildShareModalUrl(form).then(setShareModalUrl).catch(() => undefined);
   };
 
   const copyShareModalLink = async () => {
     if (!shareModalForm) return;
-    const url = buildShareModalUrl();
+    const url = shareModalUrl || (await buildShareModalUrl(shareModalForm));
     try {
       await navigator.clipboard.writeText(url);
       triggerToast('Share link copied to clipboard!');
@@ -1823,25 +1828,25 @@ function FormsDashboard() {
   const shareModalViaEmail = () => {
     if (!shareModalForm) return;
     const subject = encodeURIComponent(`Please fill out: ${shareModalForm.name}`);
-    const body = encodeURIComponent(`Fill out this form: ${buildShareModalUrl()}`);
+    const body = encodeURIComponent(`Fill out this form: ${shareModalUrl}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const shareModalViaSMS = () => {
     if (!shareModalForm) return;
-    const text = encodeURIComponent(`Please fill out this form: ${buildShareModalUrl()}`);
+    const text = encodeURIComponent(`Please fill out this form: ${shareModalUrl}`);
     window.location.href = `sms:?&body=${text}`;
   };
 
   const shareModalViaWhatsApp = () => {
     if (!shareModalForm) return;
-    const text = encodeURIComponent(`Please fill out this form: ${buildShareModalUrl()}`);
+    const text = encodeURIComponent(`Please fill out this form: ${shareModalUrl}`);
     window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   const copyShareEmbedCode = async () => {
     if (!shareModalForm) return;
-    const url = buildShareModalUrl();
+    const url = shareModalUrl || (await buildShareModalUrl(shareModalForm));
     const embed = `<iframe src="${url}" width="100%" height="600" style="border:none"></iframe>`;
     try {
       await navigator.clipboard.writeText(embed);
@@ -3394,7 +3399,7 @@ function FormsDashboard() {
                   <input
                     type="text"
                     readOnly
-                    value={buildShareModalUrl()}
+                    value={shareModalUrl}
                     className="w-full bg-slate-100 border border-slate-300 rounded p-2 text-xs font-mono text-slate-600"
                   />
                   <button
@@ -3441,7 +3446,7 @@ function FormsDashboard() {
                   <input
                     type="text"
                     readOnly
-                    value={`<iframe src="${buildShareModalUrl()}" width="100%" height="600" style="border:none"></iframe>`}
+                    value={`<iframe src="${shareModalUrl}" width="100%" height="600" style="border:none"></iframe>`}
                     className="w-full bg-slate-100 border border-slate-300 rounded p-2 text-xs font-mono text-slate-600"
                   />
                   <button

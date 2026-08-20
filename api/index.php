@@ -1882,6 +1882,68 @@ function duplicate_smart_list(int $id, array $body): void
     respond(['data' => smart_list_payload(smart_list_fetch($newId)), 'message' => 'Smart list duplicated']);
 }
 
+/* ----------------------- FORM IMAGES (short form links) ----------------------- */
+
+/** Ensure the form_images table exists (created lazily so no manual SQL is needed). */
+function ensure_form_images_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec(
+        'CREATE TABLE IF NOT EXISTS form_images (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            data MEDIUMTEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+}
+
+/** POST /form-images { image: "<base64 data URI>" } -> store, return { id }. */
+function store_form_image(array $body): void
+{
+    $image = $body['image'] ?? '';
+    if (!is_string($image) || $image === '' || !preg_match('~^data:image/[a-zA-Z0-9.+-]+;base64,~', $image)) {
+        fail('Valid base64 image data URI required');
+    }
+    if (strlen($image) > 6 * 1024 * 1024) {
+        fail('Image too large (max 6 MB)');
+    }
+    ensure_form_images_table();
+    $stmt = db()->prepare('INSERT INTO form_images (data) VALUES (:data)');
+    $stmt->execute([':data' => $image]);
+    respond(['data' => ['id' => (int)db()->lastInsertId()]]);
+}
+
+/** GET /form-images/{id} -> raw image bytes with the right content type. */
+function get_form_image(int $id): void
+{
+    ensure_form_images_table();
+    $stmt = db()->prepare('SELECT data FROM form_images WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        http_response_code(404);
+        exit;
+    }
+    if (!preg_match('~^data:image/([a-zA-Z0-9.+-]+);base64,(.+)$~s', $row['data'], $m)) {
+        http_response_code(404);
+        exit;
+    }
+    $ext = strtolower($m[1]);
+    $mime = $ext === 'jpeg' ? 'image/jpeg' : 'image/' . $ext;
+    $bytes = base64_decode($m[2], true);
+    if ($bytes === false) {
+        http_response_code(404);
+        exit;
+    }
+    header('Content-Type: ' . $mime);
+    header('Content-Length: ' . strlen($bytes));
+    header('Cache-Control: public, max-age=31536000, immutable');
+    echo $bytes;
+    exit;
+}
+
 /* ----------------------- ROUTER ----------------------- */
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -2085,6 +2147,16 @@ switch ($resource) {
             } else {
                 create_notification(json_body());
             }
+        }
+        break;
+
+    case 'form-images':
+        if ($method === 'POST') {
+            store_form_image(json_body());
+        } elseif ($method === 'GET') {
+            $id = $parts[1] ?? null;
+            if ($id === null) fail('Image id required');
+            get_form_image(to_int($id));
         }
         break;
 

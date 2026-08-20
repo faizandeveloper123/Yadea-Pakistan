@@ -605,6 +605,12 @@ export const api = {
 
   /* ------------------- SMART LISTS ------------------- */
 
+  uploadFormImage: (image: string) =>
+    request<{ data: { id: number } }>('/form-images', {
+      method: 'POST',
+      body: JSON.stringify({ image }),
+    }),
+
   listSmartLists: (userId: number) =>
     request<{ data: ApiSmartList[]; count: number }>(`/smart-lists?user_id=${userId}`),
 
