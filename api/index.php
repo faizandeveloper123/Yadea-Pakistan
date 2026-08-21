@@ -1181,6 +1181,14 @@ function register_dealer(array $body): void
     $findByEmail->execute([':email' => $email]);
     $existing = $findByEmail->fetch();
 
+    // Existing dealers keep their profile in sync when they register again:
+    // a freshly entered Dealership Code updates the stored system_id.
+    if ($existing && $systemId !== null && ($existing['system_id'] ?? null) !== $systemId) {
+        $pdo->prepare('UPDATE staff_users SET system_id = :sid WHERE id = :id')
+            ->execute([':sid' => $systemId, ':id' => $existing['id']]);
+        $existing['system_id'] = $systemId;
+    }
+
     // Already an account AND we still know its password: hand it back as-is.
     if ($existing && !empty($existing['password_plain'])) {
         respond([
