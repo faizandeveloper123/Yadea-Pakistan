@@ -307,7 +307,7 @@ export function DataTable({
   onRowClick?: (row: (string | number)[]) => void;
 }) {
   return (
-    <div className="h-full overflow-auto custom-horizontal-scrollbar">
+    <div className="h-full overflow-auto custom-horizontal-scrollbar max-h-[300px]">
       <table className="w-full text-left text-[11px]">
         <thead className="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200">
           <tr>
@@ -346,7 +346,7 @@ export function LeadStageList({
   onOpenContact?: (id: number) => void;
 }) {
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-auto max-h-[340px]">
       <table className="w-full text-left text-[11px]">
         <thead className="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200">
           <tr>
@@ -414,7 +414,7 @@ export function LeadStatusList({
   onOpenContact?: (id: number) => void;
 }) {
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-auto max-h-[340px]">
       <table className="w-full text-left text-[11px]">
         <thead className="bg-slate-50 text-slate-500 font-semibold sticky top-0 z-10 border-b border-slate-200">
           <tr>

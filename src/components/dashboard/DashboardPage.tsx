@@ -42,11 +42,10 @@ const SIZE_CLASS: Record<WidgetInstance['size'], string> = {
   lg: 'col-span-12',
 };
 
-/** Stable min-heights keep rows aligned even when a chart is still loading. */
-const SIZE_MIN_H: Record<WidgetInstance['size'], string> = {
-  sm: 'min-h-[120px]',
-  md: 'min-h-[220px]',
-  lg: 'min-h-[250px]',
+const SKELETON_H: Record<WidgetInstance['size'], string> = {
+  sm: 'h-[104px]',
+  md: 'h-[204px]',
+  lg: 'h-[236px]',
 };
 
 function WidgetBody({
@@ -163,14 +162,14 @@ function WidgetCard({
       onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
       style={{ animationDelay: `${Math.min(index * 55, 500)}ms` }}
-      className={`dash-in evee-card-hover group relative bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col min-w-0 transition-colors ${
+      className={`dash-in group relative bg-white border border-slate-200/70 rounded-xl shadow-xs overflow-hidden flex flex-col min-w-0 transition-shadow hover:shadow-md ${
         SIZE_CLASS[instance.size]
-      } ${SIZE_MIN_H[instance.size]} ${
-        editMode ? 'border-blue-400 ring-2 ring-blue-200/60' : 'border-slate-200/80'
+      } ${
+        editMode ? 'border-blue-400 ring-2 ring-blue-200/60' : ''
       } ${overIndex === index && dragIndex !== null && dragIndex !== index ? 'ring-2 ring-blue-400 ring-offset-2' : ''}`}
     >
-      <header className="flex items-center justify-between px-2.5 py-2 sm:px-4 sm:py-3 border-b border-slate-100 cursor-grab active:cursor-grabbing">
-        <h3 className="font-semibold text-slate-700 text-xs truncate">{instance.title}</h3>
+      <header className="flex items-center justify-between px-3 py-2 sm:px-3.5 sm:py-2 border-b border-slate-100 cursor-grab active:cursor-grabbing">
+        <h3 className="font-semibold text-slate-500 text-[11px] uppercase tracking-wide truncate">{instance.title}</h3>
         <div className="relative flex-shrink-0 ml-2">
           <button
             onMouseDown={(e) => e.stopPropagation()}
@@ -209,7 +208,7 @@ function WidgetCard({
           )}
         </div>
       </header>
-      <div className="flex-1 px-2.5 py-2 sm:px-4 sm:py-3 min-h-0">
+      <div className="flex-1 px-3 py-2.5 sm:px-3.5 sm:py-3 min-h-0">
         <WidgetBody data={data} onOpenContact={onOpenContact} onLeadStatusChange={onLeadStatusChange} />
       </div>
       {dragIndex !== null && overIndex === index && dragIndex !== index && (
@@ -498,7 +497,7 @@ function DashboardPage({
           const part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
           const first = user?.first_name || user?.full_name?.split(' ')[0] || 'there';
           return (
-            <div className="dash-in relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white px-4 sm:px-6 py-4 mb-4 shadow-md">
+            <div className="dash-in relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white px-4 sm:px-5 py-3 mb-3 shadow-sm">
               <div
                 className="absolute -right-6 -top-10 w-36 h-36 rounded-full bg-white/10 pointer-events-none"
                 aria-hidden="true"
@@ -543,12 +542,12 @@ function DashboardPage({
             {['sm', 'sm', 'md', 'md', 'md', 'lg'].map((s, i) => (
               <div
                 key={i}
-                className={`${SIZE_CLASS[s as WidgetInstance['size']]} ${SIZE_MIN_H[s as WidgetInstance['size']]} dash-skeleton`}
+                className={`${SIZE_CLASS[s as WidgetInstance['size']]} ${SKELETON_H[s as WidgetInstance['size']]} dash-skeleton`}
               />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-12 gap-2 sm:gap-4">
+          <div className="grid grid-cols-12 gap-2 sm:gap-3">
             {instances.map((w, index) => (
               <WidgetCard
                 key={w.uid}
