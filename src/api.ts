@@ -238,6 +238,8 @@ export interface DealerRegistrationInput {
   last_name?: string;
   email: string;
   phone?: string;
+  /** Dealership Code field from the registration form (stored as system_id). */
+  dealership_code?: string;
 }
 
 export interface ApiActivity {

@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import type { IconType } from 'react-icons';
 import {
   FaArrowLeft,
-  FaArrowUp,
   FaArrowsUpDown,
   FaBullhorn,
   FaCamera,
@@ -73,6 +72,7 @@ import { fileToResizedDataUrl, ROLE_BADGE, ROLE_LABEL } from '../utils';
 import RichTextEditor from './RichTextEditor';
 import UserMenu from './UserMenu';
 import NotificationsBell from './NotificationsBell';
+import WorkspaceBox from './WorkspaceBox';
 
 type TabId = 'userInfo' | 'roles' | 'callVoicemail' | 'userAvailability' | 'calendarConfig';
 type Role = 'Admin' | 'Dealer' | 'Follower';
@@ -539,15 +539,7 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
   const sidebarInner = (
     <>
       <div className="p-3 border-b border-slate-700/60 flex items-center justify-between">
-        <div className="flex items-center space-x-2.5 overflow-hidden">
-          <div className="w-7 h-7 rounded bg-amber-400 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-            <FaArrowUp className="text-xs" />
-          </div>
-          <div className="truncate">
-            <div className="text-xs font-bold text-white truncate">HiFi Marketing and T...</div>
-            <div className="text-[10px] text-slate-400 truncate">Islamabad, Islamabad</div>
-          </div>
-        </div>
+        <WorkspaceBox />
         <FaArrowsUpDown className="text-[10px] text-slate-400" />
       </div>
 
@@ -700,7 +692,7 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
                 className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-5 py-2.5 rounded-md shadow-sm flex items-center justify-center space-x-2 transition"
               >
                 <FaPlus className="text-xs" />
-                <span>+ Add User</span>
+                <span>Add User</span>
               </button>
             )}
           </div>

@@ -1,7 +1,6 @@
 import type { IconType } from 'react-icons';
 import {
   FaBoltLightning,
-  FaBuildingUser,
   FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
@@ -29,6 +28,7 @@ import {
 import YadeaLogo from './YadeaLogo';
 import { useAuth } from '../auth';
 import UserMenu from './UserMenu';
+import WorkspaceBox from './WorkspaceBox';
 
 interface NavItem {
   label: string;
@@ -147,21 +147,11 @@ function Sidebar({
           </button>
         </div>
 
-        {/* Business Location Selector */}
+        {/* Signed-in user workspace box */}
         {!collapsed && (
           <div className="px-3 pt-2 pb-0.5">
             <button className="w-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 rounded-lg p-2 flex items-center justify-between text-left group transition">
-              <div className="flex items-center space-x-2.5 min-w-0">
-                <div className="w-7 h-7 rounded bg-slate-700/60 flex items-center justify-center text-slate-300 flex-shrink-0 text-xs">
-                  <FaBuildingUser />
-                </div>
-                <div className="truncate">
-                  <div className="text-xs font-semibold text-slate-200 truncate">
-                    Hifi Marketing and T...
-                  </div>
-                  <div className="text-[10px] text-slate-400 truncate">Islamabad, Islamabad</div>
-                </div>
-              </div>
+              <WorkspaceBox />
               <FaChevronDown className="text-slate-400 text-xs ml-1 flex-shrink-0" />
             </button>
           </div>

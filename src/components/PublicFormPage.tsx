@@ -152,11 +152,14 @@ export default function PublicFormPage({ data }: { data: string }) {
       if (email && /dealer/i.test(form.name)) {
         try {
           const nameParts = name.split(/\s+/);
+          const dealershipCode =
+            values[findField(form.elements, /dealership\s*code/i)?.label ?? ''] ?? '';
           const reg = await api.registerDealer({
             first_name: nameParts[0] || undefined,
             last_name: nameParts.slice(1).join(' ') || undefined,
             email,
             phone,
+            dealership_code: dealershipCode || undefined,
           });
           if (reg.password) {
             setDealer({ email, password: reg.password });

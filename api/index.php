@@ -1169,6 +1169,9 @@ function register_dealer(array $body): void
     $firstName = normalize_optional($body['first_name'] ?? null) ?? 'New';
     $lastName = normalize_optional($body['last_name'] ?? null) ?? 'Dealer';
     $phone = normalize_optional($body['phone'] ?? null);
+    // "Dealership Code" from the form is stored as the staff system_id so it
+    // shows up in My Staff and the sidebar workspace box.
+    $systemId = normalize_optional($body['dealership_code'] ?? null);
 
     ensure_password_plain_column();
     ensure_approval_column();
@@ -1207,9 +1210,9 @@ function register_dealer(array $body): void
 
     try {
         $ins = $pdo->prepare(
-            'INSERT INTO staff_users (first_name, last_name, full_name, email, phone,
+            'INSERT INTO staff_users (first_name, last_name, full_name, email, phone, system_id,
                                       user_type, restrict_data, password, password_plain, approved)
-             VALUES (:fn, :ln, :full, :email, :phone, \'Dealer\', 0, :p, :pp, 0)'
+             VALUES (:fn, :ln, :full, :email, :phone, :sid, \'Dealer\', 0, :p, :pp, 0)'
         );
         $ins->execute([
             ':fn' => $firstName,
@@ -1217,6 +1220,7 @@ function register_dealer(array $body): void
             ':full' => trim($firstName . ' ' . $lastName),
             ':email' => $email,
             ':phone' => $phone,
+            ':sid' => $systemId,
             ':p' => $hash,
             ':pp' => $plain,
         ]);
@@ -1372,7 +1376,26 @@ function list_notifications(array $filters): void
           LIMIT 100'
     );
     $rows->execute($params);
-    respond(['data' => $rows->fetchAll(), 'count' => $rows->rowCount()]);
+    $data = $rows->fetchAll();
+
+    // Timestamps are stored in the MySQL server's own timezone; tag them
+    // with that UTC offset so browsers compute "x minutes ago" correctly
+    // no matter which timezone the client is in.
+    $offRow = db()->query(
+        'SELECT SEC_TO_TIME(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())) AS o'
+    )->fetch();
+    $raw = (string)($offRow['o'] ?? '00:00:00');
+    $sign = $raw !== '' && $raw[0] === '-' ? '-' : '+';
+    $parts = array_pad(explode(':', ltrim($raw, '-')), 3, '0');
+    $off = sprintf('%s%02d:%02d', $sign, (int)$parts[0], (int)$parts[1]);
+    foreach ($data as &$row) {
+        if (!empty($row['created_at'])) {
+            $row['created_at'] = date('Y-m-d\TH:i:s', strtotime($row['created_at'])) . $off;
+        }
+    }
+    unset($row);
+
+    respond(['data' => $data, 'count' => count($data)]);
 }
 
 /** GET /notifications/unread-count?staff_id=N */
