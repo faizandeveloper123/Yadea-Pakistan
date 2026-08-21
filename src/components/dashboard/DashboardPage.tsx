@@ -32,7 +32,7 @@ import AssignLeadsModal from './AssignLeadsModal';
 import NotificationsBell from '../NotificationsBell';
 import UserMenu from '../UserMenu';
 
-const STORAGE_KEY = 'evee_dashboard_widgets_v2';
+const STORAGE_KEY = 'evee_dashboard_widgets_v3';
 
 const OWNER_EMAIL = 'yadeapakistan@gmail.com';
 
@@ -234,7 +234,7 @@ function DashboardPage({
   const role: WidgetRole = user?.user_type ?? 'Admin';
   const dealerId = user?.user_type === 'Follower' && user.manager_id != null ? user.manager_id : user?.id ?? 0;
   // Dashboard layout is saved per user so each role keeps its own widgets.
-  const storageKey = user ? `evee_dashboard_widgets_v2_${user.id}` : STORAGE_KEY;
+  const storageKey = user ? `evee_dashboard_widgets_v3_${user.id}` : STORAGE_KEY;
 
   const [contacts, setContacts] = useState<ApiContact[]>([]);
   const [dealers, setDealers] = useState<DealerDashboardDealer[]>([]);

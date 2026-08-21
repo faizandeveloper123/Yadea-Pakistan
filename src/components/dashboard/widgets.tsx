@@ -1004,20 +1004,25 @@ export function isWidgetAllowedForRole(defId: string, role: WidgetRole): boolean
 }
 
 const ADMIN_DEFAULT_INSTANCES: WidgetInstance[] = [
-  { uid: 'd1', defId: 'contacts-total', title: 'Total Contacts', size: 'sm' },
-  { uid: 'd2', defId: 'leads-total', title: 'Total Leads Assigned', size: 'sm' },
-  { uid: 'd3', defId: 'leads-status-donut', title: 'Leads by Status', size: 'md' },
-  { uid: 'd4', defId: 'contacts-by-type', title: 'Contacts by Type', size: 'md' },
-  { uid: 'd5', defId: 'contacts-created-line', title: 'Contacts Created', size: 'md' },
-  { uid: 'd6', defId: 'leads-funnel', title: 'Lead Funnel', size: 'md' },
-  { uid: 'd7', defId: 'contacts-recent', title: 'Recent Contacts', size: 'lg' },
+  { uid: 'd1', defId: 'leads-total', title: 'Total Leads', size: 'sm' },
+  { uid: 'd2', defId: 'contacts-with-email', title: 'Contacts with Email', size: 'sm' },
+  { uid: 'd3', defId: 'contacts-total', title: 'Total Contacts', size: 'sm' },
+  { uid: 'd4', defId: 'contacts-with-phone', title: 'Contacts with Phone', size: 'sm' },
+  { uid: 'd5', defId: 'contacts-mine', title: 'My Leads', size: 'md' },
+  { uid: 'd6', defId: 'contacts-recent', title: 'Recent Contacts', size: 'md' },
+  { uid: 'd7', defId: 'leads-funnel', title: 'Lead Funnel', size: 'md' },
+  { uid: 'd8', defId: 'contacts-by-type', title: 'Contact By Type', size: 'md' },
 ];
 
 const TEAM_DEFAULT_INSTANCES: WidgetInstance[] = [
   { uid: 'd1', defId: 'leads-total', title: 'Total Leads Assigned', size: 'sm' },
-  { uid: 'd2', defId: 'leads-status-donut', title: 'Leads by Status', size: 'md' },
-  { uid: 'd3', defId: 'leads-funnel', title: 'Lead Funnel', size: 'md' },
+  { uid: 'd2', defId: 'leads-customers', title: 'Customers (Bought)', size: 'sm' },
+  { uid: 'd3', defId: 'leads-status-donut', title: 'Leads by Status', size: 'md' },
   { uid: 'd4', defId: 'leads-my-table', title: 'My Leads', size: 'lg' },
+  { uid: 'd5', defId: 'leads-funnel', title: 'Lead Funnel', size: 'md' },
+  { uid: 'd6', defId: 'leads-created-line', title: 'Leads Over Time', size: 'md' },
+  { uid: 'd7', defId: 'leads-stage-list', title: 'Lead Stages', size: 'lg' },
+  { uid: 'd8', defId: 'traffic-analytics', title: 'Traffic Analytics', size: 'lg' },
 ];
 
 /** The widgets a role starts with on a fresh dashboard. */
