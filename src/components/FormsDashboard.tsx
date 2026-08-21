@@ -1205,6 +1205,68 @@ function FormsDashboard() {
   // dropdown and the table columns.
   const registeredForms = useForms();
 
+  // ---- Server persistence: load every saved builder form on mount ----
+  useEffect(() => {
+    let cancelled = false;
+    api.listForms()
+      .then((res) => {
+        if (cancelled) return;
+        const mapped: Form[] = res.data.map((row) => ({
+          id: row.id,
+          name: row.name,
+          updatedOn: formatDbDate(row.updated_at) ?? '',
+          updatedBy: row.updated_by ?? '',
+          elements: (row.elements as unknown as FormElement[]) ?? [],
+          submissions: [],
+          header: (row.header as unknown as FormHeader) ?? undefined,
+          columns: row.cols === 2 ? 2 : 1,
+          campaignId: row.campaign_id ?? undefined,
+        }));
+        setForms(mapped);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** Shape a Form for the API payload. */
+  const formToInput = (f: Form) => ({
+    name: f.name,
+    updated_by: f.updatedBy,
+    elements: f.elements,
+    header: f.header ?? null,
+    cols: f.columns ?? 1,
+    campaign_id: f.campaignId ?? null,
+  });
+
+  /** Swap a temporary (negative) local id for the real database id. */
+  const applyRealId = (tempId: number, realId: number) => {
+    setForms((prev) => prev.map((f) => (f.id === tempId ? { ...f, id: realId } : f)));
+    setActiveForm((prev) => (prev.id === tempId ? { ...prev, id: realId } : prev));
+  };
+
+  /** Insert a brand-new form into the database. */
+  const persistNewForm = (form: Form) => {
+    api.createForm(formToInput(form))
+      .then((res) => applyRealId(form.id, res.data.id))
+      .catch(() => triggerToast('Warning: form could not be saved to server'));
+  };
+
+  /** Save edits to an existing database row (creates it if missing). */
+  const persistOnSave = (form: Form) => {
+    if (form.id <= 0) {
+      persistNewForm(form);
+      return;
+    }
+    const input = formToInput(form);
+    api.updateForm(form.id, input).catch(() => {
+      api.createForm(input)
+        .then((res) => applyRealId(form.id, res.data.id))
+        .catch(() => triggerToast('Warning: form could not be saved to server'));
+    });
+  };
+
   const loadSubmissions = useCallback(async () => {
     setSubmissionLoading(true);
     try {
@@ -1333,7 +1395,8 @@ function FormsDashboard() {
   };
 
   const createForm = () => {
-    const newId = formCountRef.current++;
+    // Negative ids are temporary locals; the real id comes from the database.
+    const newId = -(formCountRef.current++);
     const isTemplate = selectedOption === 'template';
     const templateElements = isTemplate
       ? AUTO_DEALER_TEMPLATE.map((el) => ({ ...el, id: Date.now() + Math.random() }))
@@ -1352,6 +1415,7 @@ function FormsDashboard() {
     openEditorWithForm(newFormObj);
     triggerToast(isTemplate ? `Created "${formName}" from Template!` : `Created "${formName}"!`);
     logActivity({ type: 'form', title: 'Form created', detail: formName });
+    persistNewForm(newFormObj);
   };
 
   const openTemplateLibrary = () => {
@@ -1361,7 +1425,7 @@ function FormsDashboard() {
   };
 
   const createFormFromTemplate = (template: FormTemplate) => {
-    const newId = formCountRef.current++;
+    const newId = -(formCountRef.current++);
     const elements: FormElement[] = template.elements.map((el) =>
       withGeneralSettings(
         {
@@ -1395,6 +1459,7 @@ function FormsDashboard() {
     openEditorWithForm(newFormObj);
     triggerToast(`Created "${template.title}" from Template!`);
     logActivity({ type: 'form', title: 'Form created', detail: template.title });
+    persistNewForm(newFormObj);
   };
 
   const openEditorWithForm = (form: Form) => {
@@ -1406,13 +1471,15 @@ function FormsDashboard() {
   const backToDashboard = () => setCurrentView('dashboard');
 
   const saveFormInEditor = () => {
+    const savedForm: Form = JSON.parse(JSON.stringify({ ...activeForm, updatedOn: formatDate(new Date()) }));
     setForms((prev) => {
       const idx = prev.findIndex((f) => f.id === activeForm.id);
       if (idx === -1) return prev;
       const next = [...prev];
-      next[idx] = JSON.parse(JSON.stringify({ ...activeForm, updatedOn: formatDate(new Date()) }));
+      next[idx] = savedForm;
       return next;
     });
+    persistOnSave(savedForm);
 
     const h = activeForm.header;
     const template: FormTemplate = {
@@ -1683,7 +1750,7 @@ function FormsDashboard() {
   };
 
   const duplicateForm = (form: Form) => {
-    const newId = formCountRef.current++;
+    const newId = -(formCountRef.current++);
     const copy: Form = {
       ...JSON.parse(JSON.stringify(form)),
       id: newId,
@@ -1696,11 +1763,15 @@ function FormsDashboard() {
     setOpenMenuFor(null);
     triggerToast(`Duplicated "${form.name}"!`);
     logActivity({ type: 'form', title: 'Form duplicated', detail: form.name });
+    persistNewForm(copy);
   };
 
   const deleteForm = (id: number) => {
     const target = forms.find((f) => f.id === id);
     setForms((prev) => prev.filter((f) => f.id !== id));
+    if (id > 0) {
+      api.deleteForm(id).catch(() => triggerToast('Warning: form could not be deleted from server'));
+    }
     triggerToast('Form deleted');
     logActivity({ type: 'delete', title: 'Form deleted', detail: target?.name });
   };

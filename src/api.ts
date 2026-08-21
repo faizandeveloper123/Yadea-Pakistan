@@ -190,6 +190,27 @@ export interface SmartListInput {
   shared_user_ids?: number[];
 }
 
+export interface ApiSmartForm {
+  id: number;
+  name: string;
+  updated_by: string | null;
+  elements: unknown[];
+  header: Record<string, unknown> | null;
+  cols: number;
+  campaign_id: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface SmartFormInput {
+  name: string;
+  updated_by?: string;
+  elements?: unknown;
+  header?: unknown;
+  cols?: number;
+  campaign_id?: number | null;
+}
+
 export interface DealerLeadFilter {
   type: 'all' | 'days' | 'weeks' | 'months' | 'years' | 'range';
   value?: number;
@@ -636,4 +657,23 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ user_id: userId }),
     }),
+
+  /* ------------------- FORM BUILDER (persisted) ------------------- */
+
+  listForms: () => request<{ data: ApiSmartForm[]; count: number }>('/forms'),
+
+  createForm: (input: SmartFormInput) =>
+    request<{ data: ApiSmartForm; message: string }>('/forms', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  updateForm: (id: number, input: SmartFormInput) =>
+    request<{ data: ApiSmartForm; message: string }>(`/forms/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+
+  deleteForm: (id: number) =>
+    request<{ message: string }>(`/forms/${id}`, { method: 'DELETE' }),
 };

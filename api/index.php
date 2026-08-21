@@ -1944,6 +1944,126 @@ function get_form_image(int $id): void
     exit;
 }
 
+/* ----------------------- FORM BUILDER (persisted) ----------------------- */
+
+/** Create the forms table on first use so no manual SQL step is required. */
+function ensure_forms_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec(
+        'CREATE TABLE IF NOT EXISTS forms (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(191) NOT NULL,
+            updated_by VARCHAR(191) DEFAULT "",
+            elements MEDIUMTEXT NULL,
+            header MEDIUMTEXT NULL,
+            cols TINYINT NOT NULL DEFAULT 1,
+            campaign_id INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+}
+
+/** Decode JSON columns of a form row for the API response. */
+function form_payload(array $row): array
+{
+    $row['elements'] = decode_json_field($row['elements'] ?? null);
+    $row['header'] = decode_json_field($row['header'] ?? null);
+    $row['cols'] = (int)$row['cols'] === 2 ? 2 : 1;
+    return $row;
+}
+
+/** GET /forms -> every saved builder form. */
+function list_forms(): void
+{
+    ensure_forms_table();
+    $rows = db()->query('SELECT * FROM forms ORDER BY updated_at DESC, id DESC')->fetchAll();
+    $rows = array_map('form_payload', $rows);
+    respond(['data' => $rows, 'count' => count($rows)]);
+}
+
+/** POST /forms { name, updated_by?, elements?, header?, cols?, campaign_id? } */
+function create_form(array $body): void
+{
+    ensure_forms_table();
+    $name = normalize_optional($body['name'] ?? null);
+    if ($name === null || $name === '') fail('Form name is required');
+
+    $stmt = db()->prepare(
+        'INSERT INTO forms (name, updated_by, elements, header, cols, campaign_id)
+         VALUES (:name, :updated_by, :elements, :header, :cols, :campaign_id)'
+    );
+    $stmt->execute([
+        ':name' => $name,
+        ':updated_by' => normalize_optional($body['updated_by'] ?? null) ?? '',
+        ':elements' => encode_json_field($body['elements'] ?? null),
+        ':header' => encode_json_field($body['header'] ?? null),
+        ':cols' => ((int)($body['cols'] ?? 1)) === 2 ? 2 : 1,
+        ':campaign_id' => isset($body['campaign_id']) && (int)$body['campaign_id'] > 0 ? (int)$body['campaign_id'] : null,
+    ]);
+    $id = (int)db()->lastInsertId();
+    $stmt = db()->prepare('SELECT * FROM forms WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    respond(['data' => form_payload($stmt->fetch() ?: ['id' => $id]), 'message' => 'Form saved'], 201);
+}
+
+/** PUT /forms/{id} — full update of the builder form. */
+function update_form(int $id, array $body): void
+{
+    ensure_forms_table();
+    $stmt = db()->prepare('SELECT id FROM forms WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    if ($stmt->fetchColumn() === false) fail('Form not found', 404);
+
+    $sets = [];
+    $params = [':id' => $id];
+    if (array_key_exists('name', $body)) {
+        $name = normalize_optional($body['name']);
+        if ($name === null || $name === '') fail('Form name is required');
+        $sets[] = 'name = :name';
+        $params[':name'] = $name;
+    }
+    if (array_key_exists('updated_by', $body)) {
+        $sets[] = 'updated_by = :updated_by';
+        $params[':updated_by'] = normalize_optional($body['updated_by']) ?? '';
+    }
+    if (array_key_exists('elements', $body)) {
+        $sets[] = 'elements = :elements';
+        $params[':elements'] = encode_json_field($body['elements']);
+    }
+    if (array_key_exists('header', $body)) {
+        $sets[] = 'header = :header';
+        $params[':header'] = encode_json_field($body['header']);
+    }
+    if (array_key_exists('cols', $body)) {
+        $sets[] = 'cols = :cols';
+        $params[':cols'] = ((int)$body['cols']) === 2 ? 2 : 1;
+    }
+    if (array_key_exists('campaign_id', $body)) {
+        $sets[] = 'campaign_id = :campaign_id';
+        $params[':campaign_id'] = $body['campaign_id'] !== null && (int)$body['campaign_id'] > 0 ? (int)$body['campaign_id'] : null;
+    }
+    if (!$sets) fail('No fields to update');
+
+    db()->prepare('UPDATE forms SET ' . implode(', ', $sets) . ' WHERE id = :id')->execute($params);
+    $stmt = db()->prepare('SELECT * FROM forms WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    respond(['data' => form_payload($stmt->fetch() ?: []), 'message' => 'Form updated']);
+}
+
+/** DELETE /forms/{id} */
+function delete_form(int $id): void
+{
+    ensure_forms_table();
+    $stmt = db()->prepare('DELETE FROM forms WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    if ($stmt->rowCount() === 0) fail('Form not found', 404);
+    respond(['message' => 'Form deleted']);
+}
+
 /* ----------------------- ROUTER ----------------------- */
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -2157,6 +2277,21 @@ switch ($resource) {
             $id = $parts[1] ?? null;
             if ($id === null) fail('Image id required');
             get_form_image(to_int($id));
+        }
+        break;
+
+    case 'forms':
+        $id = $parts[1] ?? null;
+        if ($method === 'GET') {
+            list_forms();
+        } elseif ($method === 'POST') {
+            create_form(json_body());
+        } elseif ($method === 'PUT') {
+            if (!$id) fail('Form id required');
+            update_form(to_int($id), json_body());
+        } elseif ($method === 'DELETE') {
+            if (!$id) fail('Form id required');
+            delete_form(to_int($id));
         }
         break;
 
