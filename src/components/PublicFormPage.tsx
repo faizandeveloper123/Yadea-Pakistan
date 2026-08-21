@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FaRegCircleCheck } from 'react-icons/fa6';
+import { FaRegCircleCheck, FaRegClock } from 'react-icons/fa6';
 import { api } from '../api';
 import { logActivity } from '../data/activityLog';
 import { ensureCampaignsLoaded, campaignNameById } from '../data/campaigns';
@@ -41,6 +41,7 @@ export default function PublicFormPage({ data }: { data: string }) {
   /** Dealer credentials created for this submission (dealership forms only). */
   const [dealer, setDealer] = useState<{ email: string; password: string } | null>(null);
   const [countdown, setCountdown] = useState(5);
+  const [pendingApproval, setPendingApproval] = useState(false);
   const signingInRef = useRef(false);
 
   /**
@@ -61,14 +62,14 @@ export default function PublicFormPage({ data }: { data: string }) {
   };
 
   useEffect(() => {
-    if (!dealer) return;
+    if (!dealer || pendingApproval) return;
     if (countdown <= 0) {
       void signInAndContinue();
       return;
     }
     const t = window.setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => window.clearTimeout(t);
-  }, [dealer, countdown]);
+  }, [dealer, countdown, pendingApproval]);
 
   if (!form) {
     return (
@@ -160,6 +161,9 @@ export default function PublicFormPage({ data }: { data: string }) {
           if (reg.password) {
             setDealer({ email, password: reg.password });
             setCountdown(5);
+            // Fresh registrations wait for an admin to approve the account;
+            // only already-approved dealers are signed in automatically.
+            setPendingApproval((reg.data.approved ?? 1) !== 1);
           }
         } catch {
           /* ignore — the submission itself succeeded */
@@ -219,13 +223,26 @@ export default function PublicFormPage({ data }: { data: string }) {
 
             {dealer && (
               <div className="mt-6 text-left bg-slate-50 border border-slate-200 rounded-xl p-4">
-                <p className="text-sm font-semibold text-slate-800">
-                  Your dealer account is ready
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  You are being signed in automatically. Keep these details — you can
-                  view or change your password later under Account settings.
-                </p>
+                {pendingApproval ? (
+                  <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2.5 text-xs mb-3">
+                    <FaRegClock className="mt-0.5 flex-shrink-0" />
+                    <span>
+                      Your account is awaiting admin approval. You will receive an
+                      email at <strong>{dealer.email}</strong> as soon as it is
+                      approved — then you can log in with the password below.
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-sm font-semibold text-slate-800">
+                    Your dealer account is ready
+                  </p>
+                )}
+                {!pendingApproval && (
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    You are being signed in automatically. Keep these details — you can
+                    view or change your password later under Account settings.
+                  </p>
+                )}
                 <div className="mt-3 space-y-1.5 text-xs">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-slate-500">Email</span>
@@ -240,20 +257,22 @@ export default function PublicFormPage({ data }: { data: string }) {
                     </span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void signInAndContinue()}
-                  disabled={countdown > 0}
-                  className="mt-4 w-full py-2.5 rounded-md text-sm font-medium transition disabled:opacity-60"
-                  style={{
-                    backgroundColor: form.header?.accentColor || '#2563EB',
-                    color: '#FFFFFF',
-                  }}
-                >
-                  {countdown > 0
-                    ? `Signing you in to the website in ${countdown}s…`
-                    : 'Continue to your dashboard'}
-                </button>
+                {!pendingApproval && (
+                  <button
+                    type="button"
+                    onClick={() => void signInAndContinue()}
+                    disabled={countdown > 0}
+                    className="mt-4 w-full py-2.5 rounded-md text-sm font-medium transition disabled:opacity-60"
+                    style={{
+                      backgroundColor: form.header?.accentColor || '#2563EB',
+                      color: '#FFFFFF',
+                    }}
+                  >
+                    {countdown > 0
+                      ? `Signing you in to the website in ${countdown}s…`
+                      : 'Continue to your dashboard'}
+                  </button>
+                )}
               </div>
             )}
           </div>

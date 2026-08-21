@@ -71,6 +71,8 @@ export interface ApiStaffUser {
   availability: StaffAvailability;
   calendar_config: StaffCalendarConfig;
   permissions: Record<string, boolean>;
+  /** 1 = approved (can log in), 0 = waiting for admin approval. */
+  approved?: number;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -572,6 +574,15 @@ export const api = {
     request<{ data: { password: string | null } }>('/auth/reveal-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
+    }),
+
+  /**
+   * Admin action (Settings -> My Staff): approve a pending account so its
+   * owner can log in. The API also notifies the user on the portal + email.
+   */
+  approveStaff: (id: number) =>
+    request<{ data: ApiStaffUser; message: string }>(`/staff/${id}/approve`, {
+      method: 'POST',
     }),
 
   /* ------------------- NOTIFICATIONS ------------------- */

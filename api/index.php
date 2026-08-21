@@ -706,6 +706,7 @@ function encode_json_field($value): ?string
 
 function list_staff(): void
 {
+    ensure_approval_column();
     $rows = db()->query('SELECT * FROM staff_users ORDER BY full_name')->fetchAll();
 
     $payload = array_map('staff_payload', $rows);
@@ -1097,6 +1098,11 @@ function login(array $body): void
     if (!$row || !verify_password($password, $row['password'] ?? null)) {
         fail('Invalid email or password', 401);
     }
+    // Accounts created through public registration stay locked until an
+    // Admin approves them under Settings -> My Staff.
+    if (isset($row['approved']) && (int)$row['approved'] !== 1) {
+        fail('Your account is pending admin approval. You will receive an email once it is approved.', 403);
+    }
 
     respond(['data' => staff_payload($row), 'message' => 'Login successful']);
 }
@@ -1125,6 +1131,30 @@ function ensure_password_plain_column(): void
 }
 
 /**
+ * Lazy migration: staff_users.approved gates logins. Defaults to 1 so
+ * admin-created staff are never locked out; public registrations insert 0
+ * and wait for an Admin to approve them under Settings -> My Staff.
+ */
+function ensure_approval_column(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    $check = db()->prepare(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'staff_users'
+            AND COLUMN_NAME  = 'approved'"
+    );
+    $check->execute();
+    if ((int)$check->fetchColumn() === 0) {
+        db()->exec(
+            "ALTER TABLE staff_users ADD COLUMN approved TINYINT(1) NOT NULL DEFAULT 1 AFTER password_plain"
+        );
+    }
+}
+
+/**
  * POST /auth/register-dealer
  * Public endpoint used by the Dealership Registration form: finds or creates
  * a Dealer staff account for the submitted email and returns it together with
@@ -1141,6 +1171,7 @@ function register_dealer(array $body): void
     $phone = normalize_optional($body['phone'] ?? null);
 
     ensure_password_plain_column();
+    ensure_approval_column();
     $pdo = db();
 
     $findByEmail = $pdo->prepare('SELECT * FROM staff_users WHERE email = :email LIMIT 1');
@@ -1177,8 +1208,8 @@ function register_dealer(array $body): void
     try {
         $ins = $pdo->prepare(
             'INSERT INTO staff_users (first_name, last_name, full_name, email, phone,
-                                      user_type, restrict_data, password, password_plain)
-             VALUES (:fn, :ln, :full, :email, :phone, \'Dealer\', 0, :p, :pp)'
+                                      user_type, restrict_data, password, password_plain, approved)
+             VALUES (:fn, :ln, :full, :email, :phone, \'Dealer\', 0, :p, :pp, 0)'
         );
         $ins->execute([
             ':fn' => $firstName,
@@ -1205,11 +1236,70 @@ function register_dealer(array $body): void
 
     $get = $pdo->prepare('SELECT * FROM staff_users WHERE id = :id');
     $get->execute([':id' => (int)$pdo->lastInsertId()]);
+    $created = $get->fetch();
+
+    // Every Admin learns about the pending registration on their portal
+    // (notifications bell) and by email, so they can approve it quickly.
+    $dealerName = trim($firstName . ' ' . $lastName);
+    $detail = 'New dealer registration: ' . $dealerName . ' (' . $email . ')'
+        . ' is waiting for approval under Settings -> My Staff.';
+    $admins = $pdo->query("SELECT id FROM staff_users WHERE user_type = 'Admin'")->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($admins as $adminId) {
+        notify_staff((int)$adminId, null, 'dealer_registration', 'New dealer registration', $detail);
+    }
+
     respond([
-        'data' => staff_payload($get->fetch()),
+        'data' => staff_payload($created),
         'password' => $plain,
-        'message' => 'Dealer account created',
+        'message' => 'Dealer account created and pending approval',
     ], 201);
+}
+
+/**
+ * POST /staff/{id}/approve
+ * Admin action from Settings -> My Staff: unlocks the account, drops a
+ * portal notification for the user and emails them a login link.
+ */
+function approve_staff(int $id): void
+{
+    ensure_approval_column();
+    $pdo = db();
+    $stmt = $pdo->prepare('SELECT * FROM staff_users WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    if (!$row) fail('Staff user not found', 404);
+
+    if ((int)($row['approved'] ?? 1) !== 1) {
+        $upd = $pdo->prepare('UPDATE staff_users SET approved = 1 WHERE id = :id');
+        $upd->execute([':id' => $id]);
+    }
+
+    $name = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+    $loginUrl = (defined('APP_URL') ? APP_URL : '') . '/';
+
+    // Portal notification for the approved user.
+    notify_staff($id, null, 'account_approved', 'Account approved', 'Your account has been approved. You can now log in to the website.');
+
+    // Richer approval email with the login link.
+    if (!empty($row['email'])) {
+        $bodyHtml = '<p style="margin:0 0 12px 0;font-size:14px;line-height:22px;color:#334155;">Hi '
+            . htmlspecialchars($name !== '' ? $name : 'there', ENT_QUOTES, 'UTF-8') . ',</p>'
+            . '<p style="margin:0 0 16px 0;font-size:14px;line-height:22px;color:#334155;">Good news! Your dealership registration has been <strong style="color:#059669;">approved</strong>. Your account is now active and you can sign in with the email and password you received at registration.</p>'
+            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px 0;"><tr><td style="background-color:#EB5F1B;border-radius:8px;">'
+            . '<a href="' . htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;padding:11px 26px;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;">Login to your account</a>'
+            . '</td></tr></table>'
+            . '<p style="margin:0;font-size:13px;line-height:20px;color:#64748b;">If the button does not work, copy this link into your browser:<br>'
+            . '<a href="' . htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') . '" style="color:#EB5F1B;word-break:break-all;">' . htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') . '</a></p>';
+        send_app_mail(
+            (string)$row['email'],
+            $name,
+            'Your dealership registration is approved',
+            $bodyHtml
+        );
+    }
+
+    $stmt->execute([':id' => $id]);
+    respond(['data' => staff_payload($stmt->fetch()), 'message' => 'User approved']);
 }
 
 /** POST /auth/reveal-password { email } -> stored plain password (or null). */
@@ -2281,7 +2371,11 @@ switch ($resource) {
             }
             list_staff();
         } elseif ($method === 'POST') {
-            create_staff(json_body());
+            if ($id && ($parts[2] ?? null) === 'approve') {
+                approve_staff(to_int($id));
+            } else {
+                create_staff(json_body());
+            }
         } elseif ($method === 'PUT') {
             if (!$id) fail('Staff id required');
             update_staff(to_int($id), json_body());

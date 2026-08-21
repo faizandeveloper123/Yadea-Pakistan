@@ -17,6 +17,12 @@ define('DB_NAME', getenv('DB_NAME') ?: 'evee_crm');
 define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 
+/* Mail credentials live in api/mail_config.php (see that file for the list
+ * of values to fill in). Loaded here so every endpoint can send mail. */
+if (is_file(__DIR__ . '/mail_config.php')) {
+    require_once __DIR__ . '/mail_config.php';
+}
+
 function db(): PDO
 {
     static $pdo = null;
@@ -127,24 +133,141 @@ function generate_strong_password(int $length = 12): string
     return str_shuffle($out);
 }
 
-/* ----------------------- EMAIL NOTIFICATION (best effort) ----------------------- */
+/* ----------------------- EMAIL NOTIFICATION (PHPMailer SMTP) ----------------------- */
 
 /**
- * Best-effort outbound email for notifications. On XAMPP this relies on the
- * configured PHP mail transport (Mercury / sendmail). Failures are swallowed
- * so notification creation never breaks because mail could not be sent.
+ * Wrap transactional content in a clean, table-based HTML shell. Inline
+ * styles only (Gmail strips <style>), plain background, short text — the
+ * template stays friendly to spam filters.
+ */
+function email_html_template(string $title, string $bodyHtml): string
+{
+    $brand = '#EB5F1B';
+    $fromName = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea Pakistan';
+    $year = date('Y');
+    $titleEsc = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+    return '<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>' . $titleEsc . '</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#334155;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;padding:24px 12px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
+        <tr>
+          <td style="background-color:' . $brand . ';padding:18px 28px;">
+            <span style="color:#ffffff;font-size:16px;font-weight:bold;letter-spacing:1px;">' . htmlspecialchars($fromName, ENT_QUOTES, 'UTF-8') . '</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px;">
+            <h2 style="margin:0 0 14px 0;font-size:18px;color:#1e293b;">' . $titleEsc . '</h2>
+            ' . $bodyHtml . '
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 28px;background-color:#f8fafc;border-top:1px solid #e2e8f0;">
+            <p style="margin:0;font-size:11px;line-height:16px;color:#94a3b8;">
+              You received this email because an action was taken on your ' . htmlspecialchars($fromName, ENT_QUOTES, 'UTF-8') . ' account.
+            </p>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:14px 0 0 0;font-size:11px;color:#94a3b8;">&copy; ' . $year . ' ' . htmlspecialchars($fromName, ENT_QUOTES, 'UTF-8') . '. All rights reserved.</p>
+    </td>
+  </tr>
+</table>
+</body>
+</html>';
+}
+
+/** Strip tags + decode entities for the plain-text alternative body. */
+function email_plain_text(string $html): string
+{
+    $text = html_entity_decode(strip_tags($html), ENT_QUOTES, 'UTF-8');
+    return trim(preg_replace("/[ \t]+/", ' ', preg_replace("/\r|\n{2,}/", "\n", $text)) ?? $text);
+}
+
+/**
+ * Send an email through SMTP via PHPMailer. Falls back to PHP mail() when
+ * SMTP is not configured so notifications never hard-fail on fresh installs.
+ * Returns true when the message was accepted for delivery.
+ */
+function send_app_mail(string $to, string $toName, string $subject, string $bodyHtml): bool
+{
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
+
+    $html = email_html_template($subject, $bodyHtml);
+    $host = defined('SMTP_HOST') ? trim((string)SMTP_HOST) : '';
+
+    if ($host === '') {
+        // Not configured yet: legacy best-effort mail() path.
+        $headers = "MIME-Version: 1.0\r\n"
+            . "Content-Type: text/html; charset=UTF-8\r\n"
+            . 'From: ' . (defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Evee CRM') . " <no-reply@evee.local>\r\n"
+            . "X-Mailer: Evee CRM Notification\r\n";
+        try {
+            return @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $html, $headers);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    require_once __DIR__ . '/lib/phpmailer/Exception.php';
+    require_once __DIR__ . '/lib/phpmailer/PHPMailer.php';
+    require_once __DIR__ . '/lib/phpmailer/SMTP.php';
+
+    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host = $host;
+        $mail->Port = defined('SMTP_PORT') ? SMTP_PORT : 587;
+        if (defined('SMTP_SECURE') && SMTP_SECURE !== '') {
+            $mail->SMTPSecure = SMTP_SECURE === 'ssl'
+                ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+                : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        }
+        $mail->SMTPAuth = true;
+        $mail->Username = defined('SMTP_USER') ? SMTP_USER : '';
+        $mail->Password = defined('SMTP_PASS') ? SMTP_PASS : '';
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
+
+        // Send from the authenticated mailbox itself (SPF/DKIM aligned),
+        // which keeps the message out of spam folders.
+        $from = SMTP_USER !== '' ? SMTP_USER : 'no-reply@evee.local';
+        $mail->setFrom($from, defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea CRM');
+        if ($toName !== '') {
+            $mail->addAddress($to, $toName);
+        } else {
+            $mail->addAddress($to);
+        }
+        if ($from !== $to) {
+            $mail->addReplyTo($from, defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea CRM');
+        }
+
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body = $html;
+        $mail->AltBody = email_plain_text($bodyHtml);
+
+        return $mail->send();
+    } catch (Throwable $e) {
+        error_log('[Evee CRM] Mail to ' . $to . ' failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Best-effort notification email used across the app. Kept for backwards
+ * compatibility with existing call sites; now backed by PHPMailer/SMTP.
  * Returns true when mail() accepted the message.
  */
 function send_notification_email(string $to, string $subject, string $body): bool
 {
-    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
-    $headers = "MIME-Version: 1.0\r\n"
-        . "Content-Type: text/html; charset=UTF-8\r\n"
-        . "From: Evee CRM <no-reply@evee.local>\r\n"
-        . "X-Mailer: Evee CRM Notification\r\n";
-    try {
-        return @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
-    } catch (Throwable $e) {
-        return false;
-    }
+    return send_app_mail($to, '', $subject, $body);
 }

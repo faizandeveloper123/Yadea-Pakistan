@@ -69,7 +69,7 @@ import {
 import { useStaff } from '../StaffContext';
 import { useAuth } from '../auth';
 import { ACTION_LABELS, PERMISSION_CATEGORIES, permKeys, type PermissionCategory } from '../data/staffPermissions';
-import type { ApiStaffUser, StaffAvailability, StaffInput } from '../api';
+import { api, type ApiStaffUser, type StaffAvailability, StaffInput } from '../api';
 import { fileToResizedDataUrl, ROLE_BADGE, ROLE_LABEL } from '../utils';
 import RichTextEditor from './RichTextEditor';
 import UserMenu from './UserMenu';
@@ -215,7 +215,7 @@ interface MyStaffPageProps {
 }
 
 function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
-  const { staff, loading, addStaff, updateStaff, removeStaff } = useStaff();
+  const { staff, loading, addStaff, updateStaff, removeStaff, reload } = useStaff();
   const { user: currentUser, logout } = useAuth();
 
   const isDealer = currentUser?.user_type === 'Dealer';
@@ -448,6 +448,17 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
       onNotify('User removed', 'error');
     } catch (err) {
       onNotify(`Delete failed: ${(err as Error).message}`, 'error');
+    }
+  };
+
+  /** Admin unlocks a pending account; the API emails the user a login link. */
+  const handleApprove = async (user: ApiStaffUser) => {
+    try {
+      await api.approveStaff(user.id);
+      await reload();
+      onNotify(`${user.full_name} approved — they can now log in.`);
+    } catch (err) {
+      onNotify(`Approve failed: ${(err as Error).message}`, 'error');
     }
   };
 
@@ -719,6 +730,11 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
                         >
                           {user.user_type}
                         </span>
+                        {user.approved === 0 && (
+                          <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 border border-amber-300 flex-shrink-0">
+                            Pending
+                          </span>
+                        )}
                       </div>
                       <div className="text-[11px] text-slate-500 truncate mt-0.5">
                         {user.email || '—'}
@@ -731,6 +747,16 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
                       )}
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
+                      {isAdmin && user.approved === 0 && (
+                        <button
+                          onClick={() => handleApprove(user)}
+                          className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded transition"
+                          title="Approve — allows this user to log in"
+                        >
+                          <FaCheck className="text-[10px]" />
+                          Approve
+                        </button>
+                      )}
                       <button
                         onClick={() => openEdit(user)}
                         className="p-2 text-slate-400 hover:text-blue-600 transition"
@@ -811,6 +837,11 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
                             >
                               {user.user_type}
                             </span>
+                            {user.approved === 0 && (
+                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 border border-amber-300">
+                                Pending Approval
+                              </span>
+                            )}
                             {user.user_type === 'Follower' && user.manager_id != null && (
                               <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200">
                                 Follower of{' '}
@@ -819,7 +850,17 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
                             )}
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-right space-x-2">
+                        <td className="py-3.5 px-4 text-right space-x-2 whitespace-nowrap">
+                          {isAdmin && user.approved === 0 && (
+                            <button
+                              onClick={() => handleApprove(user)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded transition"
+                              title="Approve — allows this user to log in"
+                            >
+                              <FaCheck className="text-[10px]" />
+                              Approve
+                            </button>
+                          )}
                           <button
                             onClick={() => openEdit(user)}
                             className="text-slate-400 hover:text-blue-600 transition p-1"
