@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FaRegCircleCheck } from 'react-icons/fa6';
 import { api } from '../api';
 import { logActivity } from '../data/activityLog';
 import { ensureCampaignsLoaded, campaignNameById } from '../data/campaigns';
 import { deserializeFormFromUrl, type PublicFormPayload } from '../utils';
 import { recordFormSubmission } from '../data/formsStore';
+import { useAuth } from '../auth';
+import { navigate } from '../router';
 
 const DEFAULT_OPTIONS = ['Option 1', 'Option 2', 'Option 3'];
 
@@ -32,9 +34,41 @@ function findField(elements: PublicFormPayload['elements'], re: RegExp) {
 
 export default function PublicFormPage({ data }: { data: string }) {
   const form = deserializeFormFromUrl(data);
+  const { login } = useAuth();
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  /** Dealer credentials created for this submission (dealership forms only). */
+  const [dealer, setDealer] = useState<{ email: string; password: string } | null>(null);
+  const [countdown, setCountdown] = useState(5);
+  const signingInRef = useRef(false);
+
+  /**
+   * Log the new dealer in and take them to their dashboard. Used by the
+   * auto-redirect countdown and by the manual "continue" button.
+   */
+  const signInAndContinue = async () => {
+    if (!dealer || signingInRef.current) return;
+    signingInRef.current = true;
+    try {
+      await login({ email: dealer.email, password: dealer.password });
+      navigate({ name: 'dashboard' });
+    } catch {
+      // Auto-login failed: keep the thank-you screen with the manual button.
+    } finally {
+      signingInRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (!dealer) return;
+    if (countdown <= 0) {
+      void signInAndContinue();
+      return;
+    }
+    const t = window.setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [dealer, countdown]);
 
   if (!form) {
     return (
@@ -109,6 +143,29 @@ export default function PublicFormPage({ data }: { data: string }) {
           .join('\n'),
         contactId: res.data.id,
       });
+
+      // Dealership registration forms also create a Dealer website account
+      // (from the submitted email) so the submitter can be logged in right
+      // after the thank-you message. Best-effort: the lead stays saved even
+      // if account provisioning fails.
+      if (email && /dealer/i.test(form.name)) {
+        try {
+          const nameParts = name.split(/\s+/);
+          const reg = await api.registerDealer({
+            first_name: nameParts[0] || undefined,
+            last_name: nameParts.slice(1).join(' ') || undefined,
+            email,
+            phone,
+          });
+          if (reg.password) {
+            setDealer({ email, password: reg.password });
+            setCountdown(5);
+          }
+        } catch {
+          /* ignore — the submission itself succeeded */
+        }
+      }
+
       setStatus('success');
     } catch (err) {
       setStatus('error');
@@ -159,6 +216,46 @@ export default function PublicFormPage({ data }: { data: string }) {
             <FaRegCircleCheck className="text-4xl text-emerald-500 mx-auto mb-3" />
             <h2 className="text-lg font-semibold text-slate-800">Thank you!</h2>
             <p className="text-sm text-slate-500 mt-1">Your submission has been received.</p>
+
+            {dealer && (
+              <div className="mt-6 text-left bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <p className="text-sm font-semibold text-slate-800">
+                  Your dealer account is ready
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  You are being signed in automatically. Keep these details — you can
+                  view or change your password later under Account settings.
+                </p>
+                <div className="mt-3 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500">Email</span>
+                    <span className="font-mono font-semibold text-slate-800 break-all text-right">
+                      {dealer.email}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500">Password</span>
+                    <span className="font-mono font-semibold text-slate-800 break-all text-right">
+                      {dealer.password}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void signInAndContinue()}
+                  disabled={countdown > 0}
+                  className="mt-4 w-full py-2.5 rounded-md text-sm font-medium transition disabled:opacity-60"
+                  style={{
+                    backgroundColor: form.header?.accentColor || '#2563EB',
+                    color: '#FFFFFF',
+                  }}
+                >
+                  {countdown > 0
+                    ? `Signing you in to the website in ${countdown}s…`
+                    : 'Continue to your dashboard'}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={submit} className="p-5 sm:p-6">

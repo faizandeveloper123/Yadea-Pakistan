@@ -110,6 +110,23 @@ function verify_password(string $plain, ?string $stored): bool
     return hash_equals($stored, $plain);
 }
 
+/**
+ * Random strong password for auto-provisioned accounts (e.g. dealers who
+ * register through the public website form). Avoids visually ambiguous
+ * characters and always contains one symbol.
+ */
+function generate_strong_password(int $length = 12): string
+{
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    $symbols = '!@#$%&*';
+    $out = '';
+    for ($i = 0; $i < max(8, $length) - 1; $i++) {
+        $out .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+    }
+    $out .= $symbols[random_int(0, strlen($symbols) - 1)];
+    return str_shuffle($out);
+}
+
 /* ----------------------- EMAIL NOTIFICATION (best effort) ----------------------- */
 
 /**

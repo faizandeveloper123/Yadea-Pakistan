@@ -737,9 +737,11 @@ function upsert_staff(array $body, ?int $existingId = null): int
         $managerId = $body['manager_id'] === null ? null : to_int((string)$body['manager_id']);
         if ($managerId !== null && $managerId <= 0) $managerId = null;
     }
-    $password = isset($body['password']) && $body['password'] !== ''
-        ? hash_password((string)$body['password'])
+    $rawPassword = isset($body['password']) && $body['password'] !== ''
+        ? (string)$body['password']
         : null;
+    $password = $rawPassword !== null ? hash_password($rawPassword) : null;
+    if ($password !== null) ensure_password_plain_column();
 
     $pdo = db();
     $fullName = trim($firstName . ' ' . ($lastName ?? ''));
@@ -754,7 +756,7 @@ function upsert_staff(array $body, ?int $existingId = null): int
                     avatar_data = :avatar, restrict_data = :rd, user_type = :type'
                     . ($hasManager ? ', manager_id = :mgr' : '') .
                     ', call_voicemail = :cv, availability = :av, calendar_config = :cc, permissions = :perm
-                    ' . ($password !== null ? ', password = :password' : '') . '
+                    ' . ($password !== null ? ', password = :password, password_plain = :ppassword' : '') . '
              WHERE id = :id'
         );
         $params = [
@@ -776,7 +778,10 @@ function upsert_staff(array $body, ?int $existingId = null): int
             ':perm' => encode_json_field($body['permissions'] ?? null),
         ];
         if ($hasManager) $params[':mgr'] = $managerId;
-        if ($password !== null) $params[':password'] = $password;
+        if ($password !== null) {
+            $params[':password'] = $password;
+            $params[':ppassword'] = $rawPassword;
+        }
         $params[':id'] = $existingId;
         $stmt->execute($params);
         if ($stmt->rowCount() === 0) {
@@ -792,10 +797,10 @@ function upsert_staff(array $body, ?int $existingId = null): int
         'INSERT INTO staff_users (first_name, last_name, full_name, email, phone, extension, calendar, system_id,
                                   signature, avatar_data, restrict_data, user_type, manager_id,
                                   call_voicemail, availability, calendar_config, permissions'
-                                  . ($password !== null ? ', password' : '') . ')
+                                  . ($password !== null ? ', password, password_plain' : '') . ')
          VALUES (:fn, :ln, :full, :email, :phone, :ext, :cal, :sid, :sig, :avatar, :rd, :type, :mgr,
                  :cv, :av, :cc, :perm'
-                 . ($password !== null ? ', :password' : '') . ')'
+                 . ($password !== null ? ', :password, :ppassword' : '') . ')'
     );
     $insertParams = [
         ':fn' => $firstName,
@@ -816,7 +821,10 @@ function upsert_staff(array $body, ?int $existingId = null): int
         ':cc' => encode_json_field($body['calendar_config'] ?? null),
         ':perm' => encode_json_field($body['permissions'] ?? null),
     ];
-    if ($password !== null) $insertParams[':password'] = $password;
+    if ($password !== null) {
+        $insertParams[':password'] = $password;
+        $insertParams[':ppassword'] = $rawPassword;
+    }
     $stmt->execute($insertParams);
     return (int)$pdo->lastInsertId();
 }
@@ -1066,7 +1074,7 @@ function create_activity(int $contactId, array $body): void
 /** Shape a staff row for API responses: decode JSON fields, hide password. */
 function staff_payload(array $row): array
 {
-    unset($row['password']);
+    unset($row['password'], $row['password_plain']);
     $row['call_voicemail'] = decode_json_field($row['call_voicemail'] ?? null);
     $row['availability'] = decode_json_field($row['availability'] ?? null);
     $row['calendar_config'] = decode_json_field($row['calendar_config'] ?? null);
@@ -1091,6 +1099,129 @@ function login(array $body): void
     }
 
     respond(['data' => staff_payload($row), 'message' => 'Login successful']);
+}
+
+/**
+ * Lazy migration: staff_users.password_plain keeps a recoverable copy of the
+ * password so auto-provisioned dealers can see it again in account settings.
+ */
+function ensure_password_plain_column(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    $check = db()->prepare(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'staff_users'
+            AND COLUMN_NAME  = 'password_plain'"
+    );
+    $check->execute();
+    if ((int)$check->fetchColumn() === 0) {
+        db()->exec(
+            "ALTER TABLE staff_users ADD COLUMN password_plain VARCHAR(255) DEFAULT NULL AFTER password"
+        );
+    }
+}
+
+/**
+ * POST /auth/register-dealer
+ * Public endpoint used by the Dealership Registration form: finds or creates
+ * a Dealer staff account for the submitted email and returns it together with
+ * the working password so the website can log the dealer in automatically.
+ */
+function register_dealer(array $body): void
+{
+    $email = normalize_optional($body['email'] ?? null);
+    if ($email === null || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        fail('A valid email is required', 400);
+    }
+    $firstName = normalize_optional($body['first_name'] ?? null) ?? 'New';
+    $lastName = normalize_optional($body['last_name'] ?? null) ?? 'Dealer';
+    $phone = normalize_optional($body['phone'] ?? null);
+
+    ensure_password_plain_column();
+    $pdo = db();
+
+    $findByEmail = $pdo->prepare('SELECT * FROM staff_users WHERE email = :email LIMIT 1');
+    $findByEmail->execute([':email' => $email]);
+    $existing = $findByEmail->fetch();
+
+    // Already an account AND we still know its password: hand it back as-is.
+    if ($existing && !empty($existing['password_plain'])) {
+        respond([
+            'data' => staff_payload($existing),
+            'password' => $existing['password_plain'],
+            'message' => 'Existing dealer account',
+        ]);
+    }
+
+    // New account, or an existing one whose password is not recoverable:
+    // (re)set the credentials so this submitter can always be logged in.
+    $plain = generate_strong_password();
+    $hash = hash_password($plain);
+
+    if ($existing) {
+        $upd = $pdo->prepare(
+            'UPDATE staff_users SET password = :p, password_plain = :pp WHERE id = :id'
+        );
+        $upd->execute([':p' => $hash, ':pp' => $plain, ':id' => $existing['id']]);
+        $findByEmail->execute([':email' => $email]);
+        respond([
+            'data' => staff_payload($findByEmail->fetch()),
+            'password' => $plain,
+            'message' => 'Existing dealer account credentials reset',
+        ]);
+    }
+
+    try {
+        $ins = $pdo->prepare(
+            'INSERT INTO staff_users (first_name, last_name, full_name, email, phone,
+                                      user_type, restrict_data, password, password_plain)
+             VALUES (:fn, :ln, :full, :email, :phone, \'Dealer\', 0, :p, :pp)'
+        );
+        $ins->execute([
+            ':fn' => $firstName,
+            ':ln' => $lastName,
+            ':full' => trim($firstName . ' ' . $lastName),
+            ':email' => $email,
+            ':phone' => $phone,
+            ':p' => $hash,
+            ':pp' => $plain,
+        ]);
+    } catch (PDOException $e) {
+        if ($e->getCode() === '23000') {
+            // Raced with another submission for the same email.
+            $findByEmail->execute([':email' => $email]);
+            $row = $findByEmail->fetch();
+            respond([
+                'data' => staff_payload($row),
+                'password' => $row['password_plain'] ?? null,
+                'message' => 'Existing dealer account',
+            ]);
+        }
+        fail('Database error: ' . $e->getMessage(), 500);
+    }
+
+    $get = $pdo->prepare('SELECT * FROM staff_users WHERE id = :id');
+    $get->execute([':id' => (int)$pdo->lastInsertId()]);
+    respond([
+        'data' => staff_payload($get->fetch()),
+        'password' => $plain,
+        'message' => 'Dealer account created',
+    ], 201);
+}
+
+/** POST /auth/reveal-password { email } -> stored plain password (or null). */
+function reveal_password(array $body): void
+{
+    $email = normalize_optional($body['email'] ?? null);
+    if ($email === null) fail('Email is required');
+    ensure_password_plain_column();
+    $stmt = db()->prepare('SELECT password_plain FROM staff_users WHERE email = :email LIMIT 1');
+    $stmt->execute([':email' => $email]);
+    $row = $stmt->fetch();
+    respond(['data' => ['password' => $row['password_plain'] ?? null]]);
 }
 
 /**
@@ -2194,7 +2325,14 @@ switch ($resource) {
 
     case 'auth':
         if ($method === 'POST') {
-            login(json_body());
+            $sub = $parts[1] ?? null;
+            if ($sub === 'register-dealer') {
+                register_dealer(json_body());
+            } elseif ($sub === 'reveal-password') {
+                reveal_password(json_body());
+            } else {
+                login(json_body());
+            }
         }
         break;
 

@@ -223,6 +223,21 @@ export interface LoginInput {
   password: string;
 }
 
+/** Response of POST /auth/register-dealer (public dealership form signup). */
+export interface DealerRegistrationResult {
+  data: ApiStaffUser;
+  /** Working password for the account (generated or existing). */
+  password: string | null;
+  message: string;
+}
+
+export interface DealerRegistrationInput {
+  first_name?: string;
+  last_name?: string;
+  email: string;
+  phone?: string;
+}
+
 export interface ApiActivity {
   id: number;
   type: string;
@@ -539,6 +554,24 @@ export const api = {
     request<{ data: ApiStaffUser; message: string }>('/auth', {
       method: 'POST',
       body: JSON.stringify(input),
+    }),
+
+  /**
+   * Find-or-create the Dealer staff account for a dealership registration
+   * submission. Returns the account together with its working password so
+   * the public form page can log the new dealer in automatically.
+   */
+  registerDealer: (input: DealerRegistrationInput) =>
+    request<DealerRegistrationResult>('/auth/register-dealer', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  /** Current plain password of an account (for "view password" in settings). */
+  revealPassword: (email: string) =>
+    request<{ data: { password: string | null } }>('/auth/reveal-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     }),
 
   /* ------------------- NOTIFICATIONS ------------------- */
