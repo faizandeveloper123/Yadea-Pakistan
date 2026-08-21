@@ -37,47 +37,30 @@ const STORAGE_KEY = 'evee_dashboard_widgets_v2';
 const OWNER_EMAIL = 'yadeapakistan@gmail.com';
 
 const SIZE_CLASS: Record<WidgetInstance['size'], string> = {
-  sm: 'col-span-6 sm:col-span-6 lg:col-span-3',
+  sm: 'col-span-6 sm:col-span-3',
   md: 'col-span-12 sm:col-span-6',
   lg: 'col-span-12',
 };
 
 /** Stable min-heights keep rows aligned even when a chart is still loading. */
 const SIZE_MIN_H: Record<WidgetInstance['size'], string> = {
-  sm: 'min-h-[132px]',
-  md: 'min-h-[228px]',
-  lg: 'min-h-[260px]',
+  sm: 'min-h-[120px]',
+  md: 'min-h-[220px]',
+  lg: 'min-h-[250px]',
 };
-
-const WIDGET_ACCENTS = [
-  { bar: '#3b82f6', dot: 'bg-blue-500' },
-  { bar: '#8b5cf6', dot: 'bg-violet-500' },
-  { bar: '#10b981', dot: 'bg-emerald-500' },
-  { bar: '#f59e0b', dot: 'bg-amber-500' },
-  { bar: '#06b6d4', dot: 'bg-cyan-500' },
-  { bar: '#ec4899', dot: 'bg-pink-500' },
-];
-
-function accentFor(defId: string) {
-  let h = 0;
-  for (let i = 0; i < defId.length; i++) h = (h * 31 + defId.charCodeAt(i)) >>> 0;
-  return WIDGET_ACCENTS[h % WIDGET_ACCENTS.length];
-}
 
 function WidgetBody({
   data,
-  icon,
   onOpenContact,
   onLeadStatusChange,
 }: {
   data: WidgetData;
-  icon?: string;
   onOpenContact?: (id: number) => void;
   onLeadStatusChange?: (contactId: number, status: DealerLeadStatus) => void;
 }) {
   switch (data.kind) {
     case 'number':
-      return <NumberCard value={data.value} sub={data.sub} accent={data.accent} icon={icon} />;
+      return <NumberCard value={data.value} sub={data.sub} accent={data.accent} />;
     case 'donut':
       return (
         <DonutChart
@@ -172,8 +155,6 @@ function WidgetCard({
 
   if (!def || !data) return null;
 
-  const accent = accentFor(instance.defId);
-
   return (
     <section
       draggable
@@ -188,17 +169,8 @@ function WidgetCard({
         editMode ? 'border-blue-400 ring-2 ring-blue-200/60' : 'border-slate-200/80'
       } ${overIndex === index && dragIndex !== null && dragIndex !== index ? 'ring-2 ring-blue-400 ring-offset-2' : ''}`}
     >
-      {/* Colored top accent */}
-      <span
-        className="absolute inset-x-0 top-0 h-[3px] transition-opacity"
-        style={{ background: `linear-gradient(90deg, ${accent.bar}, ${accent.bar}66)` }}
-        aria-hidden="true"
-      />
       <header className="flex items-center justify-between px-2.5 py-2 sm:px-4 sm:py-3 border-b border-slate-100 cursor-grab active:cursor-grabbing">
-        <h3 className="font-semibold text-slate-700 text-xs truncate flex items-center gap-1.5 min-w-0">
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${accent.dot}`} aria-hidden="true" />
-          {instance.title}
-        </h3>
+        <h3 className="font-semibold text-slate-700 text-xs truncate">{instance.title}</h3>
         <div className="relative flex-shrink-0 ml-2">
           <button
             onMouseDown={(e) => e.stopPropagation()}
@@ -238,12 +210,7 @@ function WidgetCard({
         </div>
       </header>
       <div className="flex-1 px-2.5 py-2 sm:px-4 sm:py-3 min-h-0">
-        <WidgetBody
-          data={data}
-          icon={typeof def.icon === 'string' && data.kind === 'number' ? def.icon : undefined}
-          onOpenContact={onOpenContact}
-          onLeadStatusChange={onLeadStatusChange}
-        />
+        <WidgetBody data={data} onOpenContact={onOpenContact} onLeadStatusChange={onLeadStatusChange} />
       </div>
       {dragIndex !== null && overIndex === index && dragIndex !== index && (
         <div className="absolute inset-x-2 -top-1 h-1 bg-blue-500 rounded-full" />

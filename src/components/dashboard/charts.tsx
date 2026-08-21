@@ -264,13 +264,11 @@ export function NumberCard({
   sub,
   delta,
   accent,
-  icon,
 }: {
   value: number | string;
   sub?: string;
   delta?: { value: number; up: boolean };
   accent?: string;
-  icon?: string;
 }) {
   // Animate plain numeric values (12, "1,234"); composite strings like
   // "5 / 12" or "Rs 0" render as-is.
@@ -280,30 +278,19 @@ export function NumberCard({
   const display = numeric !== null ? animated.toLocaleString('en-US') : value;
 
   return (
-    <div className="h-full flex items-center justify-between gap-3 min-w-0">
-      <div className="min-w-0">
-        <div className={`text-2xl sm:text-[28px] font-extrabold tracking-tight leading-none ${accent ?? 'text-slate-800'}`}>
-          {display}
-        </div>
-        {sub && <div className="text-[11px] text-slate-500 mt-1.5 truncate">{sub}</div>}
-        {delta !== undefined && (
-          <div
-            className={`inline-flex items-center gap-1 text-[11px] font-semibold mt-1.5 px-1.5 py-0.5 rounded-full ${
-              delta.up ? 'text-emerald-700 bg-emerald-50' : 'text-rose-700 bg-rose-50'
-            }`}
-          >
-            {delta.up ? <FaArrowTrendUp /> : <FaArrowTrendDown />}
-            {delta.value}%
-          </div>
-        )}
+    <div className="h-full flex flex-col justify-center min-w-0">
+      <div className={`text-2xl sm:text-[28px] font-extrabold tracking-tight leading-none ${accent ?? 'text-slate-800'}`}>
+        {display}
       </div>
-      {icon && (
+      {sub && <div className="text-[11px] text-slate-500 mt-1.5 truncate">{sub}</div>}
+      {delta !== undefined && (
         <div
-          className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0 shadow-sm"
-          style={{ background: 'linear-gradient(135deg, #eff6ff, #e0e7ff)' }}
-          aria-hidden="true"
+          className={`inline-flex items-center gap-1 text-[11px] font-semibold mt-1.5 px-1.5 py-0.5 rounded-full w-fit ${
+            delta.up ? 'text-emerald-700 bg-emerald-50' : 'text-rose-700 bg-rose-50'
+          }`}
         >
-          {icon}
+          {delta.up ? <FaArrowTrendUp /> : <FaArrowTrendDown />}
+          {delta.value}%
         </div>
       )}
     </div>

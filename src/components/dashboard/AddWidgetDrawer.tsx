@@ -77,10 +77,18 @@ function CategoryGroup({
               <div
                 key={w.id}
                 onClick={() => onAdd(w.id)}
-                className="p-2.5 bg-white border border-slate-200/90 rounded-xl shadow-sm hover:border-blue-400 hover:shadow cursor-pointer flex items-center gap-3 transition-all group"
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/x-evee-widget', w.id);
+                  e.dataTransfer.effectAllowed = 'copy';
+                }}
+                title="Click to add, or drag onto the dashboard"
+                className="p-2.5 bg-white border border-slate-200/90 rounded-xl shadow-sm hover:border-blue-400 hover:shadow cursor-grab active:cursor-grabbing flex items-center gap-3 transition-all group"
               >
                 <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0 group-hover:bg-orange-100 transition-colors">
-                  <span className="text-xs">{w.icon}</span>
+                  <span className="text-xs">
+                    <ChartTypeIcon type={w.chartType} />
+                  </span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="text-xs font-bold text-slate-800 leading-tight group-hover:text-blue-600 transition-colors">
@@ -111,6 +119,7 @@ export function AddWidgetDrawer({
   const [tab, setTab] = useState('Widgets');
   const [search, setSearch] = useState('');
   const [chartType, setChartType] = useState<WidgetChartType | 'all'>('all');
+  const [dropHint, setDropHint] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => ({
     [role === 'Admin' ? 'Contacts' : 'Opportunities']: true,
   }));
@@ -145,13 +154,44 @@ export function AddWidgetDrawer({
 
   const toggleCategory = (name: string) => setExpanded((v) => ({ ...v, [name]: !v[name] }));
 
+  const isWidgetDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('application/x-evee-widget');
+
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[1px]" onClick={onClose} />
+      <div
+        className={`absolute inset-0 transition-colors ${dropHint ? 'bg-blue-900/25' : 'bg-slate-900/20'} backdrop-blur-[1px]`}
+        onClick={onClose}
+        onDragOver={(e) => {
+          if (!isWidgetDrag(e)) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+          if (!dropHint) setDropHint(true);
+        }}
+        onDragLeave={(e) => {
+          if (e.currentTarget === e.target) setDropHint(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDropHint(false);
+          const defId = e.dataTransfer.getData('application/x-evee-widget');
+          if (defId) onAdd(defId);
+        }}
+      >
+        {dropHint && (
+          <div className="absolute inset-4 sm:inset-6 border-2 border-dashed border-blue-400/80 rounded-2xl bg-blue-50/30 flex items-center justify-center pointer-events-none">
+            <span className="text-xs font-bold text-blue-700 bg-white/90 px-3 py-1.5 rounded-full shadow">
+              Release to add widget
+            </span>
+          </div>
+        )}
+      </div>
       <aside className="absolute right-0 top-0 h-full w-80 sm:w-96 bg-white shadow-2xl border-l border-slate-200 flex flex-col">
         {/* Drawer header */}
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-800">Add new widget</h3>
+          <div>
+            <h3 className="text-sm font-bold text-slate-800">Add new widget</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Click to add, or drag onto the dashboard</p>
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors">
             <FaXmark className="text-sm" />
           </button>
