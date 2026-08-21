@@ -37,23 +37,47 @@ const STORAGE_KEY = 'evee_dashboard_widgets_v2';
 const OWNER_EMAIL = 'yadeapakistan@gmail.com';
 
 const SIZE_CLASS: Record<WidgetInstance['size'], string> = {
-  sm: 'col-span-6 sm:col-span-3',
-  md: 'col-span-6 sm:col-span-6',
-  lg: 'col-span-12 sm:col-span-12',
+  sm: 'col-span-6 sm:col-span-6 lg:col-span-3',
+  md: 'col-span-12 sm:col-span-6',
+  lg: 'col-span-12',
 };
+
+/** Stable min-heights keep rows aligned even when a chart is still loading. */
+const SIZE_MIN_H: Record<WidgetInstance['size'], string> = {
+  sm: 'min-h-[132px]',
+  md: 'min-h-[228px]',
+  lg: 'min-h-[260px]',
+};
+
+const WIDGET_ACCENTS = [
+  { bar: '#3b82f6', dot: 'bg-blue-500' },
+  { bar: '#8b5cf6', dot: 'bg-violet-500' },
+  { bar: '#10b981', dot: 'bg-emerald-500' },
+  { bar: '#f59e0b', dot: 'bg-amber-500' },
+  { bar: '#06b6d4', dot: 'bg-cyan-500' },
+  { bar: '#ec4899', dot: 'bg-pink-500' },
+];
+
+function accentFor(defId: string) {
+  let h = 0;
+  for (let i = 0; i < defId.length; i++) h = (h * 31 + defId.charCodeAt(i)) >>> 0;
+  return WIDGET_ACCENTS[h % WIDGET_ACCENTS.length];
+}
 
 function WidgetBody({
   data,
+  icon,
   onOpenContact,
   onLeadStatusChange,
 }: {
   data: WidgetData;
+  icon?: string;
   onOpenContact?: (id: number) => void;
   onLeadStatusChange?: (contactId: number, status: DealerLeadStatus) => void;
 }) {
   switch (data.kind) {
     case 'number':
-      return <NumberCard value={data.value} sub={data.sub} accent={data.accent} />;
+      return <NumberCard value={data.value} sub={data.sub} accent={data.accent} icon={icon} />;
     case 'donut':
       return (
         <DonutChart
@@ -148,6 +172,8 @@ function WidgetCard({
 
   if (!def || !data) return null;
 
+  const accent = accentFor(instance.defId);
+
   return (
     <section
       draggable
@@ -155,14 +181,24 @@ function WidgetCard({
       onDragOver={(e) => onDragOver(e, index)}
       onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
-      className={`group relative bg-white border rounded-xl shadow-xs overflow-hidden flex flex-col min-h-[150px] min-w-0 transition ${
+      style={{ animationDelay: `${Math.min(index * 55, 500)}ms` }}
+      className={`dash-in evee-card-hover group relative bg-white border rounded-xl shadow-sm overflow-hidden flex flex-col min-w-0 transition-colors ${
         SIZE_CLASS[instance.size]
-      } ${editMode ? 'border-blue-400 ring-2 ring-blue-200/60' : 'border-slate-200'} ${
-        overIndex === index && dragIndex !== null && dragIndex !== index ? 'ring-2 ring-blue-400 ring-offset-2' : ''
-      }`}
+      } ${SIZE_MIN_H[instance.size]} ${
+        editMode ? 'border-blue-400 ring-2 ring-blue-200/60' : 'border-slate-200/80'
+      } ${overIndex === index && dragIndex !== null && dragIndex !== index ? 'ring-2 ring-blue-400 ring-offset-2' : ''}`}
     >
+      {/* Colored top accent */}
+      <span
+        className="absolute inset-x-0 top-0 h-[3px] transition-opacity"
+        style={{ background: `linear-gradient(90deg, ${accent.bar}, ${accent.bar}66)` }}
+        aria-hidden="true"
+      />
       <header className="flex items-center justify-between px-2.5 py-2 sm:px-4 sm:py-3 border-b border-slate-100 cursor-grab active:cursor-grabbing">
-        <h3 className="font-semibold text-slate-700 text-xs truncate">{instance.title}</h3>
+        <h3 className="font-semibold text-slate-700 text-xs truncate flex items-center gap-1.5 min-w-0">
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${accent.dot}`} aria-hidden="true" />
+          {instance.title}
+        </h3>
         <div className="relative flex-shrink-0 ml-2">
           <button
             onMouseDown={(e) => e.stopPropagation()}
@@ -202,7 +238,12 @@ function WidgetCard({
         </div>
       </header>
       <div className="flex-1 px-2.5 py-2 sm:px-4 sm:py-3 min-h-0">
-        <WidgetBody data={data} onOpenContact={onOpenContact} onLeadStatusChange={onLeadStatusChange} />
+        <WidgetBody
+          data={data}
+          icon={typeof def.icon === 'string' && data.kind === 'number' ? def.icon : undefined}
+          onOpenContact={onOpenContact}
+          onLeadStatusChange={onLeadStatusChange}
+        />
       </div>
       {dragIndex !== null && overIndex === index && dragIndex !== index && (
         <div className="absolute inset-x-2 -top-1 h-1 bg-blue-500 rounded-full" />
@@ -405,7 +446,7 @@ function DashboardPage({
           </div>
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex items-center gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs font-semibold rounded shadow-xs transition-colors"
+            className="flex items-center gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[10px] sm:text-xs font-semibold rounded shadow-sm transition-all hover:shadow-md"
           >
             <FaPlus className="text-[9px] hidden sm:inline" />
             <span>Add Widget</span>
@@ -431,9 +472,9 @@ function DashboardPage({
                 setEditMode(false);
               }
             }}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded shadow-xs transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded shadow-sm transition-all ${
               editMode
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white hover:shadow-md'
                 : 'border border-blue-600 text-blue-600 hover:bg-blue-50'
             }`}
             title="Toggle dashboard editing"
@@ -452,7 +493,7 @@ function DashboardPage({
 
           <button
             onClick={() => onNotify('Ask AI coming soon')}
-            className="flex items-center gap-1.5 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-full transition-colors shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white text-xs font-medium rounded-full transition-all hover:shadow-md"
           >
             <FaWandMagicSparkles className="text-[11px]" />
             <span className="hidden sm:inline">Ask AI</span>
@@ -484,6 +525,40 @@ function DashboardPage({
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        {/* Welcome banner */}
+        {(() => {
+          const h = new Date().getHours();
+          const part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+          const first = user?.first_name || user?.full_name?.split(' ')[0] || 'there';
+          return (
+            <div className="dash-in relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white px-4 sm:px-6 py-4 mb-4 shadow-md">
+              <div
+                className="absolute -right-6 -top-10 w-36 h-36 rounded-full bg-white/10 pointer-events-none"
+                aria-hidden="true"
+              />
+              <div
+                className="absolute right-16 -bottom-14 w-28 h-28 rounded-full bg-white/5 pointer-events-none"
+                aria-hidden="true"
+              />
+              <div className="relative flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <div className="text-sm sm:text-base font-bold truncate">
+                    {part}, {first}!
+                  </div>
+                  <div className="text-[11px] text-white/80 mt-0.5">
+                    Here is what is happening today ·{' '}
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </div>
+                </div>
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold bg-white/15 border border-white/25 rounded-full px-2.5 py-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 dash-live-dot" aria-hidden="true" />
+                  Live CRM data
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+
         {editMode && (
           <div className="bg-blue-50 border border-blue-200 text-blue-700 text-[11px] rounded-md px-3 py-2 mb-4 flex items-center justify-between gap-2">
             <span>Editing dashboard — drag widgets to reorder, use the menu on each widget to edit, duplicate, or remove it.</span>
@@ -497,7 +572,14 @@ function DashboardPage({
         )}
 
         {loading && instances.length === 0 ? (
-          <div className="p-10 text-center text-xs text-slate-500">Loading dashboard...</div>
+          <div className="grid grid-cols-12 gap-2 sm:gap-4" aria-busy="true" aria-label="Loading dashboard">
+            {['sm', 'sm', 'md', 'md', 'md', 'lg'].map((s, i) => (
+              <div
+                key={i}
+                className={`${SIZE_CLASS[s as WidgetInstance['size']]} ${SIZE_MIN_H[s as WidgetInstance['size']]} dash-skeleton`}
+              />
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-12 gap-2 sm:gap-4">
             {instances.map((w, index) => (
@@ -532,14 +614,17 @@ function DashboardPage({
         )}
 
         {!loading && instances.length === 0 && (
-          <div className="p-10 text-center">
-            <FaGaugeHigh className="text-2xl text-slate-300 mx-auto mb-2" />
+          <div className="p-12 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-violet-50 border border-slate-200 flex items-center justify-center mx-auto mb-3">
+              <FaGaugeHigh className="text-xl text-blue-500" />
+            </div>
             <p className="font-semibold text-slate-600 text-xs mb-1">No widgets yet</p>
+            <p className="text-[11px] text-slate-400 mb-3">Add charts and stats to build your perfect dashboard.</p>
             <button
               onClick={() => setDrawerOpen(true)}
-              className="mt-2 text-[11px] text-blue-600 hover:underline font-semibold"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[11px] font-semibold rounded-lg shadow-sm transition"
             >
-              Add your first widget
+              <FaPlus className="text-[10px]" /> Add your first widget
             </button>
           </div>
         )}

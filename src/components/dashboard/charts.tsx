@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
 import { FaArrowTrendUp, FaArrowTrendDown, FaPhone } from 'react-icons/fa6';
 import { STATUS_COLORS, STATUS_META } from './widgetMeta';
@@ -20,6 +20,24 @@ const PALETTE = [
 Chart.defaults.font.family =
   'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
 
+/** Smoothly counts up to `target` for animated number widgets. */
+function useCountUp(target: number, duration = 900): number {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(Math.round(target * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
+
 function useChart(
   type: 'doughnut' | 'bar' | 'line',
   labels: string[],
@@ -36,34 +54,56 @@ function useChart(
     if (chartRef.current) chartRef.current.destroy();
 
     const isDoughnut = type === 'doughnut';
+    const isLine = type === 'line';
     const ctx = ref.current.getContext('2d');
     if (!ctx) return;
+
+    // Gradient fills make line/bar charts feel richer while keeping the
+    // same data underneath.
+    const datasetBackgroundColor: unknown = isDoughnut
+      ? colors
+      : isLine
+      ? (context: { chart: Chart }) => {
+          const area = context.chart.chartArea;
+          if (!area) return 'rgba(59,130,246,0.15)';
+          const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+          g.addColorStop(0, 'rgba(59,130,246,0.32)');
+          g.addColorStop(1, 'rgba(59,130,246,0.02)');
+          return g;
+        }
+      : (context: { chart: Chart; dataIndex: number }) => {
+          const c = colors[context.dataIndex % colors.length] ?? '#3b82f6';
+          const area = context.chart.chartArea;
+          if (!area) return c;
+          const g =
+            horizontal && type === 'bar'
+              ? ctx.createLinearGradient(area.left, 0, area.right, 0)
+              : ctx.createLinearGradient(0, area.bottom, 0, area.top);
+          g.addColorStop(0, `${c}55`);
+          g.addColorStop(1, c);
+          return g;
+        };
 
     chartRef.current = new Chart(ctx, {
       type,
       data: {
         labels,
         datasets: [
-          isDoughnut
-            ? {
-                data: values,
-                backgroundColor: colors,
-                borderWidth: 2,
-                borderColor: '#ffffff',
-                hoverOffset: 6,
-              }
-            : {
-                label: '',
-                data: values,
-                backgroundColor: colors,
-                borderColor: colors,
-                borderWidth: 1,
-                borderRadius: type === 'bar' ? 5 : 0,
-                fill: type === 'line' ? true : false,
-                tension: type === 'line' ? 0.35 : 0,
-                pointRadius: type === 'line' ? 0 : undefined,
-                pointHoverRadius: type === 'line' ? 4 : undefined,
-              },
+          {
+            label: '',
+            data: values,
+            backgroundColor: datasetBackgroundColor as string,
+            borderColor: isDoughnut ? '#ffffff' : isLine ? '#3b82f6' : colors,
+            borderWidth: isDoughnut ? 3 : isLine ? 2.5 : 1,
+            borderRadius: type === 'bar' ? 6 : 0,
+            borderSkipped: false,
+            fill: isLine,
+            tension: isLine ? 0.4 : 0,
+            pointRadius: isLine ? 0 : undefined,
+            pointHoverRadius: isLine ? 5 : undefined,
+            pointHoverBorderWidth: isLine ? 2 : undefined,
+            hoverOffset: isDoughnut ? 8 : undefined,
+          },
         ],
       },
       options: {
@@ -71,21 +111,33 @@ function useChart(
         maintainAspectRatio: false,
         indexAxis: type === 'bar' && horizontal ? 'y' : 'x',
         cutout: isDoughnut ? cutout : undefined,
+        animation: { duration: 800, easing: 'easeOutQuart' },
         plugins: {
           legend: { display: false },
           tooltip: {
             backgroundColor: '#0f172a',
             padding: 10,
+            cornerRadius: 8,
             titleFont: { size: 12 },
             bodyFont: { size: 12 },
+            displayColors: false,
           },
         },
         scales:
           type === 'doughnut'
             ? undefined
             : {
-                x: { grid: { display: type === 'line' ? false : true, color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+                x: {
+                  grid: { display: isLine || horizontal, color: '#f1f5f9' },
+                  border: { display: false },
+                  ticks: { font: { size: 10 }, color: '#94a3b8' },
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: { color: '#f1f5f9' },
+                  border: { display: false },
+                  ticks: { font: { size: 10 }, color: '#94a3b8', precision: 0 },
+                },
               },
       },
     });
@@ -120,13 +172,17 @@ export function DonutChart({
       <div className="w-24 h-24 sm:w-32 sm:h-32 relative flex-shrink-0">
         <canvas ref={ref} />
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-xl sm:text-2xl font-bold text-slate-800 leading-none">{centerText ?? total}</span>
+          <span className="text-xl sm:text-2xl font-extrabold text-slate-800 leading-none">{centerText ?? total}</span>
+          {centerText && <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide mt-0.5">of total</span>}
         </div>
       </div>
       <div className="w-full sm:w-auto sm:flex-1 sm:min-w-0 space-y-2 text-xs">
         {labels.map((l, i) => (
           <div key={l} className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: palette[i] }} />
+            <span
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm"
+              style={{ backgroundColor: palette[i], boxShadow: `0 0 0 3px ${palette[i]}22` }}
+            />
             <span className="text-slate-600 font-medium truncate">{l}</span>
             <span className="ml-auto font-bold text-slate-800 flex-shrink-0">{values[i]}</span>
           </div>
@@ -177,13 +233,20 @@ export function FunnelChart({
         return (
           <div key={s.label}>
             <div className="flex items-center justify-between text-[11px] mb-1">
-              <span className="font-medium text-slate-600">{s.label}</span>
+              <span className="font-medium text-slate-600 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+                {s.label}
+              </span>
               <span className="font-bold text-slate-800">{s.value}</span>
             </div>
-            <div className="w-full h-8 rounded-md overflow-hidden bg-slate-100 relative">
+            <div className="w-full h-7 rounded-full overflow-hidden bg-slate-100 relative">
               <div
-                className="h-full rounded-md transition-all"
-                style={{ width: `${pct}%`, backgroundColor: s.color }}
+                className="h-full rounded-full transition-all duration-700 ease-out"
+                style={{
+                  width: `${pct}%`,
+                  background: `linear-gradient(90deg, ${s.color}bb, ${s.color})`,
+                  transitionDelay: `${i * 90}ms`,
+                }}
               />
               <span className="absolute inset-y-0 right-2 flex items-center text-[10px] font-semibold text-slate-500">
                 {i === 0 ? '100%' : `${pct}%`}
@@ -201,24 +264,46 @@ export function NumberCard({
   sub,
   delta,
   accent,
+  icon,
 }: {
   value: number | string;
   sub?: string;
   delta?: { value: number; up: boolean };
   accent?: string;
+  icon?: string;
 }) {
+  // Animate plain numeric values (12, "1,234"); composite strings like
+  // "5 / 12" or "Rs 0" render as-is.
+  const raw = typeof value === 'number' ? String(value) : String(value).trim();
+  const numeric = /^\d{1,3}(,\d{3})*$|^\d+$/.test(raw) ? parseInt(raw.replace(/,/g, ''), 10) : null;
+  const animated = useCountUp(numeric ?? 0);
+  const display = numeric !== null ? animated.toLocaleString('en-US') : value;
+
   return (
-    <div className="h-full flex flex-col justify-center">
-      <div className={`text-2xl sm:text-3xl font-bold text-slate-800 leading-none ${accent ?? ''}`}>{value}</div>
-      {sub && <div className="text-[11px] text-slate-500 mt-1.5">{sub}</div>}
-      {delta !== undefined && (
+    <div className="h-full flex items-center justify-between gap-3 min-w-0">
+      <div className="min-w-0">
+        <div className={`text-2xl sm:text-[28px] font-extrabold tracking-tight leading-none ${accent ?? 'text-slate-800'}`}>
+          {display}
+        </div>
+        {sub && <div className="text-[11px] text-slate-500 mt-1.5 truncate">{sub}</div>}
+        {delta !== undefined && (
+          <div
+            className={`inline-flex items-center gap-1 text-[11px] font-semibold mt-1.5 px-1.5 py-0.5 rounded-full ${
+              delta.up ? 'text-emerald-700 bg-emerald-50' : 'text-rose-700 bg-rose-50'
+            }`}
+          >
+            {delta.up ? <FaArrowTrendUp /> : <FaArrowTrendDown />}
+            {delta.value}%
+          </div>
+        )}
+      </div>
+      {icon && (
         <div
-          className={`inline-flex items-center gap-1 text-[11px] font-semibold mt-1 ${
-            delta.up ? 'text-emerald-600' : 'text-rose-600'
-          }`}
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0 shadow-sm"
+          style={{ background: 'linear-gradient(135deg, #eff6ff, #e0e7ff)' }}
+          aria-hidden="true"
         >
-          {delta.up ? <FaArrowTrendUp /> : <FaArrowTrendDown />}
-          {delta.value}%
+          {icon}
         </div>
       )}
     </div>
