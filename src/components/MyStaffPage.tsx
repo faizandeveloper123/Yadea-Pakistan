@@ -11,7 +11,6 @@ import {
   FaChevronRight,
   FaCircleQuestion,
   FaCopy,
-  FaEllipsisVertical,
   FaGoogle,
   FaMagnifyingGlass,
   FaMicrosoft,
@@ -874,12 +873,6 @@ function MyStaffPage({ onNotify, onBack }: MyStaffPageProps) {
                             title="Delete User"
                           >
                             <FaTrashCan className="text-sm" />
-                          </button>
-                          <button
-                            className="text-slate-400 hover:text-slate-600 transition p-1"
-                            title="More options"
-                          >
-                            <FaEllipsisVertical className="text-sm" />
                           </button>
                         </td>
                       </tr>
