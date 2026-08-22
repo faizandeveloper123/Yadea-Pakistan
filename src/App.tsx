@@ -31,6 +31,7 @@ import FormsDashboard from './components/FormsDashboard';
 import DashboardPage from './components/dashboard/DashboardPage';
 import AutomationDashboard from './components/automation/AutomationDashboard';
 import PublicFormPage from './components/PublicFormPage';
+import InvoicesPage from './components/InvoicesPage';
 import MyStaffPage from './components/MyStaffPage';
 import ManageSmartListsPage from './components/ManageSmartListsPage';
 import Pagination from './components/Pagination';
@@ -185,6 +186,8 @@ function App() {
     ? 'Dashboard'
     : route.name === 'automation'
     ? 'Automation'
+    : route.name === 'invoices'
+    ? 'Invoices'
     : 'Contacts';
 
   const showToast = useCallback((msg: string) => {
@@ -227,6 +230,10 @@ function App() {
       }
       if (label === 'Automation') {
         navigate({ name: 'automation' });
+        return;
+      }
+      if (label === 'Invoices') {
+        navigate({ name: 'invoices' });
         return;
       }
       showToast(`"${label}" page coming soon`);
@@ -1101,6 +1108,8 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
       ? 'dashboard'
       : route.name === 'automation'
       ? 'automation'
+      : route.name === 'invoices'
+      ? 'invoices'
       : 'contacts';
   if (route.name !== 'dashboard' && !hasPermission(routePerm)) {
     return (
@@ -1189,6 +1198,21 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
           />
           <main className="flex-1 min-w-0 h-full overflow-hidden">
             <AutomationDashboard onNotify={showToast} onLogout={logout} />
+          </main>
+        </div>
+      ) : route.name === 'invoices' ? (
+        <div className="flex h-screen w-full overflow-hidden select-none bg-slate-100">
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            mobileOpen={sidebarMobileOpen}
+            activeNav={activeNav}
+            onNavigate={handleNav}
+            onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+            onMobileClose={() => setSidebarMobileOpen(false)}
+            onLogout={logout}
+          />
+          <main className="flex-1 min-w-0 h-full overflow-hidden">
+            <InvoicesPage onNotify={showToast} />
           </main>
         </div>
       ) : (

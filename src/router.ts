@@ -10,6 +10,7 @@
  *   #/sites           -> Sites / Forms dashboard (standalone page)
  *   #/settings        -> Settings page (standalone page, own sidebar)
  *   #/dashboard       -> Dealer / Franchise dashboard (owner vs user views)
+ *   #/invoices        -> Yadea Sales Tax Invoice generator
  */
 
 export type Route =
@@ -20,6 +21,7 @@ export type Route =
   | { name: 'smart-lists' }
   | { name: 'dashboard' }
   | { name: 'automation' }
+  | { name: 'invoices' }
   | { name: 'form'; data: string };
 
 export const DEFAULT_ROUTE: Route = { name: 'dashboard' };
@@ -51,6 +53,8 @@ export function parseHash(): Route {
       return { name: 'dashboard' };
     case 'automation':
       return { name: 'automation' };
+    case 'invoices':
+      return { name: 'invoices' };
     case 'form':
       if (idPart) return { name: 'form', data: idPart };
       return DEFAULT_ROUTE;
@@ -73,6 +77,8 @@ export function routeToHash(route: Route): string {
       return '#/dashboard';
     case 'automation':
       return '#/automation';
+    case 'invoices':
+      return '#/invoices';
     case 'form':
       return `#/form/${route.data}`;
     case 'contacts':

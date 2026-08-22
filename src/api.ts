@@ -213,6 +213,47 @@ export interface SmartFormInput {
   campaign_id?: number | null;
 }
 
+/** Saved sales tax invoice row (GET /invoices). */
+export interface ApiInvoice {
+  id: number;
+  invoice_no: string;
+  dated: string;
+  strn: string;
+  customer_name: string;
+  qty: number;
+  motorcycle: string;
+  model_year: string;
+  colour: string;
+  engine_no: string;
+  chassis_no: string;
+  value_excl: number;
+  tax_rate: number;
+  tax_payable: number;
+  value_incl: number;
+  created_by: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Payload for creating/updating a sales tax invoice. */
+export interface InvoiceInput {
+  invoice_no: string;
+  dated?: string;
+  strn?: string;
+  customer_name?: string;
+  qty?: number;
+  motorcycle?: string;
+  model_year?: string;
+  colour?: string;
+  engine_no?: string;
+  chassis_no?: string;
+  value_excl?: number;
+  tax_rate?: number;
+  tax_payable?: number;
+  value_incl?: number;
+  created_by?: number | null;
+}
+
 export interface DealerLeadFilter {
   type: 'all' | 'days' | 'weeks' | 'months' | 'years' | 'range';
   value?: number;
@@ -722,4 +763,26 @@ export const api = {
 
   deleteForm: (id: number) =>
     request<{ message: string }>(`/forms/${id}`, { method: 'DELETE' }),
+
+  /* ------------------- SALES TAX INVOICES ------------------- */
+
+  listInvoices: (params: { search?: string; created_by?: number } = {}) =>
+    request<{ data: ApiInvoice[]; count: number }>(`/invoices${toQuery(params)}`),
+
+  nextInvoiceNumber: () => request<{ data: { invoice_no: string } }>('/invoices/next-number'),
+
+  createInvoice: (input: InvoiceInput) =>
+    request<{ data: ApiInvoice; message: string }>('/invoices', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  updateInvoice: (id: number, input: InvoiceInput) =>
+    request<{ data: ApiInvoice; message: string }>(`/invoices/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    }),
+
+  deleteInvoice: (id: number) =>
+    request<{ message: string }>(`/invoices/${id}`, { method: 'DELETE' }),
 };

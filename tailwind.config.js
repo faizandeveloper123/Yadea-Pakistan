@@ -22,6 +22,11 @@ export default {
           badge: '#eff6ff',
           badgeText: '#1d4ed8',
         },
+        yadea: {
+          orange: '#EB5F1B',
+          dark: '#c94e15',
+          black: '#111827',
+        },
       },
     },
   },

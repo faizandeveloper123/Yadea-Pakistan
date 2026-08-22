@@ -17,6 +17,12 @@
  *  DELETE /api/index.php/staff/{id}             -> delete staff user
  *  PUT  /api/index.php/contacts/{id}            -> update contact (e.g. assigned_to)
  *
+ *  GET  /api/index.php/invoices                  -> list invoices (filters: search, created_by)
+ *  GET  /api/index.php/invoices/next-number      -> suggested next sequential invoice number
+ *  POST /api/index.php/invoices                  -> create sales tax invoice
+ *  PUT  /api/index.php/invoices/{id}             -> update sales tax invoice
+ *  DELETE /api/index.php/invoices/{id}           -> delete sales tax invoice
+ *
  * Full URL example:  http://localhost/Evee/api/index.php/contacts?search=faiz
  */
 
@@ -2407,6 +2413,242 @@ function delete_form(int $id): void
     respond(['message' => 'Form deleted']);
 }
 
+/* ----------------------- SALES TAX INVOICES ----------------------- */
+
+/** Create the invoices table on first use so no manual SQL step is required. */
+function ensure_invoices_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec(
+        'CREATE TABLE IF NOT EXISTS invoices (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            invoice_no VARCHAR(191) NOT NULL,
+            dated VARCHAR(20) DEFAULT "",
+            strn VARCHAR(64) DEFAULT "",
+            customer_name VARCHAR(255) DEFAULT "",
+            qty INT NOT NULL DEFAULT 1,
+            motorcycle VARCHAR(255) DEFAULT "",
+            model_year VARCHAR(20) DEFAULT "",
+            colour VARCHAR(100) DEFAULT "",
+            engine_no VARCHAR(100) DEFAULT "",
+            chassis_no VARCHAR(100) DEFAULT "",
+            value_excl DECIMAL(12,2) NOT NULL DEFAULT 0,
+            tax_rate DECIMAL(6,2) NOT NULL DEFAULT 18,
+            tax_payable DECIMAL(12,2) NOT NULL DEFAULT 0,
+            value_incl DECIMAL(12,2) NOT NULL DEFAULT 0,
+            created_by INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_invoices_invoice_no (invoice_no),
+            INDEX idx_invoices_created_by (created_by)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+}
+
+/** Cast an invoice row's numeric columns for the API response. */
+function invoice_payload(array $row): array
+{
+    foreach (['id', 'qty'] as $k) {
+        $row[$k] = (int)$row[$k];
+    }
+    foreach (['value_excl', 'tax_rate', 'tax_payable', 'value_incl'] as $k) {
+        $row[$k] = (float)$row[$k];
+    }
+    $row['created_by'] = isset($row['created_by']) && $row['created_by'] !== null ? (int)$row['created_by'] : null;
+    return $row;
+}
+
+/**
+ * GET /invoices[?search=&created_by=]
+ * Newest first; optional search across number/customer/bike/engine/chassis.
+ * created_by scopes a non-admin user to their own invoices.
+ */
+function list_invoices(array $filters): void
+{
+    ensure_invoices_table();
+    $where = [];
+    $params = [];
+
+    if (!empty($filters['search'])) {
+        $term = '%' . $filters['search'] . '%';
+        $cols = ['invoice_no', 'customer_name', 'motorcycle', 'engine_no', 'chassis_no'];
+        $pats = [];
+        foreach ($cols as $i => $col) {
+            $pname = ':search' . $i;
+            $params[$pname] = $term;
+            $pats[] = "$col LIKE $pname";
+        }
+        $where[] = '(' . implode(' OR ', $pats) . ')';
+    }
+    if (!empty($filters['created_by'])) {
+        $params[':created_by'] = to_int((string)$filters['created_by']);
+        $where[] = 'created_by = :created_by';
+    }
+
+    $sql = 'SELECT * FROM invoices';
+    if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
+    $sql .= ' ORDER BY id DESC';
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll();
+    respond(['data' => array_map('invoice_payload', $rows), 'count' => count($rows)]);
+}
+
+/**
+ * GET /invoices/next-number
+ * Suggests the next sequential invoice number from the highest numeric
+ * invoice_no already saved ("084" -> "085", keeping the digit width).
+ */
+function next_invoice_number(): void
+{
+    ensure_invoices_table();
+    $rows = db()->query('SELECT invoice_no FROM invoices')->fetchAll(PDO::FETCH_COLUMN);
+    $max = 0;
+    $width = 3;
+    foreach ($rows as $no) {
+        $digits = preg_replace('/\D+/', '', (string)$no);
+        if ($digits !== '' && (int)$digits >= $max) {
+            $max = (int)$digits;
+            $width = max($width, strlen(ltrim($digits, '0')) ?: 1);
+        }
+    }
+    respond(['data' => ['invoice_no' => str_pad((string)($max + 1), $width, '0', STR_PAD_LEFT)]]);
+}
+
+/** Shared insert/update column list for an invoice request body. */
+function invoice_columns(array $body): array
+{
+    $qty = max(1, to_int((string)($body['qty'] ?? 1)));
+    $num = static function ($v): float {
+        $cleaned = preg_replace('/[^0-9.\-]/', '', (string)($v ?? 0));
+        return (float)($cleaned === '' ? 0 : $cleaned);
+    };
+
+    return [
+        'invoice_no' => trim((string)($body['invoice_no'] ?? '')),
+        'dated' => normalize_optional($body['dated'] ?? null) ?? '',
+        'strn' => normalize_optional($body['strn'] ?? null) ?? '',
+        'customer_name' => normalize_optional($body['customer_name'] ?? null) ?? '',
+        'qty' => $qty,
+        'motorcycle' => normalize_optional($body['motorcycle'] ?? null) ?? '',
+        'model_year' => normalize_optional($body['model_year'] ?? null) ?? '',
+        'colour' => normalize_optional($body['colour'] ?? null) ?? '',
+        'engine_no' => normalize_optional($body['engine_no'] ?? null) ?? '',
+        'chassis_no' => normalize_optional($body['chassis_no'] ?? null) ?? '',
+        'value_excl' => $num($body['value_excl'] ?? 0),
+        'tax_rate' => $num($body['tax_rate'] ?? 0),
+        'tax_payable' => $num($body['tax_payable'] ?? 0),
+        'value_incl' => $num($body['value_incl'] ?? 0),
+    ];
+}
+
+/** POST /invoices — save a new sales tax invoice. */
+function create_invoice(array $body): void
+{
+    ensure_invoices_table();
+    $c = invoice_columns($body);
+    if ($c['invoice_no'] === '') fail('Invoice number is required');
+
+    // Never allow two invoices with the same visible number.
+    $dup = db()->prepare('SELECT id FROM invoices WHERE invoice_no = :no');
+    $dup->execute([':no' => $c['invoice_no']]);
+    if ($dup->fetchColumn() !== false) {
+        fail('An invoice with number "' . $c['invoice_no'] . '" already exists', 409);
+    }
+
+    $createdBy = isset($body['created_by']) && (int)$body['created_by'] > 0 ? (int)$body['created_by'] : null;
+
+    $stmt = db()->prepare(
+        'INSERT INTO invoices (invoice_no, dated, strn, customer_name, qty, motorcycle, model_year,
+                               colour, engine_no, chassis_no, value_excl, tax_rate, tax_payable,
+                               value_incl, created_by)
+         VALUES (:no, :dated, :strn, :cust, :qty, :moto, :year, :colour, :engine, :chassis,
+                 :vexcl, :rate, :tpay, :vincl, :created_by)'
+    );
+    $stmt->execute([
+        ':no' => $c['invoice_no'],
+        ':dated' => $c['dated'],
+        ':strn' => $c['strn'],
+        ':cust' => $c['customer_name'],
+        ':qty' => $c['qty'],
+        ':moto' => $c['motorcycle'],
+        ':year' => $c['model_year'],
+        ':colour' => $c['colour'],
+        ':engine' => $c['engine_no'],
+        ':chassis' => $c['chassis_no'],
+        ':vexcl' => $c['value_excl'],
+        ':rate' => $c['tax_rate'],
+        ':tpay' => $c['tax_payable'],
+        ':vincl' => $c['value_incl'],
+        ':created_by' => $createdBy,
+    ]);
+    $id = (int)db()->lastInsertId();
+
+    $get = db()->prepare('SELECT * FROM invoices WHERE id = :id');
+    $get->execute([':id' => $id]);
+    respond(['data' => invoice_payload($get->fetch() ?: ['id' => $id]), 'message' => 'Invoice saved'], 201);
+}
+
+/** PUT /invoices/{id} — update an existing sales tax invoice. */
+function update_invoice(int $id, array $body): void
+{
+    ensure_invoices_table();
+    $existing = db()->prepare('SELECT id FROM invoices WHERE id = :id');
+    $existing->execute([':id' => $id]);
+    if ($existing->fetchColumn() === false) fail('Invoice not found', 404);
+
+    $c = invoice_columns($body);
+    if ($c['invoice_no'] === '') fail('Invoice number is required');
+
+    // The duplicate check must ignore the invoice being edited itself.
+    $dup = db()->prepare('SELECT id FROM invoices WHERE invoice_no = :no AND id <> :id');
+    $dup->execute([':no' => $c['invoice_no'], ':id' => $id]);
+    if ($dup->fetchColumn() !== false) {
+        fail('An invoice with number "' . $c['invoice_no'] . '" already exists', 409);
+    }
+
+    db()->prepare(
+        'UPDATE invoices SET invoice_no = :no, dated = :dated, strn = :strn, customer_name = :cust,
+                qty = :qty, motorcycle = :moto, model_year = :year, colour = :colour,
+                engine_no = :engine, chassis_no = :chassis, value_excl = :vexcl, tax_rate = :rate,
+                tax_payable = :tpay, value_incl = :vincl
+          WHERE id = :id'
+    )->execute([
+        ':no' => $c['invoice_no'],
+        ':dated' => $c['dated'],
+        ':strn' => $c['strn'],
+        ':cust' => $c['customer_name'],
+        ':qty' => $c['qty'],
+        ':moto' => $c['motorcycle'],
+        ':year' => $c['model_year'],
+        ':colour' => $c['colour'],
+        ':engine' => $c['engine_no'],
+        ':chassis' => $c['chassis_no'],
+        ':vexcl' => $c['value_excl'],
+        ':rate' => $c['tax_rate'],
+        ':tpay' => $c['tax_payable'],
+        ':vincl' => $c['value_incl'],
+        ':id' => $id,
+    ]);
+
+    $get = db()->prepare('SELECT * FROM invoices WHERE id = :id');
+    $get->execute([':id' => $id]);
+    respond(['data' => invoice_payload($get->fetch() ?: []), 'message' => 'Invoice updated']);
+}
+
+/** DELETE /invoices/{id} */
+function delete_invoice(int $id): void
+{
+    ensure_invoices_table();
+    $stmt = db()->prepare('DELETE FROM invoices WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    if ($stmt->rowCount() === 0) fail('Invoice not found', 404);
+    respond(['message' => 'Invoice deleted']);
+}
+
 /* ----------------------- ROUTER ----------------------- */
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -2646,6 +2888,23 @@ switch ($resource) {
         } elseif ($method === 'DELETE') {
             if (!$id) fail('Form id required');
             delete_form(to_int($id));
+        }
+        break;
+
+    case 'invoices':
+        $id = $parts[1] ?? null;
+        if ($method === 'GET') {
+            if ($id === null) list_invoices($filters);
+            elseif ($id === 'next-number') next_invoice_number();
+            else fail('Unknown invoice endpoint', 404);
+        } elseif ($method === 'POST') {
+            create_invoice(json_body());
+        } elseif ($method === 'PUT') {
+            if (!$id) fail('Invoice id required');
+            update_invoice(to_int($id), json_body());
+        } elseif ($method === 'DELETE') {
+            if (!$id) fail('Invoice id required');
+            delete_invoice(to_int($id));
         }
         break;
 

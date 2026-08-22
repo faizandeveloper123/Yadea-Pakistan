@@ -346,6 +346,12 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     features: fromItems(['View & manage tax settings', 'Configure tax rates', 'Export tax reports']),
   },
   {
+    id: 'invoices',
+    label: 'Invoices',
+    icon: 'file-invoice',
+    features: [{ label: 'Invoices', actions: ['view', 'add', 'edit', 'delete', 'export'] }],
+  },
+  {
     id: 'transactions',
     label: 'Transactions',
     icon: 'money-bill-transfer',

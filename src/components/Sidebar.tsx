@@ -24,6 +24,7 @@ import {
   FaAddressBook,
   FaComments,
   FaChartLine,
+  FaFileInvoice,
 } from 'react-icons/fa6';
 import YadeaLogo from './YadeaLogo';
 import { useAuth } from '../auth';
@@ -46,6 +47,7 @@ const primaryNav: NavItem[] = [
   { label: 'Contacts', icon: FaAddressBook, perm: 'contacts' },
   { label: 'Opportunities', icon: FaDiagramProject, perm: 'opportunities' },
   { label: 'Payments', icon: FaRegCreditCard, perm: 'payments' },
+  { label: 'Invoices', icon: FaFileInvoice, perm: 'invoices' },
 ];
 
 const secondaryNav: NavItem[] = [
