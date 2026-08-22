@@ -744,6 +744,46 @@ function upsert_staff(array $body, ?int $existingId = null): int
     $password = $rawPassword !== null ? hash_password($rawPassword) : null;
     if ($password !== null) ensure_password_plain_column();
 
+    // No two staff users (admin/dealer/follower) may share an email or phone
+    // number, so duplicate dealer/follower accounts can never be created.
+    // The form can store several values ("a@x.com, b@y.com"), so every part is
+    // checked; phones are compared digits-only to ignore formatting. Existing
+    // accounts are never re-validated so legacy rows keep saving fine.
+    $selfId = $existingId ?? 0;
+    $splitValues = static function (?string $raw): array {
+        if ($raw === null || trim($raw) === '') return [];
+        return array_values(array_filter(array_map('trim', explode(',', $raw)), static fn($v) => $v !== ''));
+    };
+    $newEmails = $existingId === null ? $splitValues($email) : [];
+    $newPhones = $existingId === null ? $splitValues($phone) : [];
+    if ($newEmails || $newPhones) {
+        $rows = db()->prepare('SELECT full_name, email, phone FROM staff_users WHERE id <> :self');
+        $rows->execute([':self' => $selfId]);
+        $takenEmails = [];
+        $takenPhones = [];
+        foreach ($rows->fetchAll() as $r) {
+            foreach ($splitValues($r['email'] ?? null) as $e) {
+                $takenEmails[strtolower($e)] = $r['full_name'];
+            }
+            foreach ($splitValues($r['phone'] ?? null) as $p) {
+                $digits = preg_replace('/\D+/', '', $p);
+                if ($digits !== '') $takenPhones[$digits] = $r['full_name'];
+            }
+        }
+        foreach ($newEmails as $e) {
+            $key = strtolower($e);
+            if (isset($takenEmails[$key])) {
+                fail('This email (' . $e . ') is already used by "' . trim((string)$takenEmails[$key]) . '". Please use a different email.', 409);
+            }
+        }
+        foreach ($newPhones as $p) {
+            $digits = preg_replace('/\D+/', '', $p);
+            if ($digits !== '' && isset($takenPhones[$digits])) {
+                fail('This phone number (' . $p . ') is already used by "' . trim((string)$takenPhones[$digits]) . '". Please use a different phone number.', 409);
+            }
+        }
+    }
+
     $pdo = db();
     $fullName = trim($firstName . ' ' . ($lastName ?? ''));
 
@@ -1956,7 +1996,58 @@ function list_smart_lists(array $filters): void
     $stmt->execute([':me' => $userId, ':me2' => $userId]);
     $rows = $stmt->fetchAll();
 
+    $rows = filter_smart_lists_for_staff($rows, $userId);
+
     respond(['data' => array_map('smart_list_payload', $rows), 'count' => count($rows)]);
+}
+
+/** Contact ids a staff user owns (assigned) or follows. */
+function staff_accessible_contact_ids(int $userId): array
+{
+    $stmt = db()->prepare(
+        'SELECT id FROM contacts
+          WHERE assigned_to = :me
+             OR id IN (SELECT contact_id FROM contact_followers WHERE staff_id = :me2)'
+    );
+    $stmt->execute([':me' => $userId, ':me2' => $userId]);
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
+/**
+ * Dealers and followers start with a clean slate: until leads are assigned to
+ * them they see no smart lists at all. Afterwards a shared list appears only
+ * when it is assigned to them (dealer_id), shared explicitly with them, or
+ * contains at least one of their own contacts. Admins are unaffected.
+ */
+function filter_smart_lists_for_staff(array $rows, int $userId): array
+{
+    if (!$rows) return $rows;
+    $u = db()->prepare('SELECT user_type FROM staff_users WHERE id = :id');
+    $u->execute([':id' => $userId]);
+    $type = (string)($u->fetchColumn() ?: '');
+    if ($type === '' || $type === 'Admin') return $rows;
+
+    $mineSet = array_fill_keys(staff_accessible_contact_ids($userId), true);
+    $shared = db()->prepare('SELECT smart_list_id FROM smart_list_shares WHERE user_id = :u');
+    $shared->execute([':u' => $userId]);
+    $sharedSet = array_fill_keys(array_map('intval', $shared->fetchAll(PDO::FETCH_COLUMN)), true);
+
+    $out = [];
+    foreach ($rows as $row) {
+        if ((int)$row['created_by'] === $userId
+            || (int)($row['dealer_id'] ?? 0) === $userId
+            || isset($sharedSet[(int)$row['id']])) {
+            $out[] = $row;
+            continue;
+        }
+        foreach (decode_json_field($row['members'] ?? null) as $m) {
+            if (is_numeric($m) && isset($mineSet[(int)$m])) {
+                $out[] = $row;
+                break;
+            }
+        }
+    }
+    return $out;
 }
 
 /** Validate and normalize the JSON-column inputs of a smart list. */
