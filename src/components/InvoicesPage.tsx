@@ -332,6 +332,9 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
         .inv-underlined { border-bottom: 1px solid #1e293b; background: transparent; }
         .inv-underlined:focus { border-bottom: 2px solid #EB5F1B; outline: none; }
         .inv-bare:focus { outline: none; background-color: rgba(254, 243, 199, 0.45); }
+        .preview-x::-webkit-scrollbar, .inv-scroll-y::-webkit-scrollbar { height: 6px; width: 6px; }
+        .preview-x::-webkit-scrollbar-thumb, .inv-scroll-y::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        .preview-x::-webkit-scrollbar-track, .inv-scroll-y::-webkit-scrollbar-track { background: transparent; }
         .inv-table-wrap { border: 2px solid #111827; border-radius: 14px; overflow: hidden; background: #fff; }
         .inv-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .inv-table th { border-right: 1.5px solid #111827; border-bottom: 2px solid #111827; font-size: 11px; font-weight: 800; color: #0f172a; padding: 6px 4px; text-align: center; background: #fff; }
@@ -348,12 +351,12 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
       `}</style>
 
       <div className="h-full overflow-y-auto bg-slate-100 min-w-0">
-        <div className="max-w-[1440px] mx-auto px-3 md:px-6 py-5">
-          {/* Page heading + action bar */}
-          <div className="inv-no-print flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="max-w-[1440px] mx-auto px-3 md:px-6 pb-8">
+          {/* Page heading + sticky action bar */}
+          <div className="inv-no-print sticky top-0 z-30 -mx-3 md:-mx-6 px-3 md:px-6 pt-4 pb-3 mb-5 bg-slate-100/85 backdrop-blur-md border-b border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-yadea-black flex items-center justify-center shadow">
-                <YadeaLogo wordmark={false} className="h-6 w-auto" />
+              <div className="w-11 h-11 rounded-xl bg-yadea-black flex items-center justify-center shadow-md shadow-slate-900/20 ring-1 ring-black/10">
+                <YadeaLogo wordmark={false} className="h-7 w-auto" />
               </div>
               <div>
                 <h1 className="text-lg font-extrabold text-slate-900 leading-tight">
@@ -367,7 +370,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
             <div className="flex items-center gap-2 flex-wrap">
               {editingId !== null && (
-                <span className="inline-flex items-center gap-1.5 bg-yadea-orange/10 text-yadea-dark border border-yadea-orange/30 rounded-md px-2.5 py-1.5 text-[11px] font-bold">
+                <span className="inline-flex items-center gap-1.5 bg-yadea-orange/10 text-yadea-dark border border-yadea-orange/30 rounded-lg px-2.5 py-2 text-[11px] font-bold">
                   <FaPenToSquare className="text-[10px]" />
                   Editing #{form.invoiceNo || editingId}
                 </span>
@@ -375,7 +378,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
               <button
                 type="button"
                 onClick={handleNew}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-md border border-slate-300 shadow-sm transition"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-slate-400 shadow-sm transition active:scale-[0.98]"
               >
                 <FaPlus className="text-[10px]" /> New
               </button>
@@ -384,7 +387,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                 onClick={handleSave}
                 disabled={!canEdit || saving}
                 title={canEdit ? 'Save invoice to database' : 'You do not have edit permission'}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-yadea-orange hover:bg-yadea-dark text-white text-xs font-bold rounded-md shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 h-9 px-4 bg-yadea-orange hover:bg-yadea-dark text-white text-xs font-bold rounded-lg shadow-sm shadow-yadea-orange/40 transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 <FaFloppyDisk className={saving ? 'animate-pulse' : ''} />
                 {saving ? 'Saving...' : editingId !== null ? 'Update' : 'Save'}
@@ -392,7 +395,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
               <button
                 type="button"
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-md border border-slate-300 shadow-sm transition"
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-slate-400 shadow-sm transition active:scale-[0.98]"
               >
                 <FaPrint /> Print
               </button>
@@ -401,9 +404,9 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                 onClick={() => void handleDownloadPdf()}
                 disabled={!canExport || pdfBusy}
                 title={canExport ? 'Download as PDF' : 'You do not have export permission'}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-md shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 h-9 px-4 bg-yadea-black hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaFilePdf className={pdfBusy ? 'animate-pulse text-yadea-orange' : 'text-yadea-orange'} />
+                <FaFilePdf className={`text-yadea-orange ${pdfBusy ? 'animate-pulse' : ''}`} />
                 {pdfBusy ? 'Preparing...' : 'Download PDF'}
               </button>
             </div>
@@ -614,21 +617,26 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                   />
                 </div>
 
-                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 -mx-1">
+                <div className="max-h-72 overflow-y-auto -mx-1 px-1 space-y-0.5 inv-scroll-y">
                   {loadingList ? (
-                    <p className="text-[11px] text-slate-400 text-center py-4">Loading invoices...</p>
+                    <p className="text-[11px] text-slate-400 text-center py-5">Loading invoices...</p>
                   ) : invoices.length === 0 ? (
-                    <p className="text-[11px] text-slate-400 text-center py-4 leading-relaxed">
-                      No invoices saved yet.
-                      <br />
-                      Fill the form and press Save to store one in the database.
-                    </p>
+                    <div className="text-center py-6 space-y-1.5">
+                      <FaFileInvoice className="text-2xl text-slate-200 mx-auto" />
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        No invoices saved yet.
+                        <br />
+                        Fill the form and press Save to store one in the database.
+                      </p>
+                    </div>
                   ) : (
                     invoices.map((inv) => (
                       <div
                         key={inv.id}
-                        className={`group flex items-center gap-2 py-2 px-1 ${
-                          editingId === inv.id ? 'bg-yadea-orange/5' : ''
+                        className={`group flex items-center gap-1.5 rounded-lg py-2 px-2 transition ${
+                          editingId === inv.id
+                            ? 'bg-yadea-orange/[0.07] ring-1 ring-yadea-orange/25'
+                            : 'hover:bg-slate-50'
                         }`}
                       >
                         <button
@@ -637,25 +645,32 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           className="flex-1 min-w-0 text-left"
                           title="Load into editor"
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-between gap-2">
                             <span className="font-mono font-extrabold text-xs text-green-800">
                               #{inv.invoice_no}
                             </span>
-                            <span className="text-[11px] font-semibold text-slate-800 truncate">
-                              {inv.customer_name || 'Unnamed customer'}
+                            <span className="text-[10px] font-medium text-slate-400 shrink-0">
+                              {inv.dated || 'No date'}
                             </span>
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                            {inv.dated || 'No date'} • Qty {inv.qty} • Rs{' '}
-                            {formatMoney(Number(inv.value_incl) || 0)}
-                            {inv.motorcycle ? ` • ${inv.motorcycle}` : ''}
+                          <div className="text-xs font-bold text-slate-800 truncate mt-0.5">
+                            {inv.customer_name || 'Unnamed customer'}
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-0.5">
+                            <span className="text-[10px] text-slate-500 truncate">
+                              Qty {inv.qty}
+                              {inv.motorcycle ? ` • ${inv.motorcycle}` : ''}
+                            </span>
+                            <span className="text-[11px] font-extrabold text-yadea-dark shrink-0">
+                              Rs {formatMoney(Number(inv.value_incl) || 0)}
+                            </span>
                           </div>
                         </button>
                         {canDelete && (
                           <button
                             type="button"
                             onClick={() => void handleDelete(inv)}
-                            className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-600 transition p-1 shrink-0"
+                            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 text-slate-300 hover:text-red-600 transition p-1.5 shrink-0 rounded-md hover:bg-red-50"
                             aria-label={`Delete invoice ${inv.invoice_no}`}
                             title="Delete"
                           >
@@ -682,39 +697,39 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
             {/* -------------------- Document canvas -------------------- */}
             <div className="lg:col-span-8">
               <div className="inv-scroll-host flex justify-start md:justify-center items-start overflow-x-auto pb-6 preview-x">
-                <div className="w-full min-w-[680px] max-w-[760px]">
+                <div className="w-full min-w-[640px] max-w-[780px] px-0.5">
                   <div
                     ref={docRef}
-                    className="inv-page bg-white shadow-xl rounded-xl text-slate-900 relative flex flex-col justify-between overflow-hidden border border-slate-300 w-full"
-                    style={{ minHeight: 960 }}
+                    className="inv-page bg-white shadow-xl shadow-slate-900/10 rounded-2xl text-slate-900 relative flex flex-col justify-between overflow-hidden ring-1 ring-slate-200 w-full"
+                    style={{ minHeight: 950 }}
                   >
                     <div>
-                      {/* Header banner */}
+                      {/* Header banner: orange band + black corner sweep so the
+                          orange shield always sits on black and stays visible */}
                       <div className="relative bg-white">
-                        <div className="w-full relative overflow-hidden leading-none" style={{ height: 110 }}>
-                          <svg className="w-full h-full" viewBox="0 0 700 110" preserveAspectRatio="none">
-                            <path d="M 0,0 L 700,0 L 700,55 C 640,105 480,110 380,102 C 240,90 80,105 0,70 Z" fill="#111827" />
-                            <path d="M 460,0 Q 560,35 700,105 L 700,110 Q 550,45 440,0 Z" fill="#ffffff" />
-                            <path d="M 475,0 C 570,30 650,70 700,110 L 700,40 C 620,10 540,0 475,0 Z" fill="#EB5F1B" />
+                        <div className="w-full relative overflow-hidden leading-none" style={{ height: 112 }}>
+                          <svg className="w-full h-full" viewBox="0 0 700 112" preserveAspectRatio="none">
+                            {/* Brand-orange main band */}
+                            <path d="M0,0 H700 V68 C590,102 430,112 305,107 C185,102 85,95 0,66 Z" fill="#EB5F1B" />
+                            {/* White separation sliver along the sweep edge */}
+                            <path d="M444,0 C544,24 644,57 700,94 L700,84 C650,50 560,17 458,-4 Z" fill="#ffffff" />
+                            {/* Black corner sweep hosting the shield */}
+                            <path d="M452,0 C550,22 648,54 700,90 L700,0 Z" fill="#111827" />
                           </svg>
 
-                          <div className="absolute top-3 left-6 right-6 flex justify-between items-start text-white">
-                            <div className="pt-1">
-                              <h1 className="text-2xl md:text-3xl font-black tracking-wide drop-shadow-sm">
-                                Yadea Hussain Motors
-                              </h1>
-                            </div>
-                            <div className="flex flex-col items-center mr-4 pt-0.5">
-                              <YadeaLogo wordmark={false} className="w-9 h-auto" />
-                              <span className="text-[9px] font-black tracking-[0.25em] mt-0.5 text-white">
-                                YADEA
-                              </span>
+                          <div className="absolute top-4 left-7 right-7 flex justify-between items-start">
+                            <h1 className="text-2xl md:text-[27px] font-black tracking-wide text-white drop-shadow-sm leading-tight">
+                              Yadea Hussain Motors
+                            </h1>
+                            <div className="flex flex-col items-center pr-1 shrink-0">
+                              <YadeaLogo wordmark={false} className="w-10 h-auto" />
+                              <span className="text-[9px] font-black tracking-[0.3em] mt-1 text-white">YADEA</span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Address ribbon */}
-                        <div className="bg-yadea-orange text-white text-center text-xs md:text-sm font-bold py-1 px-4 tracking-wide">
+                        {/* Address ribbon (black to separate from the orange band) */}
+                        <div className="bg-yadea-black text-white text-center text-xs md:text-sm font-bold py-1.5 px-4 tracking-wide">
                           Plaza # 27, Mini Ext 1, Bahria Town Phase 7, Rawalpindi.
                         </div>
                       </div>
@@ -805,7 +820,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                               </tr>
                             </thead>
                             <tbody>
-                              <tr style={{ height: 360 }}>
+                              <tr style={{ height: 330 }}>
                                 <td className="text-center font-bold text-slate-900 pt-4">
                                   <input
                                     type="text"
@@ -881,8 +896,8 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                     <div className="px-7 pt-4 pb-4 relative">
                       <div className="absolute bottom-0 left-0 w-40 h-24 pointer-events-none overflow-hidden z-0">
                         <svg className="w-full h-full" viewBox="0 0 160 100" preserveAspectRatio="none">
-                          <path d="M -10,110 L 140,110 Q 70,30 -10,10 Z" fill="#111827" />
-                          <path d="M -10,110 L 155,110 Q 100,60 -10,50 Z" fill="#EB5F1B" />
+                          <path d="M -10,110 L 140,110 Q 70,30 -10,10 Z" fill="#EB5F1B" />
+                          <path d="M -10,110 L 155,110 Q 100,60 -10,50 Z" fill="#111827" />
                         </svg>
                       </div>
 
