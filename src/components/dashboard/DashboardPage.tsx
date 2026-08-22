@@ -110,6 +110,9 @@ function WidgetCard({
   overIndex,
   menuOpen,
   editMode,
+  resizing,
+  resizeSpan,
+  resizeH,
   onOpenContact,
   onLeadStatusChange,
   onDragStart,
@@ -120,6 +123,7 @@ function WidgetCard({
   onEdit,
   onDuplicate,
   onDelete,
+  onResizeStart,
 }: {
   instance: WidgetInstance;
   dataset: DashboardDataset;
@@ -128,6 +132,9 @@ function WidgetCard({
   overIndex: number | null;
   menuOpen: boolean;
   editMode: boolean;
+  resizing: boolean;
+  resizeSpan: number | null;
+  resizeH: number | null;
   onOpenContact?: (id: number) => void;
   onLeadStatusChange?: (contactId: number, status: DealerLeadStatus) => void;
   onDragStart: (e: React.DragEvent, index: number) => void;
@@ -138,10 +145,12 @@ function WidgetCard({
   onEdit: (uid: string) => void;
   onDuplicate: (uid: string) => void;
   onDelete: (uid: string) => void;
+  onResizeStart: (e: React.PointerEvent, el: HTMLElement, uid: string) => void;
 }) {
   const def = WIDGET_BY_ID[instance.defId];
   const data = useMemo(() => (def ? def.compute(dataset) : null), [def, dataset]);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -154,14 +163,22 @@ function WidgetCard({
 
   if (!def || !data) return null;
 
+  const effSpan = resizeSpan ?? instance.w;
+  const effH = resizeH ?? instance.h;
+
   return (
     <section
-      draggable
+      ref={sectionRef}
+      draggable={!resizing}
       onDragStart={(e) => onDragStart(e, index)}
       onDragOver={(e) => onDragOver(e, index)}
       onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
-      style={{ animationDelay: `${Math.min(index * 55, 500)}ms` }}
+      style={{
+        animationDelay: `${Math.min(index * 55, 500)}ms`,
+        ...(effSpan ? { gridColumn: `span ${effSpan} / span ${effSpan}` } : null),
+        ...(effH ? { height: `${effH}px` } : null),
+      }}
       className={`dash-in group relative bg-white border border-slate-200/70 rounded-xl shadow-xs overflow-hidden flex flex-col min-w-0 transition-shadow hover:shadow-md ${
         SIZE_CLASS[instance.size]
       } ${
@@ -214,6 +231,24 @@ function WidgetCard({
       {dragIndex !== null && overIndex === index && dragIndex !== index && (
         <div className="absolute inset-x-2 -top-1 h-1 bg-blue-500 rounded-full" />
       )}
+      {resizing && <div className="absolute inset-0 border-2 border-blue-400/70 rounded-xl pointer-events-none" />}
+      <div
+        onPointerDown={(e) => {
+          const el = sectionRef.current;
+          if (!el) return;
+          e.preventDefault();
+          e.stopPropagation();
+          onResizeStart(e, el, instance.uid);
+        }}
+        className={`absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize flex items-end justify-end p-[3px] z-20 touch-none ${
+          resizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}
+        title="Drag to resize"
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" className={resizing ? 'text-blue-500' : 'text-slate-300 group-hover:text-slate-400'}>
+          <path d="M9 1L1 9M9 5l-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+        </svg>
+      </div>
     </section>
   );
 }
@@ -275,6 +310,44 @@ function DashboardPage({
   const [assignOpen, setAssignOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [resizePreview, setResizePreview] = useState<{ uid: string; span: number; h: number } | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
+  const handleResizeStart = useCallback((e: React.PointerEvent, el: HTMLElement, uid: string) => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startRect = el.getBoundingClientRect();
+    const cs = getComputedStyle(grid);
+    const gap = parseFloat(cs.columnGap) || 0;
+    const unit = (grid.clientWidth - 11 * gap) / 12;
+    let last = {
+      span: Math.min(12, Math.max(1, Math.round((startRect.width + gap) / (unit + gap)))),
+      h: Math.round(startRect.height),
+    };
+    document.body.style.userSelect = 'none';
+    const onMove = (ev: PointerEvent) => {
+      last = {
+        span: Math.min(12, Math.max(1, Math.round((startRect.width + (ev.clientX - startX) + gap) / (unit + gap)))),
+        h: Math.max(96, Math.round(startRect.height + (ev.clientY - startY))),
+      };
+      setResizePreview({ uid, ...last });
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      document.body.style.userSelect = '';
+      setResizePreview(null);
+      setInstances((prev) =>
+        prev.map((w) => (w.uid === uid ? { ...w, w: last.span, h: last.h } : w))
+      );
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -547,7 +620,7 @@ function DashboardPage({
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-12 gap-2 sm:gap-3">
+          <div ref={gridRef} className="grid grid-cols-12 gap-2 sm:gap-3">
             {instances.map((w, index) => (
               <WidgetCard
                 key={w.uid}
@@ -558,6 +631,9 @@ function DashboardPage({
                 overIndex={overIndex}
                 menuOpen={menuUid === w.uid}
                 editMode={editMode}
+                resizing={resizePreview?.uid === w.uid}
+                resizeSpan={resizePreview?.uid === w.uid ? resizePreview.span : null}
+                resizeH={resizePreview?.uid === w.uid ? resizePreview.h : null}
                 onOpenContact={onOpenContact}
                 onLeadStatusChange={handleLeadStatusChange}
                 onDragStart={handleDragStart}
@@ -568,6 +644,7 @@ function DashboardPage({
                   setOverIndex(null);
                 }}
                 onMenuToggle={(uid) => setMenuUid((v) => (v === uid ? null : uid))}
+                onResizeStart={handleResizeStart}
                 onEdit={(uid) => {
                   setEditUid(uid);
                   setMenuUid(null);

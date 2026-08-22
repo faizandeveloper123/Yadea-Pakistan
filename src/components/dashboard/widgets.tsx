@@ -51,6 +51,8 @@ export interface WidgetInstance {
   defId: string;
   title: string;
   size: 'sm' | 'md' | 'lg';
+  w?: number;
+  h?: number;
 }
 
 export type WidgetRole = 'Admin' | 'Dealer' | 'Follower';
