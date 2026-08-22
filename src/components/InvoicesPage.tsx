@@ -712,9 +712,10 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             {/* Brand-orange main band */}
                             <path d="M0,0 H700 V68 C590,102 430,112 305,107 C185,102 85,95 0,66 Z" fill="#EB5F1B" />
                             {/* White separation sliver along the sweep edge */}
-                            <path d="M444,0 C544,24 644,57 700,94 L700,84 C650,50 560,17 458,-4 Z" fill="#ffffff" />
-                            {/* Black corner sweep hosting the shield */}
-                            <path d="M452,0 C550,22 648,54 700,90 L700,0 Z" fill="#111827" />
+                            <path d="M410,0 C512,32 614,67 700,110 L700,99 C606,58 510,25 420,-4 Z" fill="#ffffff" />
+                            {/* Black corner sweep hosting the shield - extended left
+                                and down so the logo + caption stay fully on black */}
+                            <path d="M420,0 C520,30 620,64 700,106 L700,0 Z" fill="#111827" />
                           </svg>
 
                           <div className="absolute top-4 left-7 right-7 flex justify-between items-start">
