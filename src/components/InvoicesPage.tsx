@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   FaFileInvoice,
   FaFilePdf,
@@ -10,6 +10,8 @@ import {
   FaRotateRight,
   FaCircleInfo,
   FaPenToSquare,
+  FaChartLine,
+  FaMotorcycle,
 } from 'react-icons/fa6';
 import { api, type ApiInvoice, type InvoiceInput } from '../api';
 import { useAuth } from '../auth';
@@ -35,6 +37,90 @@ function formatMoney(amount: number): string {
 function todayDMY(): string {
   const d = new Date();
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
+/* --------------------- dashboard history filters --------------------- */
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+export type InvoiceRangeKey =
+  | 'all'
+  | 'today'
+  | 'tomorrow'
+  | 'yesterday'
+  | 'week'
+  | 'month'
+  | 'year'
+  | 'custom';
+
+export const INVOICE_RANGES: { key: InvoiceRangeKey; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'today', label: 'Today' },
+  { key: 'tomorrow', label: 'Tomorrow' },
+  { key: 'yesterday', label: 'Previous Day' },
+  { key: 'week', label: 'This Week' },
+  { key: 'month', label: 'This Month' },
+  { key: 'year', label: 'This Year' },
+  { key: 'custom', label: 'Custom' },
+];
+
+/** Parse the slip's free-text "DD/MM/YYYY" date into a Date (or null). */
+function parseDMY(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value.trim());
+  if (!m) return null;
+  const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function startOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+/** Resolve a preset (or custom range) into an inclusive [start, end] window. */
+function getRange(key: InvoiceRangeKey, from: string, to: string): [Date | null, Date | null] {
+  const now = new Date();
+  switch (key) {
+    case 'today':
+      return [startOfDay(now), endOfDay(now)];
+    case 'tomorrow': {
+      const t = new Date(now);
+      t.setDate(t.getDate() + 1);
+      return [startOfDay(t), endOfDay(t)];
+    }
+    case 'yesterday': {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      return [startOfDay(y), endOfDay(y)];
+    }
+    case 'week': {
+      // Monday-start current week through today.
+      const s = startOfDay(now);
+      s.setDate(s.getDate() - ((s.getDay() + 6) % 7));
+      return [s, endOfDay(now)];
+    }
+    case 'month':
+      return [new Date(now.getFullYear(), now.getMonth(), 1), endOfDay(now)];
+    case 'year':
+      return [new Date(now.getFullYear(), 0, 1), endOfDay(now)];
+    case 'custom': {
+      const f = from ? new Date(from) : null;
+      const t = to ? new Date(to) : null;
+      const validF = f && !Number.isNaN(f.getTime()) ? f : null;
+      const validT = t && !Number.isNaN(t.getTime()) ? endOfDay(t) : null;
+      return [validF, validT];
+    }
+    default:
+      return [null, null];
+  }
 }
 
 interface InvoiceFormState {
@@ -140,16 +226,26 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
   const [invoices, setInvoices] = useState<ApiInvoice[]>([]);
   const [loadingList, setLoadingList] = useState(true);
-  const [listSearch, setListSearch] = useState('');
+
+  // Dashboard view + history filters.
+  const [view, setView] = useState<'editor' | 'dashboard'>('editor');
+  const [rangeKey, setRangeKey] = useState<InvoiceRangeKey>('all');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [dashSearch, setDashSearch] = useState('');
 
   const docRef = useRef<HTMLDivElement | null>(null);
 
-  /* While this page is mounted every print (button or Ctrl+P) outputs only
+  /* While the editor is mounted every print (button or Ctrl+P) outputs only
      the invoice sheet - the CSS below hides everything else. */
   useEffect(() => {
+    if (view !== 'editor') {
+      document.body.classList.remove('inv-printing');
+      return undefined;
+    }
     document.body.classList.add('inv-printing');
     return () => document.body.classList.remove('inv-printing');
-  }, []);
+  }, [view]);
 
   /* Suggested next sequential number for a fresh invoice. */
   useEffect(() => {
@@ -170,26 +266,25 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
     };
   }, []);
 
-  /* Saved-invoice listing (debounced server-side search). */
+  /* Invoice listing for the dashboard (search/filtering happens client-side). */
   const loadInvoices = useCallback(async () => {
     setLoadingList(true);
     try {
-      const params: { search?: string; created_by?: number } = {};
-      if (listSearch.trim()) params.search = listSearch.trim();
+      const params: { created_by?: number } = {};
       if (user && user.user_type !== 'Admin') params.created_by = user.id;
       const res = await api.listInvoices(params);
       setInvoices(res.data);
     } catch (err) {
-      onNotify(`Failed to load saved invoices: ${(err as Error).message}`);
+      onNotify(`Failed to load invoices: ${(err as Error).message}`);
     } finally {
       setLoadingList(false);
     }
-  }, [listSearch, user, onNotify]);
+  }, [user, onNotify]);
 
+  // Fetch whenever the dashboard view opens (and on user change).
   useEffect(() => {
-    const timer = window.setTimeout(() => void loadInvoices(), 250);
-    return () => window.clearTimeout(timer);
-  }, [loadInvoices]);
+    if (view === 'dashboard') void loadInvoices();
+  }, [view, loadInvoices]);
 
   /* ------------------------- live calculations ------------------------ */
 
@@ -200,6 +295,57 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
   const taxPayable = totalExcl * (taxRate / 100);
   const totalIncl = totalExcl + taxPayable;
 
+  /* ----------------------- dashboard derivations ---------------------- */
+
+  const [rangeStart, rangeEnd] = useMemo(
+    () => getRange(rangeKey, customFrom, customTo),
+    [rangeKey, customFrom, customTo]
+  );
+
+  const filteredInvoices = useMemo(() => {
+    const q = dashSearch.trim().toLowerCase();
+    return invoices
+      .filter((inv) => {
+        const d = parseDMY(inv.dated);
+        if (rangeStart && (!d || d < rangeStart)) return false;
+        if (rangeEnd && (!d || d > rangeEnd)) return false;
+        if (q) {
+          const hay =
+            `${inv.invoice_no} ${inv.customer_name} ${inv.motorcycle} ${inv.engine_no} ${inv.chassis_no}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const da = parseDMY(a.dated)?.getTime() ?? 0;
+        const db = parseDMY(b.dated)?.getTime() ?? 0;
+        return db - da || b.id - a.id;
+      });
+  }, [invoices, rangeStart, rangeEnd, dashSearch]);
+
+  const dashCount = filteredInvoices.length;
+  const dashRevenue = filteredInvoices.reduce((s, i) => s + (Number(i.value_incl) || 0), 0);
+  const dashUnits = filteredInvoices.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+
+  /** Model-wise breakdown of the currently filtered history. */
+  const modelSummary = useMemo(() => {
+    const map = new Map<string, { model: string; units: number; revenue: number }>();
+    filteredInvoices.forEach((inv) => {
+      const key = (inv.motorcycle || '').trim();
+      if (!key) return;
+      const cur = map.get(key.toLowerCase()) ?? { model: key, units: 0, revenue: 0 };
+      cur.units += Number(inv.qty) || 0;
+      cur.revenue += Number(inv.value_incl) || 0;
+      map.set(key.toLowerCase(), cur);
+    });
+    return [...map.values()].sort((a, b) => b.revenue - a.revenue);
+  }, [filteredInvoices]);
+
+  const openInvoiceInEditor = (inv: ApiInvoice) => {
+    handleLoad(inv);
+    setView('editor');
+  };
+
   const setField =
     (key: keyof InvoiceFormState) =>
     (e: ChangeEvent<HTMLInputElement>) =>
@@ -209,6 +355,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
   const handleNew = () => {
     setEditingId(null);
+    setView('editor');
     setForm(emptyFormWithDefaults());
     api
       .nextInvoiceNumber()
@@ -377,41 +524,284 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
               )}
               <button
                 type="button"
-                onClick={handleNew}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-slate-400 shadow-sm transition active:scale-[0.98]"
+                onClick={() => setView((v) => (v === 'editor' ? 'dashboard' : 'editor'))}
+                className={`inline-flex items-center gap-1.5 h-9 px-3.5 text-xs font-bold rounded-lg shadow-sm transition active:scale-[0.98] ${
+                  view === 'dashboard'
+                    ? 'bg-slate-900 hover:bg-slate-800 text-white'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400'
+                }`}
               >
-                <FaPlus className="text-[10px]" /> New
+                <FaChartLine className="text-yadea-orange" />
+                {view === 'editor' ? 'Invoice Dashboard' : 'Back to Editor'}
               </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={!canEdit || saving}
-                title={canEdit ? 'Save invoice to database' : 'You do not have edit permission'}
-                className="inline-flex items-center gap-1.5 h-9 px-4 bg-yadea-orange hover:bg-yadea-dark text-white text-xs font-bold rounded-lg shadow-sm shadow-yadea-orange/40 transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-              >
-                <FaFloppyDisk className={saving ? 'animate-pulse' : ''} />
-                {saving ? 'Saving...' : editingId !== null ? 'Update' : 'Save'}
-              </button>
-              <button
-                type="button"
-                onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-slate-400 shadow-sm transition active:scale-[0.98]"
-              >
-                <FaPrint /> Print
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleDownloadPdf()}
-                disabled={!canExport || pdfBusy}
-                title={canExport ? 'Download as PDF' : 'You do not have export permission'}
-                className="inline-flex items-center gap-1.5 h-9 px-4 bg-yadea-black hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FaFilePdf className={`text-yadea-orange ${pdfBusy ? 'animate-pulse' : ''}`} />
-                {pdfBusy ? 'Preparing...' : 'Download PDF'}
-              </button>
+              {view === 'editor' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleNew}
+                    className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-slate-400 shadow-sm transition active:scale-[0.98]"
+                  >
+                    <FaPlus className="text-[10px]" /> New
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={!canEdit || saving}
+                    title={canEdit ? 'Save invoice to database' : 'You do not have edit permission'}
+                    className="inline-flex items-center gap-1.5 h-9 px-4 bg-yadea-orange hover:bg-yadea-dark text-white text-xs font-bold rounded-lg shadow-sm shadow-yadea-orange/40 transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                  >
+                    <FaFloppyDisk className={saving ? 'animate-pulse' : ''} />
+                    {saving ? 'Saving...' : editingId !== null ? 'Update' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 hover:border-slate-400 shadow-sm transition active:scale-[0.98]"
+                  >
+                    <FaPrint /> Print
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDownloadPdf()}
+                    disabled={!canExport || pdfBusy}
+                    title={canExport ? 'Download as PDF' : 'You do not have export permission'}
+                    className="inline-flex items-center gap-1.5 h-9 px-4 bg-yadea-black hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FaFilePdf className={`text-yadea-orange ${pdfBusy ? 'animate-pulse' : ''}`} />
+                    {pdfBusy ? 'Preparing...' : 'Download PDF'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
+          {view === 'dashboard' ? (
+            /* --------------------- Invoice Dashboard --------------------- */
+            <div className="space-y-4">
+              {/* Summary stat cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-yadea-orange/10 text-yadea-dark flex items-center justify-center shrink-0">
+                    <FaFileInvoice />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Invoices</div>
+                    <div className="text-xl font-black text-slate-900">{loadingList ? '...' : dashCount}</div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-yadea-orange/10 text-yadea-dark flex items-center justify-center shrink-0">
+                    <FaChartLine />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Total Sales</div>
+                    <div className="text-xl font-black text-slate-900 truncate">
+                      Rs {loadingList ? '...' : formatMoney(dashRevenue)}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-yadea-orange/10 text-yadea-dark flex items-center justify-center shrink-0">
+                    <FaMotorcycle />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Bikes Sold</div>
+                    <div className="text-xl font-black text-slate-900">{loadingList ? '...' : dashUnits}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filters bar */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 flex flex-wrap items-center gap-2">
+                {INVOICE_RANGES.map((r) => (
+                  <button
+                    key={r.key}
+                    type="button"
+                    onClick={() => setRangeKey(r.key)}
+                    className={`h-7 px-3 rounded-full text-[11px] font-bold transition active:scale-[0.97] ${
+                      rangeKey === r.key
+                        ? 'bg-yadea-orange text-white shadow-sm shadow-yadea-orange/40'
+                        : 'bg-slate-50 text-slate-500 border border-slate-200 hover:border-yadea-orange/50 hover:text-yadea-dark'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+                {rangeKey === 'custom' && (
+                  <span className="inline-flex flex-wrap items-center gap-1.5 ml-1">
+                    <input
+                      type="datetime-local"
+                      value={customFrom}
+                      onChange={(e) => setCustomFrom(e.target.value)}
+                      className="h-7 text-[11px] border border-slate-300 rounded-md px-1.5 text-slate-700 focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/30"
+                      aria-label="From date and time"
+                    />
+                    <span className="text-[11px] text-slate-400 font-semibold">to</span>
+                    <input
+                      type="datetime-local"
+                      value={customTo}
+                      onChange={(e) => setCustomTo(e.target.value)}
+                      className="h-7 text-[11px] border border-slate-300 rounded-md px-1.5 text-slate-700 focus:border-yadea-orange focus:outline-none focus:ring-1 focus:ring-yadea-orange/30"
+                      aria-label="To date and time"
+                    />
+                    {(customFrom || customTo) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomFrom('');
+                          setCustomTo('');
+                        }}
+                        className="h-7 px-2 rounded-md text-[10px] font-bold text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </span>
+                )}
+                <div className="relative ml-auto">
+                  <FaMagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px]" />
+                  <input
+                    type="text"
+                    placeholder="Search customer, model, #no..."
+                    value={dashSearch}
+                    onChange={(e) => setDashSearch(e.target.value)}
+                    className="h-7 w-full sm:w-56 bg-slate-50 border border-slate-200 rounded-full pl-8 pr-3 text-[11px] focus:outline-none focus:border-yadea-orange focus:ring-1 focus:ring-yadea-orange/40"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void loadInvoices()}
+                  className="w-7 h-7 rounded-full bg-slate-50 border border-slate-200 text-slate-400 hover:text-yadea-orange hover:border-yadea-orange/50 transition flex items-center justify-center shrink-0"
+                  aria-label="Refresh history"
+                  title="Refresh"
+                >
+                  <FaRotateRight className="text-[11px]" />
+                </button>
+              </div>
+
+              {/* Model-wise sales summary */}
+              {!loadingList && modelSummary.length > 0 && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2.5">
+                    Model-wise Sales
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {modelSummary.map((m) => (
+                      <span
+                        key={m.model}
+                        className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-[11px]"
+                      >
+                        <b className="text-slate-800">{m.model}</b>
+                        <span className="text-slate-300">|</span>
+                        <span className="text-slate-500">
+                          {m.units} unit{m.units === 1 ? '' : 's'}
+                        </span>
+                        <span className="font-extrabold text-yadea-dark">Rs {formatMoney(m.revenue)}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Invoice history table */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    Invoice History
+                    <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-bold">
+                      {loadingList ? '...' : dashCount}
+                    </span>
+                  </h3>
+                  <span className="text-xs font-extrabold text-yadea-dark whitespace-nowrap">
+                    Rs {formatMoney(dashRevenue)}
+                  </span>
+                </div>
+                <div className="overflow-x-auto inv-scroll-y">
+                  <table className="w-full text-xs min-w-[760px]">
+                    <thead>
+                      <tr className="text-left text-[10px] uppercase tracking-wider text-slate-400 bg-slate-50/70 border-b border-slate-200">
+                        <th className="py-2.5 pl-4 pr-3 font-extrabold">Date &amp; Day</th>
+                        <th className="py-2.5 pr-3 font-extrabold">Invoice#</th>
+                        <th className="py-2.5 pr-3 font-extrabold">Customer</th>
+                        <th className="py-2.5 pr-3 font-extrabold">Bike Model</th>
+                        <th className="py-2.5 pr-3 font-extrabold text-center">Qty</th>
+                        <th className="py-2.5 pr-3 font-extrabold text-right">Price (Incl. Tax)</th>
+                        <th className="py-2.5 pr-4" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadingList ? (
+                        <tr>
+                          <td colSpan={7} className="text-center text-slate-400 py-8">
+                            Loading invoices...
+                          </td>
+                        </tr>
+                      ) : dashCount === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="text-center py-10">
+                            <FaFileInvoice className="text-3xl text-slate-200 mx-auto mb-2" />
+                            <p className="text-slate-400 text-[11px]">
+                              No invoices found for this filter.
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredInvoices.map((inv) => {
+                          const d = parseDMY(inv.dated);
+                          return (
+                            <tr
+                              key={inv.id}
+                              onClick={() => openInvoiceInEditor(inv)}
+                              className={`border-b border-slate-50 last:border-0 cursor-pointer transition hover:bg-yadea-orange/[0.04] ${
+                                editingId === inv.id ? 'bg-yadea-orange/[0.06]' : ''
+                              }`}
+                              title="Open in editor"
+                            >
+                              <td className="py-2.5 pl-4 pr-3">
+                                <div className="font-bold text-slate-800 whitespace-nowrap">{inv.dated || '-'}</div>
+                                <div className="text-[10px] text-slate-400">
+                                  {d ? DAY_NAMES[d.getDay()] : 'Unknown day'}
+                                </div>
+                              </td>
+                              <td className="py-2.5 pr-3 font-mono font-extrabold text-green-800 whitespace-nowrap">
+                                #{inv.invoice_no}
+                              </td>
+                              <td className="py-2.5 pr-3 font-bold text-slate-800 max-w-[190px] truncate">
+                                {inv.customer_name || 'Unnamed customer'}
+                              </td>
+                              <td className="py-2.5 pr-3 text-slate-600 max-w-[190px] truncate">
+                                {inv.motorcycle || '-'}
+                              </td>
+                              <td className="py-2.5 pr-3 text-center font-semibold text-slate-700">{inv.qty}</td>
+                              <td className="py-2.5 pr-3 text-right font-extrabold text-yadea-dark whitespace-nowrap">
+                                Rs {formatMoney(Number(inv.value_incl) || 0)}
+                              </td>
+                              <td
+                                className="py-2.5 pr-4 text-right whitespace-nowrap"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {canDelete && (
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleDelete(inv)}
+                                    className="text-slate-300 hover:text-red-600 transition p-1.5 rounded-md hover:bg-red-50"
+                                    aria-label={`Delete invoice ${inv.invoice_no}`}
+                                    title="Delete"
+                                  >
+                                    <FaRegTrashCan className="text-xs" />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* ---------------------- Entry panel ---------------------- */}
             <div className="lg:col-span-4 space-y-4">
@@ -586,101 +976,15 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                 </div>
               </div>
 
-              {/* Saved invoices (database) */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                <div className="flex items-center justify-between mb-2.5">
-                  <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    Saved Invoices
-                    <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded font-bold">
-                      {loadingList ? '...' : invoices.length}
-                    </span>
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => void loadInvoices()}
-                    className="text-slate-400 hover:text-yadea-orange transition p-1"
-                    aria-label="Refresh invoice list"
-                    title="Refresh"
-                  >
-                    <FaRotateRight className="text-xs" />
-                  </button>
+              {/* Saved invoices live in the Invoice Dashboard (top button). */}
+              <div className="bg-yadea-orange/[0.06] border border-yadea-orange/20 rounded-xl p-4 text-xs">
+                <div className="font-bold text-slate-800 flex items-center gap-2 mb-1">
+                  <FaChartLine className="text-yadea-orange" /> Looking for saved invoices?
                 </div>
-
-                <div className="relative mb-2">
-                  <FaMagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px]" />
-                  <input
-                    type="text"
-                    placeholder="Search by number, customer, bike..."
-                    value={listSearch}
-                    onChange={(e) => setListSearch(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-md pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-yadea-orange focus:ring-1 focus:ring-yadea-orange/40"
-                  />
-                </div>
-
-                <div className="max-h-72 overflow-y-auto -mx-1 px-1 space-y-0.5 inv-scroll-y">
-                  {loadingList ? (
-                    <p className="text-[11px] text-slate-400 text-center py-5">Loading invoices...</p>
-                  ) : invoices.length === 0 ? (
-                    <div className="text-center py-6 space-y-1.5">
-                      <FaFileInvoice className="text-2xl text-slate-200 mx-auto" />
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        No invoices saved yet.
-                        <br />
-                        Fill the form and press Save to store one in the database.
-                      </p>
-                    </div>
-                  ) : (
-                    invoices.map((inv) => (
-                      <div
-                        key={inv.id}
-                        className={`group flex items-center gap-1.5 rounded-lg py-2 px-2 transition ${
-                          editingId === inv.id
-                            ? 'bg-yadea-orange/[0.07] ring-1 ring-yadea-orange/25'
-                            : 'hover:bg-slate-50'
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleLoad(inv)}
-                          className="flex-1 min-w-0 text-left"
-                          title="Load into editor"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-mono font-extrabold text-xs text-green-800">
-                              #{inv.invoice_no}
-                            </span>
-                            <span className="text-[10px] font-medium text-slate-400 shrink-0">
-                              {inv.dated || 'No date'}
-                            </span>
-                          </div>
-                          <div className="text-xs font-bold text-slate-800 truncate mt-0.5">
-                            {inv.customer_name || 'Unnamed customer'}
-                          </div>
-                          <div className="flex items-center justify-between gap-2 mt-0.5">
-                            <span className="text-[10px] text-slate-500 truncate">
-                              Qty {inv.qty}
-                              {inv.motorcycle ? ` • ${inv.motorcycle}` : ''}
-                            </span>
-                            <span className="text-[11px] font-extrabold text-yadea-dark shrink-0">
-                              Rs {formatMoney(Number(inv.value_incl) || 0)}
-                            </span>
-                          </div>
-                        </button>
-                        {canDelete && (
-                          <button
-                            type="button"
-                            onClick={() => void handleDelete(inv)}
-                            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 text-slate-300 hover:text-red-600 transition p-1.5 shrink-0 rounded-md hover:bg-red-50"
-                            aria-label={`Delete invoice ${inv.invoice_no}`}
-                            title="Delete"
-                          >
-                            <FaRegTrashCan className="text-xs" />
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Open the <button type="button" onClick={() => setView('dashboard')} className="font-bold text-yadea-dark underline underline-offset-2 hover:text-yadea-orange">Invoice Dashboard</button> from
+                  the top bar to browse full history with date filters and prices.
+                </p>
               </div>
 
               <div className="bg-slate-900 text-slate-300 rounded-xl p-4 text-xs space-y-1.5 shadow-sm">
@@ -922,6 +1226,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
               </div>
             </div>
           </div>
+          )}
         </div>
       </div>
     </>
