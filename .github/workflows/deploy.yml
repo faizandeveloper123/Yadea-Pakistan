@@ -27,6 +27,21 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      # The mailbox password never lives in git. It is injected at deploy time
+      # from the SMTP_PASS repository secret into api/mail_secrets.php
+      # (gitignored locally). Add/update it under:
+      #   Repo -> Settings -> Secrets and variables -> Actions -> SMTP_PASS
+      - name: Write SMTP secrets (api/mail_secrets.php)
+        env:
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          if [ -n "$SMTP_PASS" ]; then
+            printf '<?php\ndefine(%s, %s);\n' "'SMTP_PASS'" "'$SMTP_PASS'" > api/mail_secrets.php
+            echo "mail_secrets.php written (password hidden)"
+          else
+            echo "SMTP_PASS secret not set - emails will fail until it is added"
+          fi
+
       - name: Set up SSH key
         env:
           SSH_KEY: ${{ secrets.CONTABO_SSH_KEY }}
