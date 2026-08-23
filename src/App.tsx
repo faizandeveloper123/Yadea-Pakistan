@@ -34,6 +34,10 @@ import PublicFormPage from './components/PublicFormPage';
 import InvoicesPage from './components/InvoicesPage';
 import DealershipApplicationsPage from './components/DealershipApplicationsPage';
 import CustomerInquiriesPage from './components/CustomerInquiriesPage';
+import {
+  PublicDealershipFormPage,
+  PublicInquiryFormPage,
+} from './components/PublicPortalPages';
 import MyStaffPage from './components/MyStaffPage';
 import ManageSmartListsPage from './components/ManageSmartListsPage';
 import Pagination from './components/Pagination';
@@ -1101,6 +1105,14 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
   // Public form pages stay reachable without a login (shared links).
   if (route.name === 'form') {
     return <PublicFormPage data={route.data} />;
+  }
+
+  // Shareable portal forms — no login required.
+  if (route.name === 'dealership-form') {
+    return <PublicDealershipFormPage />;
+  }
+  if (route.name === 'inquiry-form') {
+    return <PublicInquiryFormPage />;
   }
 
   // One-click login from the approval email — must work while signed out.

@@ -270,7 +270,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
   const [form, setForm] = useState<InvoiceFormState>(emptyFormWithDefaults);
   const [design, setDesign] = useState<InvoiceDesign>(() => loadDesign(user?.id));
-  const [designOpen, setDesignOpen] = useState(false);
+  const [designOpen, setDesignOpen] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -943,7 +943,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
           ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* ---------------------- Entry panel ---------------------- */}
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-4 flex flex-col gap-4">
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                 <h2 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -1127,7 +1127,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
               </div>
 
               {/* ------------------ Design Studio ------------------ */}
-              <div className="inv-no-print bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="inv-no-print bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden order-first">
                 <button
                   type="button"
                   onClick={() => setDesignOpen((v) => !v)}

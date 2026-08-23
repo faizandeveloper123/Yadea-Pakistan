@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
   FaDownload,
+  FaLink,
   FaPaperPlane,
   FaRegTrashCan,
   FaStore,
@@ -23,6 +24,27 @@ function fmtDate(v: string | null): string {
   if (!v) return '-';
   const d = new Date(v.includes('T') ? v : v.replace(' ', 'T'));
   return Number.isNaN(d.getTime()) ? v : d.toLocaleString();
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
 }
 
 function DealershipApplicationsPage({ onNotify }: PageProps) {
@@ -129,6 +151,12 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
     } catch (err) {
       onNotify(`Delete failed: ${(err as Error).message}`);
     }
+  };
+
+  const copyFormLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}#/dealership-form`;
+    const ok = await copyText(url);
+    onNotify(ok ? 'Public form link copied — share it with anyone' : url);
   };
 
   const exportCsv = () => {
@@ -328,6 +356,13 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                 placeholder="Search applications…"
                 className="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg outline-none focus:border-yadea-orange w-44"
               />
+              <button
+                onClick={() => void copyFormLink()}
+                className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1.5"
+                title="Copy the public link for this form"
+              >
+                <FaLink className="text-[10px]" /> Copy Form Link
+              </button>
               <button onClick={exportCsv} className="text-xs bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-1.5">
                 <FaDownload className="text-[10px]" /> Export CSV
               </button>
