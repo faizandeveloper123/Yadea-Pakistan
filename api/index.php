@@ -1205,6 +1205,40 @@ function ensure_approval_column(): void
 }
 
 /**
+ * Branded confirmation email sent to a dealer right after they submit the
+ * dealership form. Includes their website credentials (when known) and tells
+ * them whether they can already log in or must wait for admin approval.
+ */
+function send_dealer_registration_mail(string $email, string $name, ?string $plain, bool $approved): void
+{
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return;
+    $esc = static fn ($v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+
+    $p = 'style="margin:0 0 12px 0;font-size:14px;line-height:22px;color:#334155;"';
+    $html = '<p ' . $p . '>Hi ' . $esc($name !== '' ? $name : 'there') . ',</p>'
+        . '<p ' . $p . '>Thank you for registering as a dealer with <strong>Yadea Pakistan</strong>. '
+        . 'We have received your dealership registration form successfully.</p>';
+
+    if ($plain !== null && $plain !== '') {
+        $html .= '<p style="margin:0 0 8px 0;font-size:14px;color:#334155;">Your website account details:</p>'
+            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin:0 0 16px 0;">'
+            . '<tr><td style="padding:10px 14px 4px 14px;font-size:13px;color:#334155;"><strong>Email:</strong> ' . $esc($email) . '</td></tr>'
+            . '<tr><td style="padding:4px 14px 10px 14px;font-size:13px;color:#334155;"><strong>Password:</strong> ' . $esc($plain) . '</td></tr>'
+            . '</table>';
+    }
+
+    if ($approved) {
+        $html .= '<p ' . $p . '>Your account is already <strong style="color:#059669;">active</strong> — you can log in anytime using the details above.</p>';
+    } else {
+        $html .= '<p ' . $p . '>Your account is currently <strong style="color:#B45309;">pending administrator approval</strong>. '
+            . 'Login stays disabled until our team approves your registration — you will receive a second email '
+            . 'with a login button as soon as that happens.</p>';
+    }
+
+    send_app_mail($email, $name, 'We received your dealership registration', $html);
+}
+
+/**
  * POST /auth/register-dealer
  * Public endpoint used by the Dealership Registration form: finds or creates
  * a Dealer staff account for the submitted email and returns it together with
@@ -1241,6 +1275,12 @@ function register_dealer(array $body): void
 
     // Already an account AND we still know its password: hand it back as-is.
     if ($existing && !empty($existing['password_plain'])) {
+        send_dealer_registration_mail(
+            $email,
+            trim($firstName . ' ' . $lastName),
+            (string)$existing['password_plain'],
+            (int)($existing['approved'] ?? 1) === 1
+        );
         respond([
             'data' => staff_payload($existing),
             'password' => $existing['password_plain'],
@@ -1259,6 +1299,12 @@ function register_dealer(array $body): void
         );
         $upd->execute([':p' => $hash, ':pp' => $plain, ':id' => $existing['id']]);
         $findByEmail->execute([':email' => $email]);
+        send_dealer_registration_mail(
+            $email,
+            trim($firstName . ' ' . $lastName),
+            $plain,
+            (int)($existing['approved'] ?? 1) === 1
+        );
         respond([
             'data' => staff_payload($findByEmail->fetch()),
             'password' => $plain,
@@ -1287,6 +1333,12 @@ function register_dealer(array $body): void
             // Raced with another submission for the same email.
             $findByEmail->execute([':email' => $email]);
             $row = $findByEmail->fetch();
+            send_dealer_registration_mail(
+                $email,
+                trim($firstName . ' ' . $lastName),
+                $row['password_plain'] ?? null,
+                (int)($row['approved'] ?? 1) === 1
+            );
             respond([
                 'data' => staff_payload($row),
                 'password' => $row['password_plain'] ?? null,
@@ -1309,6 +1361,9 @@ function register_dealer(array $body): void
     foreach ($admins as $adminId) {
         notify_staff((int)$adminId, null, 'dealer_registration', 'New dealer registration', $detail);
     }
+
+    // Confirmation + credentials email to the dealer who filled the form.
+    send_dealer_registration_mail($email, $dealerName, $plain, false);
 
     respond([
         'data' => staff_payload($created),
