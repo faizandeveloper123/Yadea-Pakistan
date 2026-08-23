@@ -219,6 +219,7 @@ export interface ApiInvoice {
   invoice_no: string;
   dated: string;
   strn: string;
+  address: string;
   customer_name: string;
   qty: number;
   motorcycle: string;
@@ -240,6 +241,7 @@ export interface InvoiceInput {
   invoice_no: string;
   dated?: string;
   strn?: string;
+  address?: string;
   customer_name?: string;
   qty?: number;
   motorcycle?: string;

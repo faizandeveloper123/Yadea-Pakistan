@@ -127,6 +127,7 @@ interface InvoiceFormState {
   invoiceNo: string;
   dated: string;
   strn: string;
+  address: string;
   ms: string;
   qty: string;
   motorcycle: string;
@@ -143,6 +144,7 @@ const EMPTY_FORM: InvoiceFormState = {
   invoiceNo: '',
   dated: '',
   strn: '3277876272668',
+  address: 'Plaza # 27, Mini Ext 1, Bahria Town Phase 7, Rawalpindi.',
   ms: '',
   qty: '1',
   motorcycle: '',
@@ -379,6 +381,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
     invoice_no: form.invoiceNo.trim(),
     dated: form.dated.trim(),
     strn: form.strn.trim(),
+    address: form.address.trim(),
     customer_name: form.ms.trim(),
     qty: Math.max(1, Math.round(qtyNum)),
     motorcycle: form.motorcycle.trim(),
@@ -429,6 +432,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
       invoiceNo: inv.invoice_no,
       dated: inv.dated ?? '',
       strn: inv.strn ?? '',
+      address: inv.address ?? 'Plaza # 27, Mini Ext 1, Bahria Town Phase 7, Rawalpindi.',
       ms: inv.customer_name ?? '',
       qty: String(inv.qty ?? 1),
       motorcycle: inv.motorcycle ?? '',
@@ -1044,42 +1048,42 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           />
                         </svg>
 
-                        <div className="relative z-10 p-6 sm:p-7 flex justify-between items-start">
-                          {/* Brand lockup — plain logo, black wordmark */}
-                          <div className="mt-2 ml-1">
-                            <YadeaLogo className="h-11 w-auto" wordmark wordmarkColor="#0f172a" />
-                            <p className="text-[10px] font-extrabold tracking-[0.22em] text-slate-800 uppercase mt-1 ml-0.5">
-                              Yadea Hussain Motors
-                            </p>
+                        <div className="relative z-10 px-6 sm:px-7 pt-5 pb-4 flex justify-between items-start gap-4">
+                          {/* Brand lockup: icon above large bold YADEA text */}
+                          <div className="flex flex-col items-start shrink-0">
+                            <YadeaLogo wordmark={false} className="h-9 w-auto" />
+                            <span className="text-[30px] sm:text-[34px] leading-none font-black uppercase tracking-[0.06em] text-slate-900 mt-1.5">
+                              Yadea
+                            </span>
                           </div>
 
-                          {/* Title + document numbers */}
-                          <div className="text-right mr-1 sm:mr-3 mt-1">
+                          {/* Title + document numbers (kept inside the navy wave) */}
+                          <div className="text-right max-w-[250px] shrink-0 mt-0.5 mr-1 sm:mr-2">
                             <h1
-                              className="text-[46px] sm:text-[54px] leading-none font-black uppercase"
-                              style={{ color: '#FF5400', letterSpacing: '0.04em' }}
+                              className="text-[38px] leading-none font-black uppercase"
+                              style={{ color: '#FF5400', letterSpacing: '0.03em' }}
                             >
                               Invoice
                             </h1>
                             <div
-                              className="ml-auto mt-2 h-[3px] w-24 rounded-full"
+                              className="ml-auto mt-1.5 h-[3px] w-20 rounded-full"
                               style={{ backgroundColor: '#FF5400' }}
                             />
-                            <div className="mt-4 space-y-2.5">
-                              <div className="flex items-center justify-end gap-3">
-                                <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-white/70">
+                            <div className="mt-3 space-y-2">
+                              <div className="flex items-center justify-end gap-2">
+                                <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
                                   Invoice No
                                 </span>
                                 <input
                                   type="text"
                                   value={form.invoiceNo}
                                   onChange={setField('invoiceNo')}
-                                  className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
+                                  className="inv-bare w-24 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
                                   aria-label="Invoice number"
                                 />
                               </div>
-                              <div className="flex items-center justify-end gap-3">
-                                <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-white/70">
+                              <div className="flex items-center justify-end gap-2">
+                                <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
                                   Invoice Date
                                 </span>
                                 <input
@@ -1087,7 +1091,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                                   placeholder="DD/MM/YYYY"
                                   value={form.dated}
                                   onChange={setField('dated')}
-                                  className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
+                                  className="inv-bare w-24 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
                                   aria-label="Invoice date"
                                 />
                               </div>
@@ -1115,9 +1119,14 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         <div className="col-span-4 px-3 border-l-2 border-slate-700">
                           <h3 className="font-extrabold text-slate-900 text-[13px] mb-1">Invoice From:</h3>
                           <p className="font-bold text-slate-800">Yadea Hussain Motors</p>
-                          <p className="text-slate-700 font-medium leading-tight">
-                            Plaza # 27, Mini Ext 1, Bahria Town Phase 7, Rawalpindi.
-                          </p>
+                          <input
+                            type="text"
+                            placeholder="Shop address"
+                            value={form.address}
+                            onChange={setField('address')}
+                            className="inv-underlined w-full text-slate-700 font-medium leading-tight px-0.5 py-0.5 mb-0.5"
+                            aria-label="Seller address"
+                          />
                           <p className="text-slate-700 font-bold flex items-center gap-1 flex-wrap">
                             <span>STRN Number:</span>
                             <input

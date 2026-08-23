@@ -2536,6 +2536,7 @@ function ensure_invoices_table(): void
             invoice_no VARCHAR(191) NOT NULL,
             dated VARCHAR(20) DEFAULT "",
             strn VARCHAR(64) DEFAULT "",
+            address VARCHAR(255) DEFAULT "",
             customer_name VARCHAR(255) DEFAULT "",
             qty INT NOT NULL DEFAULT 1,
             motorcycle VARCHAR(255) DEFAULT "",
@@ -2554,6 +2555,18 @@ function ensure_invoices_table(): void
             INDEX idx_invoices_created_by (created_by)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
     );
+
+    // Lazy migration for installs created before the editable seller address.
+    $col = db()->prepare(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'invoices'
+            AND COLUMN_NAME  = 'address'"
+    );
+    $col->execute();
+    if ((int)$col->fetchColumn() === 0) {
+        db()->exec('ALTER TABLE invoices ADD COLUMN address VARCHAR(255) DEFAULT "" AFTER strn');
+    }
 }
 
 /** Cast an invoice row's numeric columns for the API response. */
@@ -2640,6 +2653,7 @@ function invoice_columns(array $body): array
         'invoice_no' => trim((string)($body['invoice_no'] ?? '')),
         'dated' => normalize_optional($body['dated'] ?? null) ?? '',
         'strn' => normalize_optional($body['strn'] ?? null) ?? '',
+        'address' => normalize_optional($body['address'] ?? null) ?? '',
         'customer_name' => normalize_optional($body['customer_name'] ?? null) ?? '',
         'qty' => $qty,
         'motorcycle' => normalize_optional($body['motorcycle'] ?? null) ?? '',
@@ -2671,16 +2685,17 @@ function create_invoice(array $body): void
     $createdBy = isset($body['created_by']) && (int)$body['created_by'] > 0 ? (int)$body['created_by'] : null;
 
     $stmt = db()->prepare(
-        'INSERT INTO invoices (invoice_no, dated, strn, customer_name, qty, motorcycle, model_year,
+        'INSERT INTO invoices (invoice_no, dated, strn, address, customer_name, qty, motorcycle, model_year,
                                colour, engine_no, chassis_no, value_excl, tax_rate, tax_payable,
                                value_incl, created_by)
-         VALUES (:no, :dated, :strn, :cust, :qty, :moto, :year, :colour, :engine, :chassis,
+         VALUES (:no, :dated, :strn, :address, :cust, :qty, :moto, :year, :colour, :engine, :chassis,
                  :vexcl, :rate, :tpay, :vincl, :created_by)'
     );
     $stmt->execute([
         ':no' => $c['invoice_no'],
         ':dated' => $c['dated'],
         ':strn' => $c['strn'],
+        ':address' => $c['address'],
         ':cust' => $c['customer_name'],
         ':qty' => $c['qty'],
         ':moto' => $c['motorcycle'],
@@ -2720,8 +2735,8 @@ function update_invoice(int $id, array $body): void
     }
 
     db()->prepare(
-        'UPDATE invoices SET invoice_no = :no, dated = :dated, strn = :strn, customer_name = :cust,
-                qty = :qty, motorcycle = :moto, model_year = :year, colour = :colour,
+        'UPDATE invoices SET invoice_no = :no, dated = :dated, strn = :strn, address = :address,
+                customer_name = :cust, qty = :qty, motorcycle = :moto, model_year = :year, colour = :colour,
                 engine_no = :engine, chassis_no = :chassis, value_excl = :vexcl, tax_rate = :rate,
                 tax_payable = :tpay, value_incl = :vincl
           WHERE id = :id'
@@ -2729,6 +2744,7 @@ function update_invoice(int $id, array $body): void
         ':no' => $c['invoice_no'],
         ':dated' => $c['dated'],
         ':strn' => $c['strn'],
+        ':address' => $c['address'],
         ':cust' => $c['customer_name'],
         ':qty' => $c['qty'],
         ':moto' => $c['motorcycle'],
