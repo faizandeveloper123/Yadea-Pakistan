@@ -1016,17 +1016,17 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             {/* Brand-orange main band */}
                             <path d="M0,0 H700 V68 C590,102 430,112 305,107 C185,102 85,95 0,66 Z" fill="#EB5F1B" />
                             {/* White separation sliver along the sweep edge */}
-                            <path d="M410,0 C512,32 614,67 700,110 L700,99 C606,58 510,25 420,-4 Z" fill="#ffffff" />
+                            <path d="M392,0 C512,38 626,78 700,116 L700,105 C624,68 518,29 402,-4 Z" fill="#ffffff" />
                             {/* Black corner sweep hosting the shield - extended left
-                                and down so the logo + caption stay fully on black */}
-                            <path d="M420,0 C520,30 620,64 700,106 L700,0 Z" fill="#111827" />
+                                and down so the logo keeps clear space off the corner */}
+                            <path d="M400,0 C515,36 628,76 700,112 L700,0 Z" fill="#111827" />
                           </svg>
 
                           <div className="absolute top-4 left-7 right-7 flex justify-between items-start">
                             <h1 className="text-2xl md:text-[27px] font-black tracking-wide text-white drop-shadow-sm leading-tight">
                               Yadea Hussain Motors
                             </h1>
-                            <div className="flex flex-col items-center pr-1 shrink-0">
+                            <div className="flex flex-col items-center pt-1 pr-5 shrink-0">
                               <YadeaLogo wordmark={false} className="w-10 h-auto" />
                               <span className="text-[9px] font-black tracking-[0.3em] mt-1 text-white">YADEA</span>
                             </div>
