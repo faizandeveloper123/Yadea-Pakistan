@@ -11,6 +11,7 @@ import {
   FaCircleInfo,
   FaPenToSquare,
   FaChartLine,
+  FaPalette,
   FaMotorcycle,
 } from 'react-icons/fa6';
 import { api, type ApiInvoice, type InvoiceInput } from '../api';
@@ -160,6 +161,52 @@ function emptyFormWithDefaults(): InvoiceFormState {
   return { ...EMPTY_FORM, dated: todayDMY() };
 }
 
+/* ----------------------- invoice design studio ------------------------- */
+
+/** Everything the user can customise about the invoice look. */
+interface InvoiceDesign {
+  accentColor: string; // title, bars, row rules, pill label
+  darkColor: string; // navy: header wave, table pill, totals pill
+  brandTextColor: string; // YADEA lockup text
+  logoSide: 'left' | 'right'; // where the brand lockup sits
+  titleAlign: 'left' | 'right'; // alignment of title + number block
+  brandTextSize: number; // px
+  iconSize: number; // px
+  headerHeight: number; // px
+  pillRound: boolean; // rounded-full vs rounded-lg table header
+  showWaves: boolean;
+  showTerms: boolean;
+  showSignature: boolean;
+}
+
+const DEFAULT_DESIGN: InvoiceDesign = {
+  accentColor: '#FF5400',
+  darkColor: '#021C35',
+  brandTextColor: '#0f172a',
+  logoSide: 'left',
+  titleAlign: 'right',
+  brandTextSize: 25,
+  iconSize: 32,
+  headerHeight: 210,
+  pillRound: true,
+  showWaves: true,
+  showTerms: true,
+  showSignature: true,
+};
+
+const designStorageKey = (uid?: number | null) => `yadea_invoice_design_v1_u${uid ?? 0}`;
+
+function loadDesign(uid?: number | null): InvoiceDesign {
+  try {
+    const raw = localStorage.getItem(designStorageKey(uid));
+    if (!raw) return DEFAULT_DESIGN;
+    const parsed = JSON.parse(raw) as Partial<InvoiceDesign>;
+    return { ...DEFAULT_DESIGN, ...parsed };
+  } catch {
+    return DEFAULT_DESIGN;
+  }
+}
+
 /* --------------------- lazy html2pdf (CDN) loader -------------------- */
 
 const HTML2PDF_CDN =
@@ -222,9 +269,22 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
   const canExport = hasActionPermission('invoices', 'Invoices', 'export');
 
   const [form, setForm] = useState<InvoiceFormState>(emptyFormWithDefaults);
+  const [design, setDesign] = useState<InvoiceDesign>(() => loadDesign(user?.id));
+  const [designOpen, setDesignOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+
+  /* Persist the design per user so it survives reloads. */
+  useEffect(() => {
+    try {
+      localStorage.setItem(designStorageKey(user?.id), JSON.stringify(design));
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [design, user?.id]);
+
+  const updDesign = (patch: Partial<InvoiceDesign>) => setDesign((d) => ({ ...d, ...patch }));
 
   const [invoices, setInvoices] = useState<ApiInvoice[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -485,6 +545,69 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
   };
 
   /* ------------------------------- view ------------------------------- */
+
+  /* Header building blocks — driven entirely by the Design Studio. */
+  const tRight = design.titleAlign === 'right';
+
+  const lockupEl = (
+    <div className="flex flex-col items-center shrink-0 mt-[20px] ml-[20px]">
+      <div className="flex items-end" style={{ height: design.iconSize }}>
+        <YadeaLogo wordmark={false} className="h-full w-auto" />
+      </div>
+      <span
+        className="leading-none font-black uppercase tracking-[0.05em] mt-1.5"
+        style={{ fontSize: design.brandTextSize, color: design.brandTextColor }}
+      >
+        Yadea
+      </span>
+    </div>
+  );
+
+  const titleEl = (
+    <div
+      className={`${tRight ? 'text-right' : 'text-left'} max-w-[240px] shrink-0 mt-0.5 ${
+        tRight ? 'mr-0 sm:mr-[4px]' : 'ml-0 sm:ml-[4px]'
+      }`}
+    >
+      <h1
+        className="text-[38px] leading-none font-black uppercase"
+        style={{ color: design.accentColor, letterSpacing: '0.03em' }}
+      >
+        Invoice
+      </h1>
+      <div
+        className={`${tRight ? 'ml-auto' : ''} mt-1.5 h-[3px] w-20 rounded-full`}
+        style={{ backgroundColor: design.accentColor }}
+      />
+      <div className="mt-3 space-y-2.5">
+        <div className={`flex items-center gap-2 ${tRight ? 'justify-end' : 'justify-start'}`}>
+          <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
+            Invoice No
+          </span>
+          <input
+            type="text"
+            value={form.invoiceNo}
+            onChange={setField('invoiceNo')}
+            className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
+            aria-label="Invoice number"
+          />
+        </div>
+        <div className={`flex items-center gap-2 ${tRight ? 'justify-end' : 'justify-start'}`}>
+          <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
+            Invoice Date
+          </span>
+          <input
+            type="text"
+            placeholder="DD/MM/YYYY"
+            value={form.dated}
+            onChange={setField('dated')}
+            className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
+            aria-label="Invoice date"
+          />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -1003,6 +1126,180 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                 </p>
               </div>
 
+              {/* ------------------ Design Studio ------------------ */}
+              <div className="inv-no-print bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setDesignOpen((v) => !v)}
+                  className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-800 hover:bg-slate-50 transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <FaPalette className="text-yadea-orange" /> Design Studio
+                  </span>
+                  <span className="text-[10px] font-medium text-slate-400">
+                    {designOpen ? 'Hide' : 'Colours · Layout · Sections'}
+                  </span>
+                </button>
+
+                {designOpen && (
+                  <div className="px-4 pb-4 pt-1 space-y-4 text-[11px] border-t border-slate-100">
+                    {/* Colours */}
+                    <div className="space-y-2">
+                      <p className="font-extrabold uppercase tracking-wider text-slate-500">Colours</p>
+                      {(
+                        [
+                          ['accentColor', 'Accent / Title'],
+                          ['darkColor', 'Dark / Navy'],
+                          ['brandTextColor', 'YADEA Text'],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <div key={key} className="flex items-center justify-between gap-2">
+                          <span className="text-slate-600 font-semibold">{label}</span>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={design[key]}
+                              onChange={(e) => updDesign({ [key]: e.target.value } as Partial<InvoiceDesign>)}
+                              className="h-7 w-9 rounded border border-slate-200 cursor-pointer p-0.5"
+                              aria-label={label}
+                            />
+                            <input
+                              type="text"
+                              value={design[key]}
+                              onChange={(e) => updDesign({ [key]: e.target.value } as Partial<InvoiceDesign>)}
+                              className="w-20 font-mono text-[10px] px-1.5 py-1 border border-slate-200 rounded"
+                              aria-label={`${label} hex`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Layout */}
+                    <div className="space-y-2">
+                      <p className="font-extrabold uppercase tracking-wider text-slate-500">Layout</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-600 font-semibold">Logo block</span>
+                        <div className="flex rounded-md overflow-hidden border border-slate-200">
+                          {(['left', 'right'] as const).map((side) => (
+                            <button
+                              key={side}
+                              type="button"
+                              onClick={() => updDesign({ logoSide: side })}
+                              className={`px-3 py-1 font-bold capitalize transition ${
+                                design.logoSide === side
+                                  ? 'bg-yadea-orange text-white'
+                                  : 'bg-white text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              {side}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-600 font-semibold">Title align</span>
+                        <div className="flex rounded-md overflow-hidden border border-slate-200">
+                          {(['left', 'right'] as const).map((align) => (
+                            <button
+                              key={align}
+                              type="button"
+                              onClick={() => updDesign({ titleAlign: align })}
+                              className={`px-3 py-1 font-bold capitalize transition ${
+                                design.titleAlign === align
+                                  ? 'bg-yadea-orange text-white'
+                                  : 'bg-white text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              {align}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-600 font-semibold">Pill header</span>
+                        <div className="flex rounded-md overflow-hidden border border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => updDesign({ pillRound: true })}
+                            className={`px-3 py-1 font-bold transition ${
+                              design.pillRound ? 'bg-yadea-orange text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            Round
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updDesign({ pillRound: false })}
+                            className={`px-3 py-1 font-bold transition ${
+                              !design.pillRound ? 'bg-yadea-orange text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            Square
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sizes */}
+                    <div className="space-y-2">
+                      <p className="font-extrabold uppercase tracking-wider text-slate-500">Sizes</p>
+                      {(
+                        [
+                          ['brandTextSize', 'YADEA text', 14, 44],
+                          ['iconSize', 'Logo icon', 20, 60],
+                          ['headerHeight', 'Header height', 150, 280],
+                        ] as const
+                      ).map(([key, label, min, max]) => (
+                        <div key={key} className="flex items-center gap-2">
+                          <span className="text-slate-600 font-semibold w-24 shrink-0">{label}</span>
+                          <input
+                            type="range"
+                            min={min}
+                            max={max}
+                            value={design[key]}
+                            onChange={(e) => updDesign({ [key]: Number(e.target.value) } as Partial<InvoiceDesign>)}
+                            className="flex-1 accent-yadea-orange cursor-pointer"
+                            aria-label={label}
+                          />
+                          <span className="w-8 text-right font-mono text-[10px] text-slate-500">{design[key]}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Sections */}
+                    <div className="space-y-2">
+                      <p className="font-extrabold uppercase tracking-wider text-slate-500">Sections</p>
+                      {(
+                        [
+                          ['showWaves', 'Footer waves'],
+                          ['showTerms', 'Terms & conditions'],
+                          ['showSignature', 'Signature row'],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <label key={key} className="flex items-center justify-between cursor-pointer">
+                          <span className="text-slate-600 font-semibold">{label}</span>
+                          <input
+                            type="checkbox"
+                            checked={design[key]}
+                            onChange={(e) => updDesign({ [key]: e.target.checked } as Partial<InvoiceDesign>)}
+                            className="w-4 h-4 accent-yadea-orange cursor-pointer"
+                          />
+                        </label>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setDesign(DEFAULT_DESIGN)}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-md border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 hover:text-yadea-dark transition"
+                    >
+                      <FaRotateRight className="text-[10px]" /> Reset design
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="bg-slate-900 text-slate-300 rounded-xl p-4 text-xs space-y-1.5 shadow-sm">
                 <div className="font-bold text-white flex items-center gap-1.5">
                   <FaCircleInfo className="text-yadea-orange text-sm" /> Live Interactive Editor
@@ -1024,79 +1321,35 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                     style={{ minHeight: 1050, fontFamily: "'Poppins', 'Segoe UI', sans-serif" }}
                   >
                     <div>
-                      {/* Header: curved navy/orange vectors + round brand badge.
-                          INVOICE title and document numbers sit on the navy wave. */}
-                      <div className="relative w-full overflow-hidden" style={{ height: 210 }}>
+                      {/* Header: curved vectors + brand lockup + title block.
+                          Colours, sides and sizes come from the Design Studio. */}
+                      <div className="relative w-full overflow-hidden" style={{ height: design.headerHeight }}>
                         <svg
                           className="absolute top-0 right-0 pointer-events-none"
-                          style={{ width: 600, height: 220 }}
+                          style={{ width: 600, height: design.headerHeight + 10 }}
                           viewBox="0 0 600 220"
+                          preserveAspectRatio="none"
                           fill="none"
                           xmlns="http://www.w3.org/2000/svg"
                         >
-                          {/* Top orange accent shape */}
-                          <path d="M 120 0 C 170 100, 260 130, 360 0 Z" fill="#FF5400" />
-                          {/* Navy wave overlay */}
+                          {/* Top accent shape */}
+                          <path d="M 120 0 C 170 100, 260 130, 360 0 Z" fill={design.accentColor} />
+                          {/* Dark wave overlay */}
                           <path
                             d="M 160 0 C 200 110, 280 180, 440 170 C 510 165, 550 145, 600 130 L 600 0 Z"
-                            fill="#021C35"
+                            fill={design.darkColor}
                           />
-                          {/* Orange swoosh under the navy curve */}
+                          {/* Accent swoosh under the dark curve */}
                           <path
                             d="M 330 170 C 430 215, 530 205, 600 150 L 600 130 C 550 145, 510 165, 440 170 C 390 170, 350 170, 330 170 Z"
-                            fill="#FF5400"
+                            fill={design.accentColor}
                           />
                         </svg>
 
                         <div className="relative z-10 px-6 sm:px-7 pt-5 pb-4 flex justify-between items-start gap-5">
-                          {/* Brand lockup: icon centred above large bold YADEA text */}
-                          <div className="flex flex-col items-center shrink-0 mt-[20px] ml-[20px]">
-                            <YadeaLogo wordmark={false} className="h-8 w-auto" />
-                            <span className="text-[22px] sm:text-[25px] leading-none font-black uppercase tracking-[0.05em] text-slate-900 mt-1.5">
-                              Yadea
-                            </span>
-                          </div>
-
-                          {/* Title + document numbers (kept inside the navy wave) */}
-                          <div className="text-right max-w-[240px] shrink-0 mt-0.5 mr-0 sm:mr-[4px]">
-                            <h1
-                              className="text-[38px] leading-none font-black uppercase"
-                              style={{ color: '#FF5400', letterSpacing: '0.03em' }}
-                            >
-                              Invoice
-                            </h1>
-                            <div
-                              className="ml-auto mt-1.5 h-[3px] w-20 rounded-full"
-                              style={{ backgroundColor: '#FF5400' }}
-                            />
-                            <div className="mt-3 space-y-2.5">
-                              <div className="flex items-center justify-start gap-2">
-                                <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
-                                  Invoice No
-                                </span>
-                                <input
-                                  type="text"
-                                  value={form.invoiceNo}
-                                  onChange={setField('invoiceNo')}
-                                  className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
-                                  aria-label="Invoice number"
-                                />
-                              </div>
-                              <div className="flex items-center justify-start gap-2">
-                                <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
-                                  Invoice Date
-                                </span>
-                                <input
-                                  type="text"
-                                  placeholder="DD/MM/YYYY"
-                                  value={form.dated}
-                                  onChange={setField('dated')}
-                                  className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
-                                  aria-label="Invoice date"
-                                />
-                              </div>
-                            </div>
-                          </div>
+                          {design.logoSide === 'left' && lockupEl}
+                          {titleEl}
+                          {design.logoSide === 'right' && lockupEl}
                         </div>
                       </div>
 
@@ -1156,11 +1409,13 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         </div>
                       </div>
 
-                        {/* Items table: navy pill header, orange row rules */}
+                        {/* Items table: pill header + accent row rules */}
                         <div className="px-8 sm:px-9 mt-7">
                           <div
-                            className="text-white rounded-full px-6 py-2.5 flex items-center text-[10px] sm:text-[11px] font-extrabold tracking-wider uppercase"
-                            style={{ backgroundColor: '#021C35' }}
+                            className={`${
+                              design.pillRound ? 'rounded-full' : 'rounded-lg'
+                            } text-white px-6 py-2.5 flex items-center text-[10px] sm:text-[11px] font-extrabold tracking-wider uppercase`}
+                            style={{ backgroundColor: design.darkColor }}
                           >
                             <div className="w-[8%] text-center">Qty</div>
                             <div className="w-[36%] pl-2 text-left">Description</div>
@@ -1186,7 +1441,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             {/* Item row */}
                             <div
                               className="py-3 px-6 flex items-start justify-between border-b-2"
-                              style={{ borderColor: '#FF5400' }}
+                              style={{ borderColor: design.accentColor }}
                             >
                               <div className="w-[8%] text-center pt-3">
                                 <input
@@ -1239,13 +1494,16 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             {/* Total row */}
                             <div
                               className="py-2.5 px-6 flex items-center justify-between border-b-2"
-                              style={{ borderColor: '#FF5400' }}
+                              style={{ borderColor: design.accentColor }}
                             >
                               <div className="w-[44%] text-left font-extrabold tracking-wide">TOTAL</div>
                               <div className="w-[14%] text-right font-extrabold">{formatMoney(totalExcl)}</div>
                               <div className="w-[12%] text-center" />
                               <div className="w-[14%] text-right font-extrabold">{formatMoney(taxPayable)}</div>
-                              <div className="w-[16%] text-right pr-1 font-black text-base" style={{ color: '#FF5400' }}>
+                              <div
+                                className="w-[16%] text-right pr-1 font-black text-base"
+                                style={{ color: design.accentColor }}
+                              >
                                 {formatMoney(totalIncl)}
                               </div>
                             </div>
@@ -1254,21 +1512,27 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
                         {/* Terms & conditions + totals summary */}
                         <div className="px-8 sm:px-9 mt-9 grid grid-cols-12 gap-4 items-start">
-                          <div className="col-span-7 pr-2 text-xs">
-                            <h4 className="font-extrabold text-slate-900 text-[13px] mb-2">Terms and Conditions:</h4>
-                            <ol className="space-y-1 font-semibold text-slate-700 leading-relaxed list-none p-0 m-0">
-                              <li className="flex gap-1.5">
-                                <span>1.</span>
-                                <span>Payment is due in full at the time of delivery of the vehicle.</span>
-                              </li>
-                              <li className="flex gap-1.5">
-                                <span>2.</span>
-                                <span>Warranty and service claims are processed as per official Yadea Hussain Motors policy.</span>
-                              </li>
-                            </ol>
-                          </div>
+                          {design.showTerms && (
+                            <div className="col-span-7 pr-2 text-xs">
+                              <h4 className="font-extrabold text-slate-900 text-[13px] mb-2">Terms and Conditions:</h4>
+                              <ol className="space-y-1 font-semibold text-slate-700 leading-relaxed list-none p-0 m-0">
+                                <li className="flex gap-1.5">
+                                  <span>1.</span>
+                                  <span>Payment is due in full at the time of delivery of the vehicle.</span>
+                                </li>
+                                <li className="flex gap-1.5">
+                                  <span>2.</span>
+                                  <span>Warranty and service claims are processed as per official Yadea Hussain Motors policy.</span>
+                                </li>
+                              </ol>
+                            </div>
+                          )}
 
-                          <div className="col-span-5 ml-auto w-full max-w-[270px] space-y-1.5 text-xs sm:text-[13px] font-extrabold text-slate-900">
+                          <div
+                            className={`ml-auto w-full max-w-[270px] space-y-1.5 text-xs sm:text-[13px] font-extrabold text-slate-900 ${
+                              design.showTerms ? 'col-span-5' : 'col-span-12'
+                            }`}
+                          >
                             <div className="flex justify-between items-center px-1 gap-2">
                               <span>Value Excl. Tax:</span>
                               <span className="text-right whitespace-nowrap">Rs {formatMoney(totalExcl)}</span>
@@ -1280,11 +1544,11 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             <div className="pt-2">
                               <div
                                 className="rounded-full overflow-hidden flex items-center justify-between p-1 shadow-sm text-white"
-                                style={{ backgroundColor: '#021C35' }}
+                                style={{ backgroundColor: design.darkColor }}
                               >
                                 <div
                                   className="px-3.5 py-1 rounded-full text-[10px] sm:text-xs uppercase tracking-wider"
-                                  style={{ backgroundColor: '#FF5400' }}
+                                  style={{ backgroundColor: design.accentColor }}
                                 >
                                   Total Payable:
                                 </div>
@@ -1297,38 +1561,40 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         </div>
                       </div>
 
-                    {/* Signature row (sits on white space above the waves) */}
-                    <div className="px-8 sm:px-9 mt-10 flex justify-between items-end relative z-10">
-                      <div className="text-left pb-1">
-                        <p className="text-xs font-semibold text-slate-700 italic mb-0.5">For &amp; on Behalf of</p>
-                        <h3 className="text-base md:text-lg font-black tracking-tight" style={{ color: '#FF5400' }}>
-                          Yadea Hussain Motors
-                        </h3>
-                      </div>
-                      <div className="text-center w-48">
-                        <div className="border-b-2 border-slate-900 h-10" />
-                        <span className="text-xs font-bold text-slate-900 tracking-wider uppercase mt-1 block">
-                          Signature
-                        </span>
-                      </div>
-                    </div>
+                      {design.showSignature && (
+                        <div className="px-8 sm:px-9 mt-10 flex justify-between items-end relative z-10">
+                          <div className="text-left pb-1">
+                            <p className="text-xs font-semibold text-slate-700 italic mb-0.5">For &amp; on Behalf of</p>
+                            <h3 className="text-base md:text-lg font-black tracking-tight" style={{ color: design.accentColor }}>
+                              Yadea Hussain Motors
+                            </h3>
+                          </div>
+                          <div className="text-center w-48">
+                            <div className="border-b-2 border-slate-900 h-10" />
+                            <span className="text-xs font-bold text-slate-900 tracking-wider uppercase mt-1 block">
+                              Signature
+                            </span>
+                          </div>
+                        </div>
+                      )}
 
-                    {/* Footer: dual fluid waves (orange under navy) */}
-                    <div className="relative w-full overflow-hidden mt-2" style={{ height: 120 }}>
-                      <svg
-                        className="absolute bottom-0 left-0 w-full pointer-events-none"
-                        style={{ height: 120 }}
-                        viewBox="0 0 800 140"
-                        preserveAspectRatio="none"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        {/* Top wave (bright orange) */}
-                        <path d="M 0 55 C 220 135, 480 10, 800 55 L 800 140 L 0 140 Z" fill="#FF5400" />
-                        {/* Foreground bottom wave (dark navy) */}
-                        <path d="M 0 75 C 240 10, 500 125, 800 60 L 800 140 L 0 140 Z" fill="#021C35" />
-                      </svg>
-                    </div>
+                      {design.showWaves && (
+                        <div className="relative w-full overflow-hidden mt-2" style={{ height: 120 }}>
+                          <svg
+                            className="absolute bottom-0 left-0 w-full pointer-events-none"
+                            style={{ height: 120 }}
+                            viewBox="0 0 800 140"
+                            preserveAspectRatio="none"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            {/* Top wave (accent) */}
+                            <path d="M 0 55 C 220 135, 480 10, 800 55 L 800 140 L 0 140 Z" fill={design.accentColor} />
+                            {/* Foreground bottom wave (dark) */}
+                            <path d="M 0 75 C 240 10, 500 125, 800 60 L 800 140 L 0 140 Z" fill={design.darkColor} />
+                          </svg>
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
