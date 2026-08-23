@@ -23,6 +23,10 @@
  *  PUT  /api/index.php/invoices/{id}             -> update sales tax invoice
  *  DELETE /api/index.php/invoices/{id}           -> delete sales tax invoice
  *
+ * POST /api/index.php/emails/send              -> send email via SMTP (crm@yadea.com.pk)
+ *                                                 { to, cc?, bcc?, subject, html, from_name? }
+ * POST /api/index.php/emails/test              -> deliverability check { to, subject?, html? }
+ *
  * Full URL example:  http://localhost/Evee/api/index.php/contacts?search=faiz
  */
 
@@ -2649,6 +2653,61 @@ function delete_invoice(int $id): void
     respond(['message' => 'Invoice deleted']);
 }
 
+/* ----------------------- EMAILS (SMTP campaign sender) ----------------------- */
+
+/**
+ * POST /emails/send { to: string|string[], cc?, bcc?, subject, html, from_name? }
+ * Sends the composed message through the crm@yadea.com.pk SMTP account.
+ */
+function send_email_campaign(array $body): void
+{
+    $to = $body['to'] ?? ($body['recipients'] ?? null);
+    if ($to === null) fail('"to" (string or array of emails) is required');
+    if (trim((string)($body['subject'] ?? '')) === '') fail('Subject is required');
+    if (trim((string)($body['html'] ?? '')) === '') fail('Message body (html) is required');
+
+    $result = send_crm_mail([
+        'to' => $to,
+        'cc' => $body['cc'] ?? null,
+        'bcc' => $body['bcc'] ?? null,
+        'subject' => (string)$body['subject'],
+        'html' => (string)$body['html'],
+        'from_name' => $body['from_name'] ?? null,
+    ]);
+
+    respond([
+        'data' => [
+            'sent_count' => count($result['sent']),
+            'failed_count' => count($result['failed']),
+            'sent' => $result['sent'],
+            'failed' => $result['failed'],
+        ],
+        'message' => count($result['sent']) . ' email(s) sent via SMTP',
+    ]);
+}
+
+/**
+ * POST /emails/test { to, subject?, html? } -> quick deliverability check.
+ */
+function send_test_email(array $body): void
+{
+    $to = trim((string)($body['to'] ?? ''));
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) fail('A valid "to" email is required');
+
+    $subject = trim((string)($body['subject'] ?? '')) ?: 'Evee CRM — SMTP test email';
+    $html = trim((string)($body['html'] ?? ''))
+        ?: '<p style="margin:0 0 10px 0;font-size:14px;color:#334155;">This is a test message from Evee CRM.</p>'
+            . '<p style="margin:0;font-size:13px;color:#64748b;">If you received this, the SMTP account '
+            . htmlspecialchars(defined('SMTP_USER') ? SMTP_USER : '', ENT_QUOTES, 'UTF-8')
+            . ' is working correctly.</p>';
+
+    $result = send_crm_mail(['to' => $to, 'subject' => $subject, 'html' => $html]);
+    if (count($result['sent']) === 1) {
+        respond(['data' => ['sent' => $result['sent'], 'failed' => $result['failed']], 'message' => "Test email sent to {$to}"]);
+    }
+    fail('SMTP send failed: ' . (reset($result['failed']) ?: 'unknown error'));
+}
+
 /* ----------------------- ROUTER ----------------------- */
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -2905,6 +2964,14 @@ switch ($resource) {
         } elseif ($method === 'DELETE') {
             if (!$id) fail('Invoice id required');
             delete_invoice(to_int($id));
+        }
+        break;
+
+    case 'emails':
+        if ($method === 'POST') {
+            $sub = $parts[1] ?? null;
+            if ($sub === 'test') send_test_email(json_body());
+            else send_email_campaign(json_body());
         }
         break;
 

@@ -271,3 +271,97 @@ function send_notification_email(string $to, string $subject, string $body): boo
 {
     return send_app_mail($to, '', $subject, $body);
 }
+
+/**
+ * Send a RAW email (no CRM template wrapper) through the configured SMTP
+ * account — used by the /emails/send campaign endpoint so the message the
+ * user composed in the UI is delivered exactly as written.
+ *
+ * $opts keys:
+ *   to        string|string[]  recipient address(es)          (required)
+ *   cc / bcc  string|string[]  optional copies
+ *   subject   string                                          (required)
+ *   html      string           HTML body                      (required)
+ *   from_name string           display name override
+ * Returns [sent => string[], failed => array<string,string>].
+ */
+function send_crm_mail(array $opts): array
+{
+    $norm = static function ($v): array {
+        if ($v === null || $v === '') return [];
+        return is_array($v) ? $v : [$v];
+    };
+    $tos = $norm($opts['to'] ?? null);
+    $ccs = $norm($opts['cc'] ?? null);
+    $bccs = $norm($opts['bcc'] ?? null);
+    $subject = trim((string)($opts['subject'] ?? ''));
+    $html = (string)($opts['html'] ?? '');
+    $fromName = trim((string)($opts['from_name'] ?? '')) ?: (defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea Pakistan');
+
+    $valid = array_values(array_filter(array_map('trim', $tos), fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL)));
+    if ($valid === [] || $subject === '') {
+        return ['sent' => [], 'failed' => array_fill_keys($tos, 'Invalid recipient or empty subject')];
+    }
+
+    require_once __DIR__ . '/lib/phpmailer/Exception.php';
+    require_once __DIR__ . '/lib/phpmailer/PHPMailer.php';
+    require_once __DIR__ . '/lib/phpmailer/SMTP.php';
+
+    $sent = [];
+    $failed = [];
+
+    // One PHPMailer instance reused with SMTP keep-alive: much faster for
+    // bulk sends because the connection/auth happens only once.
+    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host = defined('SMTP_HOST') ? SMTP_HOST : '';
+        $mail->Port = defined('SMTP_PORT') ? SMTP_PORT : 465;
+        if (defined('SMTP_SECURE') && SMTP_SECURE !== '') {
+            $mail->SMTPSecure = SMTP_SECURE === 'ssl'
+                ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+                : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        }
+        $mail->SMTPAuth = true;
+        $mail->Username = defined('SMTP_USER') ? SMTP_USER : '';
+        $mail->Password = defined('SMTP_PASS') ? SMTP_PASS : '';
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
+        $mail->SMTPKeepAlive = true;
+        $from = $mail->Username !== '' ? $mail->Username : 'no-reply@evee.local';
+        $mail->setFrom($from, $fromName);
+        foreach (array_filter(array_map('trim', $ccs), fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL)) as $cc) {
+            $mail->addCC($cc);
+        }
+        foreach (array_filter(array_map('trim', $bccs), fn($e) => filter_var($e, FILTER_VALIDATE_EMAIL)) as $bcc) {
+            $mail->addBCC($bcc);
+        }
+
+        foreach ($valid as $to) {
+            try {
+                $mail->clearAddresses();
+                $mail->addAddress($to);
+                $mail->isHTML(true);
+                $mail->Subject = $subject;
+                $mail->Body = $html;
+                $mail->AltBody = email_plain_text($html);
+                if ($mail->send()) {
+                    $sent[] = $to;
+                } else {
+                    $failed[$to] = 'Rejected by server';
+                }
+            } catch (Throwable $e) {
+                $failed[$to] = $e->getMessage();
+            }
+        }
+    } catch (Throwable $e) {
+        // Connect/auth failed: every valid recipient counts as failed.
+        foreach ($valid as $to) {
+            $failed[$to] = $e->getMessage();
+        }
+    } finally {
+        $mail->smtpClose();
+    }
+
+    return ['sent' => $sent, 'failed' => $failed];
+}

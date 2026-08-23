@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fa6';
 import type { Contact } from '../types';
 import { logBulkAction } from '../data/bulkActionsStore';
+import { sendSmtpEmail, sendSmtpTestEmail } from '../services/smtp';
 import Avatar from './Avatar';
 import RichTextEditor from './RichTextEditor';
 
@@ -46,6 +47,7 @@ function SendEmailModal({ selectedContacts, senderName, senderEmail, onClose, on
   const [testEmail, setTestEmail] = useState('');
   const [consent, setConsent] = useState(false);
   const [attachments, setAttachments] = useState<string[]>([]);
+  const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const validRecipients = selectedContacts.filter((c) => c.email && c.email.trim());
@@ -67,28 +69,61 @@ function SendEmailModal({ selectedContacts, senderName, senderEmail, onClose, on
     e.target.value = '';
   };
 
-  const sendTestMail = () => {
-    if (!testEmail.trim()) {
+  const sendTestMail = async () => {
+    const to = testEmail.trim();
+    if (!to) {
       onNotify('Enter a test email ID first');
       return;
     }
-    onNotify(`Test email sent to ${testEmail.trim()}`);
-    setTestEmail('');
+    setSending(true);
+    try {
+      await sendSmtpTestEmail(to);
+      onNotify(`Test email sent from crm@yadea.com.pk to ${to}`);
+      setTestEmail('');
+    } catch (err) {
+      onNotify(`Test email failed: ${(err as Error).message}`);
+    } finally {
+      setSending(false);
+    }
   };
 
   const reviewCampaign = () => onNotify('Reviewing campaign summary');
 
-  const sendEmail = () => {
+  const sendEmail = async () => {
     if (!actionName.trim()) return onNotify('Action name is required');
     if (!subject.trim()) return onNotify('Subject is required');
     if (charCount === 0) return onNotify('Email message is required');
     if (!consent) return onNotify('Please confirm recipient consent before sending');
-    logBulkAction({
-      label: `Email "${actionName.trim()}" to ${validCount} contact(s)`,
-      operation: 'Email',
-    });
-    onNotify(`Email campaign "${actionName.trim()}" queued for ${validCount} contact(s)`);
-    onClose();
+
+    setSending(true);
+    try {
+      const result = await sendSmtpEmail({
+        to: validRecipients.map((c) => c.email!.trim()),
+        subject: subject.trim(),
+        html: message,
+        fromName: fromName.trim() || undefined,
+      });
+      logBulkAction({
+        label: `Email "${actionName.trim()}" — ${result.sent_count} sent${
+          result.failed_count > 0 ? `, ${result.failed_count} failed` : ''
+        }`,
+        operation: 'Email',
+      });
+      if (result.sent_count > 0) {
+        onNotify(
+          `Campaign "${actionName.trim()}" sent via SMTP (${result.sent_count} delivered` +
+            (result.failed_count > 0 ? `, ${result.failed_count} failed)` : ')')
+        );
+      } else {
+        const firstErr = Object.values(result.failed)[0] ?? 'unknown error';
+        onNotify(`Send failed: ${firstErr}`);
+      }
+      onClose();
+    } catch (err) {
+      onNotify(`Send failed: ${(err as Error).message}`);
+    } finally {
+      setSending(false);
+    }
   };
 
   const emailTypeOptions: { id: typeof emailType; label: string; icon: React.ReactNode }[] = [
@@ -448,8 +483,8 @@ function SendEmailModal({ selectedContacts, senderName, senderEmail, onClose, on
                   className={inputCls}
                 />
               </div>
-              <button type="button" onClick={sendTestMail} className={outlineBtnCls}>
-                Send test mail
+              <button type="button" onClick={() => void sendTestMail()} disabled={sending} className={outlineBtnCls}>
+                {sending ? 'Sending…' : 'Send test mail'}
               </button>
             </div>
 
@@ -475,8 +510,8 @@ function SendEmailModal({ selectedContacts, senderName, senderEmail, onClose, on
               <button onClick={reviewCampaign} className={outlineBtnCls}>
                 Review campaign
               </button>
-              <button onClick={sendEmail} className={primaryBtnCls}>
-                Send email
+              <button onClick={() => void sendEmail()} disabled={sending} className={primaryBtnCls}>
+                {sending ? 'Sending…' : 'Send email'}
               </button>
             </div>
           </div>

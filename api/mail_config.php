@@ -23,11 +23,20 @@
  * APP_URL is used for login links inside emails (no trailing slash).
  */
 
-define('SMTP_HOST', getenv('SMTP_HOST') ?: '');            // e.g. 'smtp.gmail.com'
-define('SMTP_PORT', (int)(getenv('SMTP_PORT') ?: 587));    // 465 or 587
-define('SMTP_SECURE', getenv('SMTP_SECURE') ?: 'tls');     // 'ssl' | 'tls' | ''
-define('SMTP_USER', getenv('SMTP_USER') ?: '');            // sender mailbox
-define('SMTP_PASS', getenv('SMTP_PASS') ?: '');            // mailbox password
+define('SMTP_HOST', getenv('SMTP_HOST') ?: 'mail.yadea.com.pk'); // cPanel mailbox host
+define('SMTP_PORT', (int)(getenv('SMTP_PORT') ?: 465));    // 465 SSL (cPanel) or 587 TLS
+define('SMTP_SECURE', getenv('SMTP_SECURE') ?: 'ssl');     // 'ssl' | 'tls' | ''
+define('SMTP_USER', getenv('SMTP_USER') ?: 'crm@yadea.com.pk'); // sender mailbox
+
+// The mailbox password is NEVER committed. It lives in api/mail_secrets.php
+// (gitignored, local + server only) or the SMTP_PASS environment variable.
+if (is_file(__DIR__ . '/mail_secrets.php')) {
+    require_once __DIR__ . '/mail_secrets.php';
+}
+if (!defined('SMTP_PASS')) {
+    define('SMTP_PASS', (string)getenv('SMTP_PASS')); // empty until secrets are provided
+}
+
 define('MAIL_FROM_NAME', getenv('MAIL_FROM_NAME') ?: 'Yadea Pakistan');
 
 /** Public site URL used in email links (no trailing slash). */
