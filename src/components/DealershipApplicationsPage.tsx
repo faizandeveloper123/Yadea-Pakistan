@@ -6,9 +6,11 @@ import {
   FaPaperPlane,
   FaRegTrashCan,
   FaStore,
+  FaUserCheck,
+  FaUserPlus,
   FaXmark,
 } from 'react-icons/fa6';
-import { api, type ApiPortalSubmission } from '../api';
+import { api, type ApiPortalSubmission, type ApiStaffUser } from '../api';
 import { useAuth } from '../auth';
 import { PROVINCES, citiesForProvince } from '../data/pakistanCities';
 
@@ -74,6 +76,17 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState<ApiPortalSubmission | null>(null);
+  const [dealers, setDealers] = useState<ApiStaffUser[]>([]);
+  const [assignPick, setAssignPick] = useState<Record<number, number>>({});
+  const [openAssign, setOpenAssign] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    api
+      .listStaff()
+      .then((res) => setDealers(res.data.filter((s) => s.user_type === 'Dealer')))
+      .catch(() => undefined);
+  }, [isAdmin]);
 
   const cityOptions = useMemo(() => citiesForProvince(form.province), [form.province]);
 
@@ -159,11 +172,36 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
     onNotify(ok ? 'Public form link copied — share it with anyone' : url);
   };
 
+  const assign = async (row: ApiPortalSubmission) => {
+    const dealerId = assignPick[row.id];
+    if (!dealerId) return onNotify('Pick a dealer first');
+    try {
+      await api.assignPortalSubmission(row.id, dealerId);
+      const name = dealers.find((d) => d.id === dealerId)?.full_name ?? 'dealer';
+      onNotify(`Application ${row.code} assigned to ${name}`);
+      setAssignPick((prev) => ({ ...prev, [row.id]: 0 }));
+      setOpenAssign(null);
+      await load();
+    } catch (err) {
+      onNotify(`Assign failed: ${(err as Error).message}`);
+    }
+  };
+
+  const unassign = async (row: ApiPortalSubmission) => {
+    try {
+      await api.assignPortalSubmission(row.id, 0);
+      onNotify(`Assignment removed from ${row.code}`);
+      await load();
+    } catch (err) {
+      onNotify(`Unassign failed: ${(err as Error).message}`);
+    }
+  };
+
   const exportCsv = () => {
     if (rows.length === 0) return onNotify('Nothing to export yet');
-    let csv = 'Code,Name,Business,Email,Phone,City,Province,OEM,Years,Property,Structure,File,Submitted\n';
+    let csv = 'Code,Name,Business,Email,Phone,City,Province,OEM,Years,Property,Structure,File,Assigned To,Submitted\n';
     rows.forEach((r) => {
-      csv += `"${r.code}","${r.name}","${r.business_name}","${r.email}","${r.phone}","${r.city}","${r.province}","${r.oem_dealer}","${r.years_in_business}","${r.property_ownership}","${r.structure}","${r.file_name}","${fmtDate(r.created_at)}"\n`;
+      csv += `"${r.code}","${r.name}","${r.business_name}","${r.email}","${r.phone}","${r.city}","${r.province}","${r.oem_dealer}","${r.years_in_business}","${r.property_ownership}","${r.structure}","${r.file_name}","${r.assigned_to_name ?? ''}","${fmtDate(r.created_at)}"\n`;
     });
     const link = document.createElement('a');
     link.href = `data:text/csv;charset=utf-8,${encodeURI(csv)}`;
@@ -393,6 +431,12 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                       <td className="px-4 py-3">
                         <div className="font-semibold text-slate-800">{r.name}</div>
                         <div className="text-[11px] text-slate-500">{r.business_name}</div>
+                        {r.assigned_to && (
+                          <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold mt-0.5">
+                            <FaUserCheck className="text-[8px]" />
+                            <span className="truncate max-w-[110px]">{r.assigned_to_name ?? 'Assigned'}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div>{r.email}</div>
@@ -400,15 +444,68 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                       </td>
                       <td className="px-4 py-3">{r.city || '-'}</td>
                       <td className="px-4 py-3 text-slate-400 text-[11px]">{fmtDate(r.created_at)}</td>
-                      <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
-                        <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-yadea-orange text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
-                          View
-                        </button>
-                        {isAdmin && (
-                          <button onClick={() => void removeRow(r)} className="text-red-500 hover:text-red-700 text-[11px] px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition">
-                            <FaRegTrashCan />
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="relative inline-block text-left space-x-1.5">
+                          {isAdmin && (
+                            <button
+                              onClick={() => setOpenAssign((v) => (v === r.id ? null : r.id))}
+                              className={`text-[11px] font-bold px-2 py-1 rounded transition ${
+                                openAssign === r.id
+                                  ? 'bg-yadea-orange text-white'
+                                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+                              }`}
+                              title="Assign to a dealer"
+                            >
+                              <FaUserPlus className="inline mr-1 text-[9px]" />
+                              Assign to
+                            </button>
+                          )}
+                          <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-yadea-orange text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
+                            View
                           </button>
-                        )}
+                          {isAdmin && (
+                            <button onClick={() => void removeRow(r)} className="text-red-500 hover:text-red-700 text-[11px] px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition">
+                              <FaRegTrashCan />
+                            </button>
+                          )}
+
+                          {isAdmin && openAssign === r.id && (
+                            <>
+                              <div className="fixed inset-0 z-20" onClick={() => setOpenAssign(null)} />
+                              <div className="absolute right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-xl p-2.5 w-56 text-left">
+                                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
+                                  Assign to dealer
+                                </p>
+                                <select
+                                  value={assignPick[r.id] ?? 0}
+                                  onChange={(e) => setAssignPick((prev) => ({ ...prev, [r.id]: Number(e.target.value) }))}
+                                  className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-yadea-orange mb-2"
+                                >
+                                  <option value={0}>Select dealer…</option>
+                                  {dealers.map((d) => (
+                                    <option key={d.id} value={d.id}>{d.full_name}</option>
+                                  ))}
+                                </select>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => void assign(r)}
+                                    className="flex-1 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
+                                  >
+                                    Assign
+                                  </button>
+                                  {r.assigned_to && (
+                                    <button
+                                      onClick={() => void unassign(r)}
+                                      className="flex-1 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-[11px] font-bold py-1.5 rounded-md transition"
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

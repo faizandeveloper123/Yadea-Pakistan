@@ -7,6 +7,7 @@ import {
   FaPaperPlane,
   FaRegTrashCan,
   FaUserCheck,
+  FaUserPlus,
   FaXmark,
 } from 'react-icons/fa6';
 import {
@@ -86,6 +87,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
   const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'assigned'>('all');
   const [dealers, setDealers] = useState<ApiStaffUser[]>([]);
   const [assignPick, setAssignPick] = useState<Record<number, number>>({});
+  const [openAssign, setOpenAssign] = useState<number | null>(null);
   const [viewing, setViewing] = useState<ApiPortalSubmission | null>(null);
 
   const setField =
@@ -360,15 +362,14 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                   <th className="px-4 py-3">Problem</th>
                   <th className="px-4 py-3">Chassis</th>
                   <th className="px-4 py-3">Status</th>
-                  {isAdmin && <th className="px-4 py-3">Assign to Dealer</th>}
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
-                  <tr><td colSpan={isAdmin ? 7 : 6} className="px-4 py-8 text-center text-slate-400">Loading…</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Loading…</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={isAdmin ? 7 : 6} className="px-4 py-8 text-center text-slate-400 font-medium">No inquiries found.</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400 font-medium">No inquiries found.</td></tr>
                 ) : (
                   filtered.map((r) => (
                     <tr key={r.id} className="hover:bg-slate-50 transition align-top">
@@ -411,37 +412,68 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                           </span>
                         )}
                       </td>
-                      {isAdmin && (
-                        <td className="px-4 py-3 min-w-[190px]">
-                          <div className="flex items-center gap-1.5">
-                            <select
-                              value={assignPick[r.id] ?? 0}
-                              onChange={(e) => setAssignPick((prev) => ({ ...prev, [r.id]: Number(e.target.value) }))}
-                              className="flex-1 min-w-0 bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-yadea-orange"
-                            >
-                              <option value={0}>Select dealer…</option>
-                              {dealers.map((d) => (
-                                <option key={d.id} value={d.id}>{d.full_name}</option>
-                              ))}
-                            </select>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="relative inline-block text-left space-x-1.5">
+                          {isAdmin && (
                             <button
-                              onClick={() => void assign(r)}
-                              className="shrink-0 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold px-2.5 py-1.5 rounded-md transition"
+                              onClick={() => setOpenAssign((v) => (v === r.id ? null : r.id))}
+                              className={`text-[11px] font-bold px-2 py-1 rounded transition ${
+                                openAssign === r.id
+                                  ? 'bg-yadea-orange text-white'
+                                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+                              }`}
+                              title="Assign to a dealer"
                             >
-                              Go
+                              <FaUserPlus className="inline mr-1 text-[9px]" />
+                              Assign to
                             </button>
-                          </div>
-                        </td>
-                      )}
-                      <td className="px-4 py-3 text-right space-x-1.5 whitespace-nowrap">
-                        <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-yadea-orange text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
-                          View
-                        </button>
-                        {isAdmin && (
-                          <button onClick={() => void removeRow(r)} className="text-red-500 hover:text-red-700 text-[11px] px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition">
-                            <FaRegTrashCan />
+                          )}
+                          <button onClick={() => setViewing(r)} className="text-slate-600 hover:text-yadea-orange text-[11px] font-bold px-2 py-1 bg-slate-100 rounded hover:bg-orange-50 transition">
+                            View
                           </button>
-                        )}
+                          {isAdmin && (
+                            <button onClick={() => void removeRow(r)} className="text-red-500 hover:text-red-700 text-[11px] px-2 py-1 bg-red-50 rounded hover:bg-red-100 transition">
+                              <FaRegTrashCan />
+                            </button>
+                          )}
+
+                          {isAdmin && openAssign === r.id && (
+                            <>
+                              <div className="fixed inset-0 z-20" onClick={() => setOpenAssign(null)} />
+                              <div className="absolute right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-xl p-2.5 w-56 text-left">
+                                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
+                                  Assign to dealer
+                                </p>
+                                <select
+                                  value={assignPick[r.id] ?? 0}
+                                  onChange={(e) => setAssignPick((prev) => ({ ...prev, [r.id]: Number(e.target.value) }))}
+                                  className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-yadea-orange mb-2"
+                                >
+                                  <option value={0}>Select dealer…</option>
+                                  {dealers.map((d) => (
+                                    <option key={d.id} value={d.id}>{d.full_name}</option>
+                                  ))}
+                                </select>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => void assign(r)}
+                                    className="flex-1 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
+                                  >
+                                    Assign
+                                  </button>
+                                  {r.assigned_to && (
+                                    <button
+                                      onClick={() => void unassign(r)}
+                                      className="flex-1 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-[11px] font-bold py-1.5 rounded-md transition"
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
