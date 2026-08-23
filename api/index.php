@@ -1133,6 +1133,52 @@ function staff_payload(array $row): array
     return $row;
 }
 
+/**
+ * Signed, stateless one-click login token for approval emails.
+ * Payload = email|expiry|HMAC(password_hash). Valid for 30 minutes and
+ * automatically invalidated the moment the account's password changes.
+ */
+function make_login_token(array $row): string
+{
+    $expires = (string)(time() + 1800);
+    $payload = ($row['email'] ?? '') . '|' . $expires;
+    $sig = hash_hmac('sha256', $payload, ($row['password'] ?? '') . '|yadea-magic-login');
+    return rtrim(strtr(base64_encode($payload . '|' . $sig), '+/', '-_'), '=');
+}
+
+/** Validate a magic login token; returns the staff row or null. */
+function verify_login_token(string $token): ?array
+{
+    $raw = base64_decode(strtr($token, '-_', '+/'), true);
+    if ($raw === false) return null;
+    $parts = explode('|', $raw);
+    if (count($parts) !== 3) return null;
+    [$email, $expires, $sig] = $parts;
+    if (!ctype_digit($expires) || (int)$expires < time() || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return null;
+    }
+    $stmt = db()->prepare('SELECT * FROM staff_users WHERE email = :email LIMIT 1');
+    $stmt->execute([':email' => $email]);
+    $row = $stmt->fetch();
+    if (!$row) return null;
+    $expected = hash_hmac('sha256', $email . '|' . $expires, ($row['password'] ?? '') . '|yadea-magic-login');
+    if (!hash_equals($expected, $sig)) return null;
+    return $row;
+}
+
+/** POST /auth/magic-login { token } -> session payload like /auth/login. */
+function magic_login(array $body): void
+{
+    $token = trim((string)($body['token'] ?? ''));
+    if ($token === '') fail('Token is required', 400);
+    $row = verify_login_token($token);
+    if (!$row) fail('This login link is invalid or has expired. Please sign in manually.', 401);
+    if ((int)($row['approved'] ?? 1) !== 1) {
+        fail('Your account is pending admin approval.', 403);
+    }
+    respond(['data' => staff_payload($row), 'message' => 'Login successful']);
+}
+
 /** POST /auth/login  { email, password } -> the staff user or 401. */
 function login(array $body): void
 {
@@ -1394,18 +1440,22 @@ function approve_staff(int $id): void
     $name = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
     $loginUrl = (defined('APP_URL') ? APP_URL : '') . '/';
 
+    // One-click signed login link: opens the CRM already signed in as this
+    // user. Falls back to the normal login page when the token is expired.
+    $magicUrl = $loginUrl . '#/magic-login/' . make_login_token($row);
+
     // Portal notification for the approved user.
     notify_staff($id, null, 'account_approved', 'Account approved', 'Your account has been approved. You can now log in to the website.');
 
-    // Richer approval email with the login link.
+    // Richer approval email with the one-click login button.
     if (!empty($row['email'])) {
         $bodyHtml = '<p style="margin:0 0 12px 0;font-size:14px;line-height:22px;color:#334155;">Hi '
             . htmlspecialchars($name !== '' ? $name : 'there', ENT_QUOTES, 'UTF-8') . ',</p>'
-            . '<p style="margin:0 0 16px 0;font-size:14px;line-height:22px;color:#334155;">Good news! Your dealership registration has been <strong style="color:#059669;">approved</strong>. Your account is now active and you can sign in with the email and password you received at registration.</p>'
+            . '<p style="margin:0 0 16px 0;font-size:14px;line-height:22px;color:#334155;">Good news! Your dealership registration has been <strong style="color:#059669;">approved</strong>. Click the button below and you will be signed in to your account right away.</p>'
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px 0;"><tr><td style="background-color:#EB5F1B;border-radius:8px;">'
-            . '<a href="' . htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;padding:11px 26px;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;">Login to your account</a>'
+            . '<a href="' . htmlspecialchars($magicUrl, ENT_QUOTES, 'UTF-8') . '" style="display:inline-block;padding:11px 26px;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;">Login to your account</a>'
             . '</td></tr></table>'
-            . '<p style="margin:0;font-size:13px;line-height:20px;color:#64748b;">If the button does not work, copy this link into your browser:<br>'
+            . '<p style="margin:0;font-size:13px;line-height:20px;color:#64748b;">The button signs you in directly. If it has expired or does not work, sign in with your email and password at:<br>'
             . '<a href="' . htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') . '" style="color:#EB5F1B;word-break:break-all;">' . htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8') . '</a></p>';
         send_app_mail(
             (string)$row['email'],
@@ -1460,7 +1510,7 @@ function notify_staff(int $staffId, ?int $contactId, string $type, string $title
         $body = '<p>Hi ' . htmlspecialchars($name ?: 'there') . ',</p>'
             . '<p>' . htmlspecialchars($title) . '</p>'
             . '<p>' . htmlspecialchars($detail) . '</p>'
-            . '<p style="color:#64748b;font-size:12px">Evee CRM notification</p>';
+            . '<p style="color:#64748b;font-size:12px">Yadea CRM Notification</p>';
         send_notification_email($r['email'], $title, $body);
     }
 
@@ -2749,9 +2799,9 @@ function send_test_email(array $body): void
     $to = trim((string)($body['to'] ?? ''));
     if (!filter_var($to, FILTER_VALIDATE_EMAIL)) fail('A valid "to" email is required');
 
-    $subject = trim((string)($body['subject'] ?? '')) ?: 'Evee CRM — SMTP test email';
+    $subject = trim((string)($body['subject'] ?? '')) ?: 'Yadea CRM — SMTP test email';
     $html = trim((string)($body['html'] ?? ''))
-        ?: '<p style="margin:0 0 10px 0;font-size:14px;color:#334155;">This is a test message from Evee CRM.</p>'
+        ?: '<p style="margin:0 0 10px 0;font-size:14px;color:#334155;">This is a test message from Yadea CRM.</p>'
             . '<p style="margin:0;font-size:13px;color:#64748b;">If you received this, the SMTP account '
             . htmlspecialchars(defined('SMTP_USER') ? SMTP_USER : '', ENT_QUOTES, 'UTF-8')
             . ' is working correctly.</p>';
@@ -2902,6 +2952,8 @@ switch ($resource) {
                 register_dealer(json_body());
             } elseif ($sub === 'reveal-password') {
                 reveal_password(json_body());
+            } elseif ($sub === 'magic-login') {
+                magic_login(json_body());
             } else {
                 login(json_body());
             }

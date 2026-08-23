@@ -612,6 +612,17 @@ export const api = {
       body: JSON.stringify(input),
     }),
 
+  /**
+   * One-click login from the approval email. Exchanges a signed token for a
+   * normal session payload; the server rejects expired/invalid tokens and
+   * accounts that are still pending admin approval.
+   */
+  magicLogin: (token: string) =>
+    request<{ data: ApiStaffUser; message: string }>('/auth/magic-login', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    }),
+
   /** Current plain password of an account (for "view password" in settings). */
   revealPassword: (email: string) =>
     request<{ data: { password: string | null } }>('/auth/reveal-password', {

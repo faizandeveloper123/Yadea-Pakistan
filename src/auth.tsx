@@ -22,6 +22,11 @@ interface AuthContextValue {
   /** True while an Admin is viewing the app as another user via "Login as". */
   isImpersonating: boolean;
   login: (input: LoginInput) => Promise<ApiStaffUser>;
+  /**
+   * Install an already-fetched staff user as the active session (used by the
+   * one-click magic-login link in approval emails).
+   */
+  completeLogin: (user: ApiStaffUser) => void;
   logout: () => void;
   /** Admin-only: switch the session to another staff user (any role). */
   loginAs: (staffId: number) => Promise<ApiStaffUser>;
@@ -101,6 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const completeLogin = useCallback((u: ApiStaffUser) => {
+    setOriginalUser(null);
+    setUser(u);
   }, []);
 
   const logout = useCallback(() => {
@@ -203,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       isImpersonating: originalUser !== null,
       login,
+      completeLogin,
       logout,
       loginAs,
       switchBack,
@@ -212,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       hasActionPermission,
       hasEditPermission,
     }),
-    [user, loading, originalUser, login, logout, loginAs, switchBack, updateUser, hasPermission, hasExactPermission, hasActionPermission, hasEditPermission]
+    [user, loading, originalUser, login, completeLogin, logout, loginAs, switchBack, updateUser, hasPermission, hasExactPermission, hasActionPermission, hasEditPermission]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

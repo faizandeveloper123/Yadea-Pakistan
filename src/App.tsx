@@ -1089,6 +1089,11 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
     return <PublicFormPage data={route.data} />;
   }
 
+  // One-click login from the approval email — must work while signed out.
+  if (route.name === 'magic-login') {
+    return <MagicLoginHandler token={route.token} />;
+  }
+
   // Signed out -> branded login screen.
   if (!user) {
     return <LoginPage onSuccess={() => navigate({ name: 'dashboard' })} />;
@@ -1482,6 +1487,66 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
 
       <Toast message={toast} />
     </StaffProvider>
+  );
+}
+
+/**
+ * Handles #/magic-login/:token links from approval emails: exchanges the
+ * signed token for a session, signs the user straight in and lands them on
+ * the dashboard. On any failure shows the error with a path to manual login.
+ */
+function MagicLoginHandler({ token }: { token: string }) {
+  const { completeLogin } = useAuth();
+  const [state, setState] = useState<'working' | 'error'>('working');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    api
+      .magicLogin(token)
+      .then((res) => {
+        if (!active) return;
+        completeLogin(res.data);
+        navigate({ name: 'dashboard' });
+      })
+      .catch((err) => {
+        if (!active) return;
+        setErrorMsg((err as Error).message);
+        setState('error');
+      });
+    return () => {
+      active = false;
+    };
+  }, [token, completeLogin]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-sm w-full text-center evee-pop">
+        {state === 'working' ? (
+          <>
+            <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl mx-auto mb-4">
+              <FaLock />
+            </div>
+            <h2 className="text-base font-bold text-slate-800">Signing you in…</h2>
+            <p className="text-xs text-slate-500 mt-1.5">Verifying your secure login link.</p>
+          </>
+        ) : (
+          <>
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl mx-auto mb-4">
+              <FaLock />
+            </div>
+            <h2 className="text-base font-bold text-slate-800">Link not valid</h2>
+            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{errorMsg}</p>
+            <button
+              onClick={() => navigate({ name: 'dashboard' })}
+              className="mt-5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition"
+            >
+              Go to login page
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -208,8 +208,8 @@ function send_app_mail(string $to, string $toName, string $subject, string $body
         // Not configured yet: legacy best-effort mail() path.
         $headers = "MIME-Version: 1.0\r\n"
             . "Content-Type: text/html; charset=UTF-8\r\n"
-            . 'From: ' . (defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Evee CRM') . " <no-reply@evee.local>\r\n"
-            . "X-Mailer: Evee CRM Notification\r\n";
+            . 'From: ' . (defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : 'Yadea CRM') . " <no-reply@evee.local>\r\n"
+            . "X-Mailer: Yadea CRM Notification\r\n";
         try {
             return @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $html, $headers);
         } catch (Throwable $e) {
