@@ -237,7 +237,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
   const docRef = useRef<HTMLDivElement | null>(null);
 
   /* While the editor is mounted every print (button or Ctrl+P) outputs only
-     the invoice sheet - the CSS below hides everything else. */
+      the invoice sheet - the CSS below hides everything else. */
   useEffect(() => {
     if (view !== 'editor') {
       document.body.classList.remove('inv-printing');
@@ -246,6 +246,18 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
     document.body.classList.add('inv-printing');
     return () => document.body.classList.remove('inv-printing');
   }, [view]);
+
+  /* Load the Poppins display font once for the invoice sheet. */
+  useEffect(() => {
+    const id = 'yadea-invoice-poppins';
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href =
+      'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap';
+    document.head.appendChild(link);
+  }, []);
 
   /* Suggested next sequential number for a fresh invoice. */
   useEffect(() => {
@@ -1005,224 +1017,301 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                   <div
                     ref={docRef}
                     className="inv-page bg-white shadow-xl shadow-slate-900/10 rounded-2xl text-slate-900 relative flex flex-col justify-between overflow-hidden ring-1 ring-slate-200 w-full"
-                    style={{ minHeight: 950 }}
+                    style={{ minHeight: 1050, fontFamily: "'Poppins', 'Segoe UI', sans-serif" }}
                   >
                     <div>
-                      {/* Header banner: orange band + black corner sweep so the
-                          orange shield always sits on black and stays visible */}
-                      <div className="relative bg-white">
-                        <div className="w-full relative overflow-hidden leading-none" style={{ height: 112 }}>
-                          <svg className="w-full h-full" viewBox="0 0 700 112" preserveAspectRatio="none">
-                            {/* Brand-orange main band */}
-                            <path d="M0,0 H700 V68 C590,102 430,112 305,107 C185,102 85,95 0,66 Z" fill="#EB5F1B" />
-                            {/* White separation sliver along the sweep edge */}
-                            <path d="M392,0 C512,38 626,78 700,116 L700,105 C624,68 518,29 402,-4 Z" fill="#ffffff" />
-                            {/* Black corner sweep hosting the shield - extended left
-                                and down so the logo keeps clear space off the corner */}
-                            <path d="M400,0 C515,36 628,76 700,112 L700,0 Z" fill="#111827" />
-                          </svg>
+                      {/* Header: curved navy/orange vectors + round brand badge.
+                          INVOICE title and document numbers sit on the navy wave. */}
+                      <div className="relative w-full overflow-hidden" style={{ height: 210 }}>
+                        <svg
+                          className="absolute top-0 right-0 pointer-events-none"
+                          style={{ width: 600, height: 220 }}
+                          viewBox="0 0 600 220"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          {/* Top orange accent shape */}
+                          <path d="M 120 0 C 170 100, 260 130, 360 0 Z" fill="#FF5400" />
+                          {/* Navy wave overlay */}
+                          <path
+                            d="M 160 0 C 200 110, 280 180, 440 170 C 510 165, 550 145, 600 130 L 600 0 Z"
+                            fill="#021C35"
+                          />
+                          {/* Orange swoosh under the navy curve */}
+                          <path
+                            d="M 330 170 C 430 215, 530 205, 600 150 L 600 130 C 550 145, 510 165, 440 170 C 390 170, 350 170, 330 170 Z"
+                            fill="#FF5400"
+                          />
+                        </svg>
 
-                          <div className="absolute top-4 left-7 right-6">
-                            <h1 className="text-2xl md:text-[27px] font-black tracking-wide text-white drop-shadow-sm leading-tight">
-                              Yadea Hussain Motors
+                        <div className="relative z-10 p-6 sm:p-7 flex justify-between items-start">
+                          {/* Round brand badge */}
+                          <div
+                            className="rounded-full flex flex-col items-center justify-center text-center shadow-sm border-2 border-white mt-1 ml-1 shrink-0"
+                            style={{ width: 128, height: 128, backgroundColor: '#FF5400' }}
+                          >
+                            <YadeaLogo wordmark={false} className="w-11 h-auto drop-shadow" />
+                            <span className="text-[8px] font-black tracking-[0.26em] mt-1.5 text-white">YADEA</span>
+                            <span className="text-[6.5px] font-bold tracking-[0.14em] text-white/90">
+                              HUSSAIN MOTORS
+                            </span>
+                          </div>
+
+                          {/* Title + document numbers */}
+                          <div className="text-right text-white mr-2 sm:mr-4 mt-1">
+                            <h1 className="text-4xl sm:text-5xl font-black tracking-wider uppercase mb-2 text-yadea-orange">
+                              Invoice
                             </h1>
+                            <div className="space-y-1.5 text-xs sm:text-sm tracking-wide">
+                              <p className="flex items-center justify-end gap-2">
+                                <span className="font-bold">Invoice No:</span>
+                                <input
+                                  type="text"
+                                  value={form.invoiceNo}
+                                  onChange={setField('invoiceNo')}
+                                  className="inv-bare font-mono w-28 text-left bg-transparent border-b border-white/40 text-white placeholder-white/50"
+                                  aria-label="Invoice number"
+                                />
+                              </p>
+                              <p className="flex items-center justify-end gap-2">
+                                <span className="font-bold">Invoice Date:</span>
+                                <input
+                                  type="text"
+                                  placeholder="DD/MM/YYYY"
+                                  value={form.dated}
+                                  onChange={setField('dated')}
+                                  className="inv-bare w-24 text-left bg-transparent border-b border-white/40 text-white placeholder-white/50"
+                                  aria-label="Invoice date"
+                                />
+                              </p>
+                            </div>
                           </div>
-
-                          {/* Shield centred inside the black sweep with clear
-                              space on both left and right sides */}
-                          <div className="absolute top-3 right-11 flex flex-col items-center">
-                            <YadeaLogo wordmark={false} className="w-8 h-auto" />
-                            <span className="text-[8px] font-black tracking-[0.28em] mt-1 text-white">YADEA</span>
-                          </div>
-                        </div>
-
-                        {/* Address ribbon (black to separate from the orange band) */}
-                        <div className="bg-yadea-black text-white text-center text-xs md:text-sm font-bold py-1.5 px-4 tracking-wide">
-                          Plaza # 27, Mini Ext 1, Bahria Town Phase 7, Rawalpindi.
                         </div>
                       </div>
 
-                      {/* Meta row */}
-                      <div className="px-7 pt-4 pb-2">
-                        <div className="flex justify-between items-start pb-2 border-b-2 border-slate-900">
-                          <div className="w-2/5">
-                            <input
-                              type="text"
-                              value={form.invoiceNo}
-                              onChange={setField('invoiceNo')}
-                              className="inv-bare font-mono font-extrabold text-xl text-green-800 tracking-[0.2em] w-28 text-left bg-transparent"
-                              aria-label="Invoice number"
-                            />
-                            <div className="text-xs font-bold text-slate-800 leading-tight">Invoice No</div>
-                            <div className="text-[11px] font-bold text-slate-800 mt-1 flex items-center gap-1">
-                              <span>STRN Number:</span>
-                              <input
-                                type="text"
-                                value={form.strn}
-                                onChange={setField('strn')}
-                                className="inv-bare font-mono text-slate-900 font-bold w-32 bg-transparent"
-                                aria-label="STRN number"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="w-1/5 text-center pt-2">
-                            <h2 className="text-lg md:text-xl font-black text-yadea-orange tracking-tight uppercase whitespace-nowrap">
-                              Sales Tax Invoice
-                            </h2>
-                          </div>
-
-                          <div className="w-2/5 text-right pt-2 flex justify-end items-end gap-1 text-xs font-bold text-slate-800">
-                            <span className="text-sm">Dated</span>
-                            <input
-                              type="text"
-                              placeholder="DD/MM/YYYY"
-                              value={form.dated}
-                              onChange={setField('dated')}
-                              className="inv-underlined text-xs w-28 px-1 text-center font-bold"
-                              aria-label="Invoice date"
-                            />
-                          </div>
-                        </div>
-
-                        {/* M/S line */}
-                        <div className="mt-3 mb-4 flex items-baseline gap-2 text-sm md:text-base font-bold text-slate-900">
-                          <span className="tracking-wide">M/S</span>
+                      {/* Buyer / seller / quick-summary columns */}
+                      <div className="px-8 sm:px-9 mt-3 grid grid-cols-12 gap-2 text-xs leading-snug">
+                        {/* Column 1: buyer */}
+                        <div className="col-span-4 pr-2">
+                          <h3 className="font-extrabold text-slate-900 text-[13px] mb-1">Invoice To:</h3>
                           <input
                             type="text"
                             placeholder="Customer Name / Buyer Name"
                             value={form.ms}
                             onChange={setField('ms')}
-                            className="inv-underlined flex-1 font-semibold px-2 text-sm md:text-base"
+                            className="inv-underlined w-full font-bold text-slate-800 px-0.5 py-0.5"
                             aria-label="Customer name"
                           />
                         </div>
 
-                        {/* Rounded invoice table */}
-                        <div className="inv-table-wrap mt-3">
-                          <table className="inv-table">
-                            <thead>
-                              <tr>
-                                <th style={{ width: '8%' }}>Qty</th>
-                                <th style={{ width: '36%' }}>DESCRIPTION</th>
-                                <th style={{ width: '14%' }}>
-                                  Value Excluding
-                                  <br />
-                                  Sales Tax
-                                </th>
-                                <th style={{ width: '12%' }}>
-                                  Rate Of
-                                  <br />
-                                  Sales Tax
-                                </th>
-                                <th style={{ width: '14%' }}>
-                                  Sales Tax
-                                  <br />
-                                  Payable
-                                </th>
-                                <th style={{ width: '16%' }}>
-                                  Value Including
-                                  <br />
-                                  Sales Tax
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr style={{ height: 330 }}>
-                                <td className="text-center font-bold text-slate-900 pt-4">
-                                  <input
-                                    type="text"
-                                    value={form.qty}
-                                    onChange={setField('qty')}
-                                    className="inv-bare w-full text-center font-bold bg-transparent"
-                                    aria-label="Quantity"
-                                  />
-                                </td>
-                                <td className="pt-3 px-3">
-                                  <div className="space-y-4 text-xs font-bold text-slate-800">
-                                    {DESC_ROWS.map((row) => (
-                                      <div key={row.key} className="flex items-center gap-1">
-                                        <span className="w-20 font-bold text-slate-900 shrink-0">{row.label}</span>
-                                        <input
-                                          type="text"
-                                          placeholder={row.placeholder}
-                                          value={form[row.key]}
-                                          onChange={setField(row.key)}
-                                          className="inv-dotted flex-1 px-1 py-0 font-medium"
-                                          aria-label={row.label}
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
-                                </td>
-                                <td className="text-right pt-4 px-2 font-semibold">
-                                  <input
-                                    type="text"
-                                    placeholder="0.00"
-                                    value={form.valueExcl}
-                                    onChange={setField('valueExcl')}
-                                    className="inv-bare w-full text-right font-bold text-slate-900 bg-transparent"
-                                    aria-label="Value excluding sales tax"
-                                  />
-                                </td>
-                                <td className="text-center pt-4 px-1 font-semibold">
-                                  <input
-                                    type="text"
-                                    placeholder="18%"
-                                    value={form.taxRate}
-                                    onChange={setField('taxRate')}
-                                    className="inv-bare w-full text-center font-bold text-slate-900 bg-transparent"
-                                    aria-label="Rate of sales tax"
-                                  />
-                                </td>
-                                <td className="text-right pt-4 px-2 font-semibold text-slate-900">
-                                  {formatMoney(taxPayable)}
-                                </td>
-                                <td className="text-right pt-4 px-2 font-black text-slate-900">
-                                  {formatMoney(totalIncl)}
-                                </td>
-                              </tr>
-
-                              <tr className="inv-total-row">
-                                <td colSpan={2} className="text-center font-extrabold text-slate-900 text-sm py-2">
-                                  Total
-                                </td>
-                                <td className="text-right px-2 font-bold py-2">{formatMoney(totalExcl)}</td>
-                                <td className="py-2" />
-                                <td className="text-right px-2 font-bold py-2">{formatMoney(taxPayable)}</td>
-                                <td className="text-right px-2 font-black py-2 text-yadea-dark text-sm">
-                                  {formatMoney(totalIncl)}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
+                        {/* Column 2: seller */}
+                        <div className="col-span-4 px-3 border-l-2 border-slate-700">
+                          <h3 className="font-extrabold text-slate-900 text-[13px] mb-1">Invoice From:</h3>
+                          <p className="font-bold text-slate-800">Yadea Hussain Motors</p>
+                          <p className="text-slate-700 font-medium leading-tight">
+                            Plaza # 27, Mini Ext 1, Bahria Town Phase 7, Rawalpindi.
+                          </p>
+                          <p className="text-slate-700 font-bold flex items-center gap-1 flex-wrap">
+                            <span>STRN Number:</span>
+                            <input
+                              type="text"
+                              value={form.strn}
+                              onChange={setField('strn')}
+                              className="inv-bare font-mono text-slate-900 font-semibold w-28 bg-transparent"
+                              aria-label="STRN number"
+                            />
+                          </p>
                         </div>
+
+                        {/* Column 3: live amounts summary */}
+                        <div className="col-span-4 pl-3 border-l-2 border-slate-700 flex flex-col justify-start space-y-1">
+                          <div className="flex justify-between items-center pr-1 gap-2">
+                            <span className="font-extrabold text-slate-900">Value Excl. Tax:</span>
+                            <span className="font-semibold text-slate-800 whitespace-nowrap">Rs {formatMoney(totalExcl)}</span>
+                          </div>
+                          <div className="flex justify-between items-center pr-1 gap-2">
+                            <span className="font-extrabold text-slate-900">Sales Tax Rate:</span>
+                            <span className="font-semibold text-slate-800 whitespace-nowrap">{form.taxRate || 0}%</span>
+                          </div>
+                          <div className="flex justify-between items-center pr-1 gap-2">
+                            <span className="font-extrabold text-slate-900">Total Incl. Tax:</span>
+                            <span className="font-semibold text-slate-800 whitespace-nowrap">Rs {formatMoney(totalIncl)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                        {/* Items table: navy pill header, orange row rules */}
+                        <div className="px-8 sm:px-9 mt-7">
+                          <div
+                            className="text-white rounded-full px-6 py-2.5 flex items-center text-[10px] sm:text-[11px] font-extrabold tracking-wider uppercase"
+                            style={{ backgroundColor: '#021C35' }}
+                          >
+                            <div className="w-[8%] text-center">Qty</div>
+                            <div className="w-[36%] pl-2 text-left">Description</div>
+                            <div className="w-[14%] text-center leading-tight">
+                              Value Excl.
+                              <br />
+                              Sales Tax
+                            </div>
+                            <div className="w-[12%] text-center leading-tight">Tax Rate</div>
+                            <div className="w-[14%] text-center leading-tight">
+                              Sales Tax
+                              <br />
+                              Payable
+                            </div>
+                            <div className="w-[16%] text-right leading-tight pr-1">
+                              Value Incl.
+                              <br />
+                              Tax
+                            </div>
+                          </div>
+
+                          <div className="text-xs sm:text-sm font-bold text-slate-900">
+                            {/* Item row */}
+                            <div
+                              className="py-3 px-6 flex items-start justify-between border-b-2"
+                              style={{ borderColor: '#FF5400' }}
+                            >
+                              <div className="w-[8%] text-center pt-3">
+                                <input
+                                  type="text"
+                                  value={form.qty}
+                                  onChange={setField('qty')}
+                                  className="inv-bare w-full text-center font-bold bg-transparent"
+                                  aria-label="Quantity"
+                                />
+                              </div>
+                              <div className="w-[36%] px-2 space-y-3 text-xs">
+                                {DESC_ROWS.map((row) => (
+                                  <div key={row.key} className="flex items-center gap-1">
+                                    <span className="w-20 font-bold text-slate-900 shrink-0">{row.label}</span>
+                                    <input
+                                      type="text"
+                                      placeholder={row.placeholder}
+                                      value={form[row.key]}
+                                      onChange={setField(row.key)}
+                                      className="inv-dotted flex-1 px-1 py-0 font-medium"
+                                      aria-label={row.label}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="w-[14%] text-right pt-3 px-1">
+                                <input
+                                  type="text"
+                                  placeholder="0.00"
+                                  value={form.valueExcl}
+                                  onChange={setField('valueExcl')}
+                                  className="inv-bare w-full text-right font-bold bg-transparent"
+                                  aria-label="Value excluding sales tax"
+                                />
+                              </div>
+                              <div className="w-[12%] text-center pt-3 px-1">
+                                <input
+                                  type="text"
+                                  placeholder="18%"
+                                  value={form.taxRate}
+                                  onChange={setField('taxRate')}
+                                  className="inv-bare w-full text-center font-bold bg-transparent"
+                                  aria-label="Rate of sales tax"
+                                />
+                              </div>
+                              <div className="w-[14%] text-right pt-3 px-1">{formatMoney(taxPayable)}</div>
+                              <div className="w-[16%] text-right pt-3 pr-1 font-black">{formatMoney(totalIncl)}</div>
+                            </div>
+
+                            {/* Total row */}
+                            <div
+                              className="py-2.5 px-6 flex items-center justify-between border-b-2"
+                              style={{ borderColor: '#FF5400' }}
+                            >
+                              <div className="w-[44%] text-left font-extrabold tracking-wide">TOTAL</div>
+                              <div className="w-[14%] text-right font-extrabold">{formatMoney(totalExcl)}</div>
+                              <div className="w-[12%] text-center" />
+                              <div className="w-[14%] text-right font-extrabold">{formatMoney(taxPayable)}</div>
+                              <div className="w-[16%] text-right pr-1 font-black text-base" style={{ color: '#FF5400' }}>
+                                {formatMoney(totalIncl)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Terms & conditions + totals summary */}
+                        <div className="px-8 sm:px-9 mt-9 grid grid-cols-12 gap-4 items-start">
+                          <div className="col-span-7 pr-2 text-xs">
+                            <h4 className="font-extrabold text-slate-900 text-[13px] mb-2">Terms and Conditions:</h4>
+                            <ol className="space-y-1 font-semibold text-slate-700 leading-relaxed list-none p-0 m-0">
+                              <li className="flex gap-1.5">
+                                <span>1.</span>
+                                <span>Payment is due in full at the time of delivery of the vehicle.</span>
+                              </li>
+                              <li className="flex gap-1.5">
+                                <span>2.</span>
+                                <span>Warranty and service claims are processed as per official Yadea Hussain Motors policy.</span>
+                              </li>
+                            </ol>
+                          </div>
+
+                          <div className="col-span-5 ml-auto w-full max-w-[270px] space-y-1.5 text-xs sm:text-[13px] font-extrabold text-slate-900">
+                            <div className="flex justify-between items-center px-1 gap-2">
+                              <span>Value Excl. Tax:</span>
+                              <span className="text-right whitespace-nowrap">Rs {formatMoney(totalExcl)}</span>
+                            </div>
+                            <div className="flex justify-between items-center px-1 gap-2">
+                              <span>Sales Tax Payable:</span>
+                              <span className="text-right whitespace-nowrap">Rs {formatMoney(taxPayable)}</span>
+                            </div>
+                            <div className="pt-2">
+                              <div
+                                className="rounded-full overflow-hidden flex items-center justify-between p-1 shadow-sm text-white"
+                                style={{ backgroundColor: '#021C35' }}
+                              >
+                                <div
+                                  className="px-3.5 py-1 rounded-full text-[10px] sm:text-xs uppercase tracking-wider"
+                                  style={{ backgroundColor: '#FF5400' }}
+                                >
+                                  Total Payable:
+                                </div>
+                                <div className="pr-3 tracking-wide text-xs sm:text-sm font-black whitespace-nowrap">
+                                  Rs {formatMoney(totalIncl)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    {/* Signature row (sits on white space above the waves) */}
+                    <div className="px-8 sm:px-9 mt-10 flex justify-between items-end relative z-10">
+                      <div className="text-left pb-1">
+                        <p className="text-xs font-semibold text-slate-700 italic mb-0.5">For &amp; on Behalf of</p>
+                        <h3 className="text-base md:text-lg font-black tracking-tight" style={{ color: '#FF5400' }}>
+                          Yadea Hussain Motors
+                        </h3>
+                      </div>
+                      <div className="text-center w-48">
+                        <div className="border-b-2 border-slate-900 h-10" />
+                        <span className="text-xs font-bold text-slate-900 tracking-wider uppercase mt-1 block">
+                          Signature
+                        </span>
                       </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="px-7 pt-4 pb-4 relative">
-                      <div className="absolute bottom-0 left-0 w-40 h-24 pointer-events-none overflow-hidden z-0">
-                        <svg className="w-full h-full" viewBox="0 0 160 100" preserveAspectRatio="none">
-                          <path d="M -10,110 L 140,110 Q 70,30 -10,10 Z" fill="#EB5F1B" />
-                          <path d="M -10,110 L 155,110 Q 100,60 -10,50 Z" fill="#111827" />
-                        </svg>
-                      </div>
-
-                      <div className="flex justify-between items-end relative z-10 pl-24 pr-2">
-                        <div className="text-left pb-1">
-                          <p className="text-xs font-semibold text-slate-700 italic mb-0.5">For &amp; on Behalf of</p>
-                          <h3 className="text-base md:text-lg font-black text-yadea-orange tracking-tight">
-                            Yadea Hussain Motors
-                          </h3>
-                        </div>
-                        <div className="text-center w-48">
-                          <div className="border-b-2 border-slate-900 h-10" />
-                          <span className="text-xs font-bold text-slate-900 tracking-wider uppercase mt-1 block">
-                            Signature
-                          </span>
-                        </div>
-                      </div>
+                    {/* Footer: dual fluid waves (orange under navy) */}
+                    <div className="relative w-full overflow-hidden mt-2" style={{ height: 120 }}>
+                      <svg
+                        className="absolute bottom-0 left-0 w-full pointer-events-none"
+                        style={{ height: 120 }}
+                        viewBox="0 0 800 140"
+                        preserveAspectRatio="none"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        {/* Top wave (bright orange) */}
+                        <path d="M 0 55 C 220 135, 480 10, 800 55 L 800 140 L 0 140 Z" fill="#FF5400" />
+                        {/* Foreground bottom wave (dark navy) */}
+                        <path d="M 0 75 C 240 10, 500 125, 800 60 L 800 140 L 0 140 Z" fill="#021C35" />
+                      </svg>
                     </div>
                   </div>
                 </div>
