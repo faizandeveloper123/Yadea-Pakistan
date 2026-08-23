@@ -4,7 +4,7 @@ import { logActivity } from '../data/activityLog';
 import { initialsFromName } from '../utils';
 import { useStaff } from '../StaffContext';
 import { useAuth } from '../auth';
-import { sendEmailViaMailgun } from '../services/mailgun';
+import { sendSmtpEmail } from '../services/smtp';
 import ContactInfoPanel from './ContactInfoPanel';
 import RightSidebar from './RightSidebar';
 import RichTextEditor from './RichTextEditor';
@@ -56,6 +56,8 @@ function LeadDetailPage({ contactId, onBack, onNotify, onAvatarUpdated, position
   const [emailBcc, setEmailBcc] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
+  const [showCcBcc, setShowCcBcc] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [attachments, setAttachments] = useState<string[]>([]);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<{ id: number; text: string; time: string }[]>([]);
@@ -115,6 +117,7 @@ function LeadDetailPage({ contactId, onBack, onNotify, onAvatarUpdated, position
     setEmailBcc('');
     setEmailSubject('');
     setEmailBody('');
+    setShowCcBcc(false);
     setAttachments([]);
     setCommentText('');
     setComments([]);
@@ -163,48 +166,61 @@ function LeadDetailPage({ contactId, onBack, onNotify, onAvatarUpdated, position
   };
 
   const sendEmail = async () => {
+    const to = emailTo.trim();
+    if (!to || !to.includes('@')) return onNotify('Recipient email is required');
+    if (!emailSubject.trim()) return onNotify('Subject is required');
+    const plain = emailBody.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!plain) return onNotify('Message body is required');
+
+    setSendingEmail(true);
     try {
-      // Mailgun placeholder — replace credentials in src/services/mailgun.ts
-      // to actually deliver through Mailgun.
-      await sendEmailViaMailgun({
-        fromEmail: emailFrom,
-        fromName: emailFromName,
-        to: emailTo,
-        cc: emailCc,
-        bcc: emailBcc,
-        subject: emailSubject,
+      // Sent from the CRM mailbox (crm@yadea.com.pk) via the backend SMTP
+      // endpoint — see src/services/smtp.ts and api/mail_config.php.
+      const result = await sendSmtpEmail({
+        to: to.split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean),
+        cc: emailCc.trim() ? [emailCc.trim()] : undefined,
+        bcc: emailBcc.trim() ? [emailBcc.trim()] : undefined,
+        subject: emailSubject.trim(),
         html: emailBody,
+        fromName: emailFromName.trim() || undefined,
       });
-      onNotify(`Email queued to ${emailTo || 'recipient'}`);
-      logActivity({ type: 'email', title: 'Email sent', detail: emailTo || contact.email || 'recipient' });
+      if (result.sent_count > 0) {
+        onNotify(`Email sent to ${emailTo.trim()} via crm@yadea.com.pk`);
+        logActivity({ type: 'email', title: 'Email sent', detail: emailTo.trim() });
+        setEmailCc('');
+        setEmailBcc('');
+        setEmailSubject('');
+        setEmailBody('');
+        setAttachments([]);
+        setShowCcBcc(false);
+      } else {
+        onNotify(`Send failed: ${Object.values(result.failed)[0] ?? 'unknown error'}`);
+      }
 
       // Notify the contact's owner + followers so the team knows a message
       // was sent about this lead.
-      const targets = new Set<number>();
-      if (contact.assigned_to) targets.add(contact.assigned_to);
-      (contact.followers ?? []).forEach((f) => targets.add(f.id));
-      if (targets.size > 0) {
-        try {
-          await api.createNotification({
-            staff_ids: [...targets],
-            contact_id: contact.id,
-            type: 'message',
-            title: `Message sent to ${contact.name}`,
-            detail: `An email was sent to ${emailTo || contact.email || 'the recipient'} for ${contact.name}.`,
-          });
-        } catch {
-          /* notification is best-effort */
+      if (result.sent_count > 0) {
+        const targets = new Set<number>();
+        if (contact.assigned_to) targets.add(contact.assigned_to);
+        (contact.followers ?? []).forEach((f) => targets.add(f.id));
+        if (targets.size > 0) {
+          try {
+            await api.createNotification({
+              staff_ids: [...targets],
+              contact_id: contact.id,
+              type: 'message',
+              title: `Message sent to ${contact.name}`,
+              detail: `An email was sent to ${emailTo.trim()} for ${contact.name}.`,
+            });
+          } catch {
+            /* notification is best-effort */
+          }
         }
       }
-
-      setEmailTo(contact.email || '');
-      setEmailCc('');
-      setEmailBcc('');
-      setEmailSubject('');
-      setEmailBody('');
-      setAttachments([]);
     } catch (err) {
       onNotify(`Email failed: ${(err as Error).message}`);
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -545,114 +561,132 @@ function LeadDetailPage({ contactId, onBack, onNotify, onAvatarUpdated, position
               )}
 
               {composerType === 'email' && (
-                <div className="p-3 bg-white space-y-2">
-                  <div className="flex items-start gap-2 text-xs">
-                    <span className="text-slate-400 font-medium w-8 pt-1">From:</span>
-                    <div className="flex-1 space-y-1.5 min-w-0">
-                      <input
-                        type="text"
-                        value={emailFrom}
-                        onChange={(e) => setEmailFrom(e.target.value)}
-                        placeholder="Enter from email"
-                        className="w-full bg-transparent border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
-                      />
+                <div className="bg-white flex flex-col">
+                  {/* Scrollable field area — never pushes the Send bar off-screen */}
+                  <div className="max-h-[44vh] overflow-y-auto p-3 space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       <input
                         type="text"
                         value={emailFromName}
                         onChange={(e) => setEmailFromName(e.target.value)}
-                        placeholder="Enter from name"
-                        className="w-full bg-transparent border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
+                        placeholder="From name"
+                        className="w-full bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                      />
+                      <input
+                        type="text"
+                        value={emailFrom}
+                        onChange={(e) => setEmailFrom(e.target.value)}
+                        placeholder="From email"
+                        className="w-full bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-slate-400 font-medium w-8 flex-shrink-0">To:</span>
+                      <input
+                        type="text"
+                        value={emailTo}
+                        onChange={(e) => setEmailTo(e.target.value)}
+                        placeholder="recipient@email.com"
+                        className="flex-1 min-w-0 bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCcBcc((v) => !v)}
+                        className={`text-[11px] font-semibold px-2 py-1 rounded border transition flex-shrink-0 ${
+                          showCcBcc
+                            ? 'bg-blue-50 border-blue-300 text-blue-600'
+                            : 'border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                        }`}
+                      >
+                        Cc/Bcc
+                      </button>
+                    </div>
+                    {showCcBcc && (
+                      <>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-slate-400 font-medium w-8 flex-shrink-0">CC:</span>
+                          <input
+                            type="text"
+                            value={emailCc}
+                            onChange={(e) => setEmailCc(e.target.value)}
+                            placeholder="cc@email.com"
+                            className="flex-1 min-w-0 bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-slate-400 font-medium w-8 flex-shrink-0">BCC:</span>
+                          <input
+                            type="text"
+                            value={emailBcc}
+                            onChange={(e) => setEmailBcc(e.target.value)}
+                            placeholder="bcc@email.com"
+                            className="flex-1 min-w-0 bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                      </>
+                    )}
+                    <div className="flex items-center gap-1.5 text-xs border-t border-slate-100 pt-2">
+                      <span className="text-slate-400 font-medium w-14 flex-shrink-0">Subject:</span>
+                      <input
+                        type="text"
+                        value={emailSubject}
+                        onChange={(e) => setEmailSubject(e.target.value)}
+                        placeholder="Enter subject"
+                        className="flex-1 min-w-0 bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="border-t border-slate-100 pt-2">
+                      <RichTextEditor
+                        value={emailBody}
+                        onChange={setEmailBody}
+                        placeholder="Write your message..."
+                        minHeight={120}
                       />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs border-t border-slate-100 pt-2">
-                    <span className="text-slate-400 font-medium w-8">To:</span>
-                    <input
-                      type="text"
-                      value={emailTo}
-                      onChange={(e) => setEmailTo(e.target.value)}
-                      placeholder="recipient@email.com"
-                      className="flex-1 bg-transparent border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-slate-400 font-medium w-8">CC:</span>
-                    <input
-                      type="text"
-                      value={emailCc}
-                      onChange={(e) => setEmailCc(e.target.value)}
-                      placeholder="cc@email.com"
-                      className="flex-1 bg-transparent border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-slate-400 font-medium w-8">BCC:</span>
-                    <input
-                      type="text"
-                      value={emailBcc}
-                      onChange={(e) => setEmailBcc(e.target.value)}
-                      placeholder="bcc@email.com"
-                      className="flex-1 bg-transparent border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs border-t border-slate-100 pt-2">
-                    <span className="text-slate-400 font-medium w-8">Subject:</span>
-                    <input
-                      type="text"
-                      value={emailSubject}
-                      onChange={(e) => setEmailSubject(e.target.value)}
-                      placeholder="Enter subject"
-                      className="flex-1 bg-transparent border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="border-t border-slate-100 pt-2">
-                    <RichTextEditor
-                      value={emailBody}
-                      onChange={setEmailBody}
-                      placeholder="Write your message..."
-                      minHeight={150}
-                    />
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          hidden
-                          onChange={handleAttach}
-                        />
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-blue-600 border border-slate-200 rounded px-2.5 py-1.5 hover:border-blue-300 transition"
-                        >
-                          <FaPaperclip className="text-xs" />
-                          Attach
-                        </button>
-                        {attachments.map((name, i) => (
-                          <span
-                            key={`${name}-${i}`}
-                            className="flex items-center gap-1 bg-slate-100 border border-slate-200 rounded px-2 py-1 text-[10px] text-slate-600"
-                          >
-                            <FaPaperclip className="text-[9px]" />
-                            {name}
-                            <button
-                              onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
-                              className="text-slate-400 hover:text-red-500"
-                              title="Remove attachment"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
+
+                  {/* Sticky action bar — always visible */}
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-slate-200 bg-slate-50/60">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        hidden
+                        onChange={handleAttach}
+                      />
                       <button
-                        onClick={sendEmail}
-                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-3 py-1.5 rounded-md transition shadow-sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-blue-600 border border-slate-200 bg-white rounded px-2.5 py-1.5 hover:border-blue-300 transition flex-shrink-0"
                       >
-                        <FaPaperPlane className="text-xs" />
-                        Send
+                        <FaPaperclip className="text-xs" />
+                        Attach
                       </button>
+                      {attachments.map((name, i) => (
+                        <span
+                          key={`${name}-${i}`}
+                          className="flex items-center gap-1 bg-white border border-slate-200 rounded px-2 py-1 text-[10px] text-slate-600 max-w-[140px]"
+                        >
+                          <FaPaperclip className="text-[9px] flex-shrink-0" />
+                          <span className="truncate">{name}</span>
+                          <button
+                            onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="text-slate-400 hover:text-red-500 flex-shrink-0"
+                            title="Remove attachment"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
                     </div>
+                    <button
+                      onClick={() => void sendEmail()}
+                      disabled={sendingEmail}
+                      className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-1.5 rounded-md transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                    >
+                      <FaPaperPlane className="text-xs" />
+                      {sendingEmail ? 'Sending…' : 'Send'}
+                    </button>
                   </div>
                 </div>
               )}
