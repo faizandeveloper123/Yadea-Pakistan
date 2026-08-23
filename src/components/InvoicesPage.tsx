@@ -1022,14 +1022,17 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             <path d="M400,0 C515,36 628,76 700,112 L700,0 Z" fill="#111827" />
                           </svg>
 
-                          <div className="absolute top-4 left-7 right-7 flex justify-between items-start">
+                          <div className="absolute top-4 left-7 right-6">
                             <h1 className="text-2xl md:text-[27px] font-black tracking-wide text-white drop-shadow-sm leading-tight">
                               Yadea Hussain Motors
                             </h1>
-                            <div className="flex flex-col items-center pt-1 pr-5 shrink-0">
-                              <YadeaLogo wordmark={false} className="w-10 h-auto" />
-                              <span className="text-[9px] font-black tracking-[0.3em] mt-1 text-white">YADEA</span>
-                            </div>
+                          </div>
+
+                          {/* Shield centred inside the black sweep with clear
+                              space on both left and right sides */}
+                          <div className="absolute top-3 right-11 flex flex-col items-center">
+                            <YadeaLogo wordmark={false} className="w-8 h-auto" />
+                            <span className="text-[8px] font-black tracking-[0.28em] mt-1 text-white">YADEA</span>
                           </div>
                         </div>
 
