@@ -263,6 +263,66 @@ export interface DealerLeadFilter {
   to?: string;
 }
 
+/* ------------------- PORTAL SUBMISSIONS (dealership + inquiries) ------------------- */
+
+export type PortalSubmissionType = 'dealership' | 'inquiry';
+
+/** Row of the shared portal store (dealership applications + support tickets). */
+export interface ApiPortalSubmission {
+  id: number;
+  type: PortalSubmissionType;
+  code: string;
+  name: string;
+  email: string;
+  phone: string;
+  business_name: string;
+  address: string;
+  years_in_business: string;
+  oem_dealer: string;
+  province: string;
+  city: string;
+  property_ownership: string;
+  structure: string;
+  file_name: string;
+  chassis_number: string;
+  order_number: string;
+  problem_category: string;
+  reason: string;
+  assigned_to: number | null;
+  assigned_to_name: string | null;
+  status: string;
+  created_by: number | null;
+  created_at: string | null;
+}
+
+export interface PortalSubmissionInput {
+  type: PortalSubmissionType;
+  name?: string;
+  email?: string;
+  phone?: string;
+  business_name?: string;
+  address?: string;
+  years_in_business?: string;
+  oem_dealer?: string;
+  province?: string;
+  city?: string;
+  property_ownership?: string;
+  structure?: string;
+  file_name?: string;
+  chassis_number?: string;
+  order_number?: string;
+  problem_category?: string;
+  reason?: string;
+  created_by?: number | null;
+}
+
+export interface PortalSubmissionFilter {
+  type?: PortalSubmissionType;
+  assigned_to?: number;
+  restrict_to?: number;
+  search?: string;
+}
+
 export interface LoginInput {
   email: string;
   password: string;
@@ -624,6 +684,34 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ token }),
     }),
+
+  /* ------------------- PORTAL SUBMISSIONS ------------------- */
+
+  listPortalSubmissions: (params: PortalSubmissionFilter = {}) => {
+    const q = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== '' && v !== null) q.set(k, String(v));
+    });
+    const qs = q.toString();
+    return request<{ data: ApiPortalSubmission[]; count: number }>(
+      `/submissions${qs ? `?${qs}` : ''}`
+    );
+  },
+
+  createPortalSubmission: (input: PortalSubmissionInput) =>
+    request<{ data: ApiPortalSubmission; message: string }>('/submissions', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+
+  assignPortalSubmission: (id: number, assignedTo: number) =>
+    request<{ data: ApiPortalSubmission; message: string }>(`/submissions/${id}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ assigned_to: assignedTo }),
+    }),
+
+  deletePortalSubmission: (id: number) =>
+    request<{ message: string }>(`/submissions/${id}`, { method: 'DELETE' }),
 
   /** Current plain password of an account (for "view password" in settings). */
   revealPassword: (email: string) =>

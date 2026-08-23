@@ -22,6 +22,8 @@ export type Route =
   | { name: 'dashboard' }
   | { name: 'automation' }
   | { name: 'invoices' }
+  | { name: 'dealership-portal' }
+  | { name: 'inquiries-portal' }
   | { name: 'magic-login'; token: string }
   | { name: 'form'; data: string };
 
@@ -56,6 +58,10 @@ export function parseHash(): Route {
       return { name: 'automation' };
     case 'invoices':
       return { name: 'invoices' };
+    case 'dealership-portal':
+      return { name: 'dealership-portal' };
+    case 'inquiries-portal':
+      return { name: 'inquiries-portal' };
     case 'magic-login':
       if (idPart) return { name: 'magic-login', token: decodeURIComponent(idPart) };
       return DEFAULT_ROUTE;
@@ -83,6 +89,10 @@ export function routeToHash(route: Route): string {
       return '#/automation';
     case 'invoices':
       return '#/invoices';
+    case 'dealership-portal':
+      return '#/dealership-portal';
+    case 'inquiries-portal':
+      return '#/inquiries-portal';
     case 'magic-login':
       return `#/magic-login/${encodeURIComponent(route.token)}`;
     case 'form':

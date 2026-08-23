@@ -27,6 +27,11 @@
  *                                                 { to, cc?, bcc?, subject, html, from_name? }
  * POST /api/index.php/emails/test              -> deliverability check { to, subject?, html? }
  *
+ *  GET  /api/index.php/submissions              -> portal submissions (type, assigned_to, restrict_to, search)
+ * POST /api/index.php/submissions               -> create dealership application / inquiry ticket
+ * POST /api/index.php/submissions/{id}/assign   -> { assigned_to } (0 = unassign)
+ * DELETE /api/index.php/submissions/{id}        -> remove a submission
+ *
  * Full URL example:  http://localhost/Evee/api/index.php/contacts?search=faiz
  */
 
@@ -2829,6 +2834,238 @@ function send_test_email(array $body): void
     fail('SMTP send failed: ' . (reset($result['failed']) ?: 'unknown error'));
 }
 
+/* ----------------------- PORTAL SUBMISSIONS (dealership + inquiries) ----------------------- */
+
+/**
+ * Shared store for the two public-style portal forms: dealership
+ * applications and customer support inquiries. Admins can assign inquiries
+ * to Dealer staff accounts.
+ */
+function ensure_portal_submissions_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    db()->exec(
+        'CREATE TABLE IF NOT EXISTS portal_submissions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            type VARCHAR(20) NOT NULL,
+            code VARCHAR(24) DEFAULT "",
+            name VARCHAR(255) DEFAULT "",
+            email VARCHAR(255) DEFAULT "",
+            phone VARCHAR(64) DEFAULT "",
+            business_name VARCHAR(255) DEFAULT "",
+            address VARCHAR(255) DEFAULT "",
+            years_in_business VARCHAR(16) DEFAULT "",
+            oem_dealer VARCHAR(16) DEFAULT "",
+            province VARCHAR(64) DEFAULT "",
+            city VARCHAR(64) DEFAULT "",
+            property_ownership VARCHAR(64) DEFAULT "",
+            structure VARCHAR(64) DEFAULT "",
+            file_name VARCHAR(255) DEFAULT "",
+            chassis_number VARCHAR(100) DEFAULT "",
+            order_number VARCHAR(100) DEFAULT "",
+            problem_category VARCHAR(120) DEFAULT "",
+            reason TEXT,
+            assigned_to INT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT "new",
+            created_by INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_ps_type (type),
+            INDEX idx_ps_assigned (assigned_to)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+    );
+}
+
+/** Normalise every submission text field in one place. */
+function portal_submission_fields(array $body): array
+{
+    $t = static fn ($v): string => normalize_optional($v ?? null) ?? '';
+    return [
+        'name' => $t($body['name'] ?? ''),
+        'email' => $t($body['email'] ?? ''),
+        'phone' => $t($body['phone'] ?? ''),
+        'business_name' => $t($body['business_name'] ?? ''),
+        'address' => $t($body['address'] ?? ''),
+        'years_in_business' => $t($body['years_in_business'] ?? ''),
+        'oem_dealer' => $t($body['oem_dealer'] ?? ''),
+        'province' => $t($body['province'] ?? ''),
+        'city' => $t($body['city'] ?? ''),
+        'property_ownership' => $t($body['property_ownership'] ?? ''),
+        'structure' => $t($body['structure'] ?? ''),
+        'file_name' => $t($body['file_name'] ?? ''),
+        'chassis_number' => $t($body['chassis_number'] ?? ''),
+        'order_number' => $t($body['order_number'] ?? ''),
+        'problem_category' => $t($body['problem_category'] ?? ''),
+        'reason' => $t($body['reason'] ?? ''),
+    ];
+}
+
+function portal_submission_payload(array $row): array
+{
+    $row['id'] = (int)$row['id'];
+    $row['assigned_to'] = $row['assigned_to'] !== null ? (int)$row['assigned_to'] : null;
+    $row['created_by'] = $row['created_by'] !== null ? (int)$row['created_by'] : null;
+    return $row;
+}
+
+/** POST /submissions - create a dealership application or inquiry ticket. */
+function create_submission(array $body): void
+{
+    ensure_portal_submissions_table();
+    $type = ($body['type'] ?? '') === 'inquiry' ? 'inquiry' : 'dealership';
+    $f = portal_submission_fields($body);
+
+    if ($f['name'] === '' && $f['business_name'] === '') fail('Name is required');
+    if ($type === 'inquiry' && $f['chassis_number'] === '') fail('Chassis number is required');
+
+    // Human-friendly reference code, retried on the rare duplicate.
+    $prefix = $type === 'inquiry' ? 'TCK-' : 'DLR-';
+    $code = '';
+    for ($i = 0; $i < 5; $i++) {
+        $candidate = $prefix . random_int(1000, 9999);
+        $chk = db()->prepare('SELECT id FROM portal_submissions WHERE code = :c LIMIT 1');
+        $chk->execute([':c' => $candidate]);
+        if ($chk->fetchColumn() === false) {
+            $code = $candidate;
+            break;
+        }
+    }
+    if ($code === '') $code = $prefix . time();
+
+    $stmt = db()->prepare(
+        'INSERT INTO portal_submissions
+            (type, code, name, email, phone, business_name, address, years_in_business,
+             oem_dealer, province, city, property_ownership, structure, file_name,
+             chassis_number, order_number, problem_category, reason, created_by)
+         VALUES (:type, :code, :name, :email, :phone, :biz, :address, :years,
+                 :oem, :province, :city, :prop, :structure, :file,
+                 :chassis, :order, :problem, :reason, :created_by)'
+    );
+    $stmt->execute([
+        ':type' => $type,
+        ':code' => $code,
+        ':name' => $f['name'],
+        ':email' => $f['email'],
+        ':phone' => $f['phone'],
+        ':biz' => $f['business_name'],
+        ':address' => $f['address'],
+        ':years' => $f['years_in_business'],
+        ':oem' => $f['oem_dealer'],
+        ':province' => $f['province'],
+        ':city' => $f['city'],
+        ':prop' => $f['property_ownership'],
+        ':structure' => $f['structure'],
+        ':file' => $f['file_name'],
+        ':chassis' => $f['chassis_number'],
+        ':order' => $f['order_number'],
+        ':problem' => $f['problem_category'],
+        ':reason' => $f['reason'],
+        ':created_by' => isset($body['created_by']) && (int)$body['created_by'] > 0 ? (int)$body['created_by'] : null,
+    ]);
+
+    $get = db()->prepare(
+        'SELECT s.*, u.full_name AS assigned_to_name FROM portal_submissions s
+         LEFT JOIN staff_users u ON u.id = s.assigned_to WHERE s.id = :id'
+    );
+    $get->execute([':id' => (int)db()->lastInsertId()]);
+    respond(['data' => portal_submission_payload($get->fetch() ?: []), 'message' => 'Submission saved'], 201);
+}
+
+/**
+ * GET /submissions?type=&assigned_to=&restrict_to=&search=
+ * restrict_to locks a non-admin viewer to only what is assigned to them.
+ */
+function list_submissions(array $filters): void
+{
+    ensure_portal_submissions_table();
+    $where = [];
+    $params = [];
+
+    if (!empty($filters['type'])) {
+        $where[] = 's.type = :type';
+        $params[':type'] = $filters['type'] === 'inquiry' ? 'inquiry' : 'dealership';
+    }
+    if (!empty($filters['assigned_to'])) {
+        $aid = to_int((string)$filters['assigned_to']);
+        if ($aid > 0) {
+            $where[] = 's.assigned_to = :aid';
+            $params[':aid'] = $aid;
+        }
+    }
+    if (!empty($filters['restrict_to'])) {
+        // Dealers only ever see inquiries assigned to them.
+        $rid = to_int((string)$filters['restrict_to']);
+        $where[] = 's.assigned_to = :rid';
+        $params[':rid'] = $rid;
+    }
+    if (!empty($filters['search'])) {
+        $term = '%' . $filters['search'] . '%';
+        $cols = ['s.code', 's.name', 's.email', 's.phone', 's.business_name', 's.city', 's.chassis_number', 's.problem_category'];
+        $pats = [];
+        foreach ($cols as $i => $col) {
+            $pname = ':search' . $i;
+            $params[$pname] = $term;
+            $pats[] = "$col LIKE $pname";
+        }
+        $where[] = '(' . implode(' OR ', $pats) . ')';
+    }
+
+    $sql = 'SELECT s.*, u.full_name AS assigned_to_name FROM portal_submissions s
+            LEFT JOIN staff_users u ON u.id = s.assigned_to';
+    if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
+    $sql .= ' ORDER BY s.id DESC';
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    respond(['data' => array_map('portal_submission_payload', $stmt->fetchAll()), 'count' => $stmt->rowCount()]);
+}
+
+/** POST /submissions/{id}/assign { assigned_to } -> assign/unassign a dealer. */
+function assign_submission(int $id, array $body): void
+{
+    ensure_portal_submissions_table();
+    $dealerId = to_int((string)($body['assigned_to'] ?? 0));
+
+    if ($dealerId > 0) {
+        $chk = db()->prepare("SELECT id FROM staff_users WHERE id = :id AND user_type IN ('Admin','Dealer') LIMIT 1");
+        $chk->execute([':id' => $dealerId]);
+        if ($chk->fetchColumn() === false) fail('Dealer not found', 404);
+    }
+
+    $stmt = db()->prepare(
+        'UPDATE portal_submissions SET assigned_to = :aid, status = :status WHERE id = :id'
+    );
+    $stmt->execute([
+        ':aid' => $dealerId > 0 ? $dealerId : null,
+        ':status' => $dealerId > 0 ? 'assigned' : 'new',
+        ':id' => $id,
+    ]);
+    if ($stmt->rowCount() === 0) {
+        $exists = db()->prepare('SELECT id FROM portal_submissions WHERE id = :id');
+        $exists->execute([':id' => $id]);
+        if ($exists->fetchColumn() === false) fail('Submission not found', 404);
+    }
+
+    $get = db()->prepare(
+        'SELECT s.*, u.full_name AS assigned_to_name FROM portal_submissions s
+         LEFT JOIN staff_users u ON u.id = s.assigned_to WHERE s.id = :id'
+    );
+    $get->execute([':id' => $id]);
+    respond([
+        'data' => portal_submission_payload($get->fetch() ?: []),
+        'message' => $dealerId > 0 ? 'Inquiry assigned' : 'Assignment removed',
+    ]);
+}
+
+/** DELETE /submissions/{id} */
+function delete_submission(int $id): void
+{
+    ensure_portal_submissions_table();
+    db()->prepare('DELETE FROM portal_submissions WHERE id = :id')->execute([':id' => $id]);
+    respond(['message' => 'Submission deleted']);
+}
+
 /* ----------------------- ROUTER ----------------------- */
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -3095,6 +3332,21 @@ switch ($resource) {
             $sub = $parts[1] ?? null;
             if ($sub === 'test') send_test_email(json_body());
             else send_email_campaign(json_body());
+        }
+        break;
+
+    case 'submissions':
+        if ($method === 'GET') {
+            list_submissions($filters);
+        } elseif ($method === 'POST') {
+            if (($parts[1] ?? null) !== null && ($parts[2] ?? null) === 'assign') {
+                assign_submission(to_int($parts[1]), json_body());
+            } else {
+                create_submission(json_body());
+            }
+        } elseif ($method === 'DELETE') {
+            if (!$parts[1]) fail('Submission id required');
+            delete_submission(to_int($parts[1]));
         }
         break;
 

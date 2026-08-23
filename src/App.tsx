@@ -32,6 +32,8 @@ import DashboardPage from './components/dashboard/DashboardPage';
 import AutomationDashboard from './components/automation/AutomationDashboard';
 import PublicFormPage from './components/PublicFormPage';
 import InvoicesPage from './components/InvoicesPage';
+import DealershipApplicationsPage from './components/DealershipApplicationsPage';
+import CustomerInquiriesPage from './components/CustomerInquiriesPage';
 import MyStaffPage from './components/MyStaffPage';
 import ManageSmartListsPage from './components/ManageSmartListsPage';
 import Pagination from './components/Pagination';
@@ -188,6 +190,10 @@ function App() {
     ? 'Automation'
     : route.name === 'invoices'
     ? 'Invoices'
+    : route.name === 'dealership-portal'
+    ? 'Dealership Page'
+    : route.name === 'inquiries-portal'
+    ? 'Customer Inquiries'
     : 'Contacts';
 
   const showToast = useCallback((msg: string) => {
@@ -234,6 +240,14 @@ function App() {
       }
       if (label === 'Invoices') {
         navigate({ name: 'invoices' });
+        return;
+      }
+      if (label === 'Dealership Page') {
+        navigate({ name: 'dealership-portal' });
+        return;
+      }
+      if (label === 'Customer Inquiries') {
+        navigate({ name: 'inquiries-portal' });
         return;
       }
       showToast(`"${label}" page coming soon`);
@@ -1115,6 +1129,10 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
       ? 'automation'
       : route.name === 'invoices'
       ? 'invoices'
+      : route.name === 'dealership-portal'
+      ? 'dashboard'
+      : route.name === 'inquiries-portal'
+      ? 'dashboard'
       : 'contacts';
   if (route.name !== 'dashboard' && !hasPermission(routePerm)) {
     return (
@@ -1218,6 +1236,36 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
           />
           <main className="flex-1 min-w-0 h-full overflow-hidden">
             <InvoicesPage onNotify={showToast} />
+          </main>
+        </div>
+      ) : route.name === 'dealership-portal' ? (
+        <div className="flex h-screen w-full overflow-hidden select-none bg-slate-100">
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            mobileOpen={sidebarMobileOpen}
+            activeNav={activeNav}
+            onNavigate={handleNav}
+            onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+            onMobileClose={() => setSidebarMobileOpen(false)}
+            onLogout={logout}
+          />
+          <main className="flex-1 min-w-0 h-full overflow-y-auto">
+            <DealershipApplicationsPage onNotify={showToast} />
+          </main>
+        </div>
+      ) : route.name === 'inquiries-portal' ? (
+        <div className="flex h-screen w-full overflow-hidden select-none bg-slate-100">
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            mobileOpen={sidebarMobileOpen}
+            activeNav={activeNav}
+            onNavigate={handleNav}
+            onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+            onMobileClose={() => setSidebarMobileOpen(false)}
+            onLogout={logout}
+          />
+          <main className="flex-1 min-w-0 h-full overflow-y-auto">
+            <CustomerInquiriesPage onNotify={showToast} />
           </main>
         </div>
       ) : (

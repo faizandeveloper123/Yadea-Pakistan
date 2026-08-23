@@ -25,6 +25,8 @@ import {
   FaComments,
   FaChartLine,
   FaFileInvoice,
+  FaStore,
+  FaHeadset,
 } from 'react-icons/fa6';
 import YadeaLogo from './YadeaLogo';
 import { useAuth } from '../auth';
@@ -59,6 +61,8 @@ const secondaryNav: NavItem[] = [
   { label: 'Media Storage', icon: FaRegFolderClosed, perm: 'medias' },
   { label: 'Reputation', icon: FaRegStar, perm: 'reputations' },
   { label: 'Reporting', icon: FaChartLine, perm: 'dashboard' },
+  { label: 'Dealership Page', icon: FaStore, perm: 'dashboard' },
+  { label: 'Customer Inquiries', icon: FaHeadset, perm: 'dashboard' },
   { label: 'App Marketplace', icon: FaGrip, perm: 'integrations' },
 ];
 
