@@ -3047,6 +3047,26 @@ function assign_submission(int $id, array $body): void
         if ($exists->fetchColumn() === false) fail('Submission not found', 404);
     }
 
+    // Portal bell + email notification so the dealer instantly knows about
+    // the new assignment (email rides on notify_staff's SMTP path).
+    if ($dealerId > 0) {
+        $get = db()->prepare('SELECT * FROM portal_submissions WHERE id = :id');
+        $get->execute([':id' => $id]);
+        $s = $get->fetch();
+        if ($s) {
+            $isInquiry = ($s['type'] ?? '') === 'inquiry';
+            $who = $s['name'] !== '' ? $s['name'] : ($s['business_name'] ?: 'A customer');
+            $place = $s['city'] !== '' ? ', ' . $s['city'] : '';
+            $title = $isInquiry
+                ? 'New support ticket assigned to you'
+                : 'New dealership application assigned to you';
+            $detail = $isInquiry
+                ? "Ticket {$s['code']} — {$s['problem_category']} for {$who}{$place} (chassis {$s['chassis_number']}). Open Customer Inquiries to follow up."
+                : "Application {$s['code']} from {$who}{$place} ({$s['business_name']}). Open Dealership Page to review.";
+            notify_staff($dealerId, null, $isInquiry ? 'inquiry_assigned' : 'application_assigned', $title, $detail);
+        }
+    }
+
     $get = db()->prepare(
         'SELECT s.*, u.full_name AS assigned_to_name FROM portal_submissions s
          LEFT JOIN staff_users u ON u.id = s.assigned_to WHERE s.id = :id'

@@ -88,6 +88,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
   const [dealers, setDealers] = useState<ApiStaffUser[]>([]);
   const [assignPick, setAssignPick] = useState<Record<number, number>>({});
   const [openAssign, setOpenAssign] = useState<number | null>(null);
+  const [assignPos, setAssignPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
   const [viewing, setViewing] = useState<ApiPortalSubmission | null>(null);
 
   const setField =
@@ -162,8 +163,9 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
     try {
       await api.assignPortalSubmission(row.id, dealerId);
       const name = dealers.find((d) => d.id === dealerId)?.full_name ?? 'dealer';
-      onNotify(`Inquiry ${row.code} assigned to ${name}`);
+      onNotify(`Inquiry ${row.code} assigned to ${name} — dealer notified`);
       setAssignPick((prev) => ({ ...prev, [row.id]: 0 }));
+      setOpenAssign(null);
       await load();
     } catch (err) {
       onNotify(`Assign failed: ${(err as Error).message}`);
@@ -416,7 +418,11 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                         <div className="relative inline-block text-left space-x-1.5">
                           {isAdmin && (
                             <button
-                              onClick={() => setOpenAssign((v) => (v === r.id ? null : r.id))}
+                              onClick={(e) => {
+                                const rct = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                setAssignPos({ top: rct.bottom + 6, right: window.innerWidth - rct.right });
+                                setOpenAssign((v) => (v === r.id ? null : r.id));
+                              }}
                               className={`text-[11px] font-bold px-2 py-1 rounded transition ${
                                 openAssign === r.id
                                   ? 'bg-yadea-orange text-white'
@@ -439,10 +445,16 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
 
                           {isAdmin && openAssign === r.id && (
                             <>
-                              <div className="fixed inset-0 z-20" onClick={() => setOpenAssign(null)} />
-                              <div className="absolute right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-xl p-2.5 w-56 text-left">
+                              <div
+                                className="fixed inset-0 z-[55]"
+                                onClick={() => setOpenAssign(null)}
+                              />
+                              <div
+                                className="fixed z-[60] bg-white border border-slate-200 rounded-lg shadow-2xl p-2.5 w-56 text-left"
+                                style={{ top: assignPos.top, right: assignPos.right }}
+                              >
                                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
-                                  Assign to dealer
+                                  Assign to dealer — {r.code}
                                 </p>
                                 <select
                                   value={assignPick[r.id] ?? 0}
@@ -459,7 +471,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
                                     onClick={() => void assign(r)}
                                     className="flex-1 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
                                   >
-                                    Assign
+                                    Assign & Notify
                                   </button>
                                   {r.assigned_to && (
                                     <button
