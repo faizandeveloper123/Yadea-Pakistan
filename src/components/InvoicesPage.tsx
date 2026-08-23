@@ -1045,45 +1045,52 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         </svg>
 
                         <div className="relative z-10 p-6 sm:p-7 flex justify-between items-start">
-                          {/* Round brand badge */}
-                          <div
-                            className="rounded-full flex flex-col items-center justify-center text-center shadow-sm border-2 border-white mt-1 ml-1 shrink-0"
-                            style={{ width: 128, height: 128, backgroundColor: '#FF5400' }}
-                          >
-                            <YadeaLogo wordmark={false} className="w-11 h-auto drop-shadow" />
-                            <span className="text-[8px] font-black tracking-[0.26em] mt-1.5 text-white">YADEA</span>
-                            <span className="text-[6.5px] font-bold tracking-[0.14em] text-white/90">
-                              HUSSAIN MOTORS
-                            </span>
+                          {/* Brand lockup — plain logo, black wordmark */}
+                          <div className="mt-2 ml-1">
+                            <YadeaLogo className="h-11 w-auto" wordmark wordmarkColor="#0f172a" />
+                            <p className="text-[10px] font-extrabold tracking-[0.22em] text-slate-800 uppercase mt-1 ml-0.5">
+                              Yadea Hussain Motors
+                            </p>
                           </div>
 
                           {/* Title + document numbers */}
-                          <div className="text-right text-white mr-2 sm:mr-4 mt-1">
-                            <h1 className="text-4xl sm:text-5xl font-black tracking-wider uppercase mb-2 text-yadea-orange">
+                          <div className="text-right mr-1 sm:mr-3 mt-1">
+                            <h1
+                              className="text-[46px] sm:text-[54px] leading-none font-black uppercase"
+                              style={{ color: '#FF5400', letterSpacing: '0.04em' }}
+                            >
                               Invoice
                             </h1>
-                            <div className="space-y-1.5 text-xs sm:text-sm tracking-wide">
-                              <p className="flex items-center justify-end gap-2">
-                                <span className="font-bold">Invoice No:</span>
+                            <div
+                              className="ml-auto mt-2 h-[3px] w-24 rounded-full"
+                              style={{ backgroundColor: '#FF5400' }}
+                            />
+                            <div className="mt-4 space-y-2.5">
+                              <div className="flex items-center justify-end gap-3">
+                                <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-white/70">
+                                  Invoice No
+                                </span>
                                 <input
                                   type="text"
                                   value={form.invoiceNo}
                                   onChange={setField('invoiceNo')}
-                                  className="inv-bare font-mono w-28 text-left bg-transparent border-b border-white/40 text-white placeholder-white/50"
+                                  className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
                                   aria-label="Invoice number"
                                 />
-                              </p>
-                              <p className="flex items-center justify-end gap-2">
-                                <span className="font-bold">Invoice Date:</span>
+                              </div>
+                              <div className="flex items-center justify-end gap-3">
+                                <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-white/70">
+                                  Invoice Date
+                                </span>
                                 <input
                                   type="text"
                                   placeholder="DD/MM/YYYY"
                                   value={form.dated}
                                   onChange={setField('dated')}
-                                  className="inv-bare w-24 text-left bg-transparent border-b border-white/40 text-white placeholder-white/50"
+                                  className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
                                   aria-label="Invoice date"
                                 />
-                              </p>
+                              </div>
                             </div>
                           </div>
                         </div>
