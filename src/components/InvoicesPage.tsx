@@ -1050,7 +1050,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
                         <div className="relative z-10 px-6 sm:px-7 pt-5 pb-4 flex justify-between items-start gap-5">
                           {/* Brand lockup: icon centred above large bold YADEA text */}
-                          <div className="flex flex-col items-center shrink-0">
+                          <div className="flex flex-col items-center shrink-0 mt-[20px] ml-[20px]">
                             <YadeaLogo wordmark={false} className="h-8 w-auto" />
                             <span className="text-[22px] sm:text-[25px] leading-none font-black uppercase tracking-[0.05em] text-slate-900 mt-1.5">
                               Yadea
@@ -1058,7 +1058,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           </div>
 
                           {/* Title + document numbers (kept inside the navy wave) */}
-                          <div className="text-right max-w-[240px] shrink-0 mt-0.5 mr-2 sm:mr-6">
+                          <div className="text-right max-w-[240px] shrink-0 mt-0.5 mr-0 sm:mr-[4px]">
                             <h1
                               className="text-[38px] leading-none font-black uppercase"
                               style={{ color: '#FF5400', letterSpacing: '0.03em' }}
@@ -1070,7 +1070,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                               style={{ backgroundColor: '#FF5400' }}
                             />
                             <div className="mt-3 space-y-2.5">
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-start gap-2">
                                 <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
                                   Invoice No
                                 </span>
@@ -1082,7 +1082,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                                   aria-label="Invoice number"
                                 />
                               </div>
-                              <div className="flex items-center justify-end gap-2">
+                              <div className="flex items-center justify-start gap-2">
                                 <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
                                   Invoice Date
                                 </span>
