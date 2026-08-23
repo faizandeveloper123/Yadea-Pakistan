@@ -1048,17 +1048,17 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           />
                         </svg>
 
-                        <div className="relative z-10 px-6 sm:px-7 pt-5 pb-4 flex justify-between items-start gap-4">
-                          {/* Brand lockup: icon above large bold YADEA text */}
-                          <div className="flex flex-col items-start shrink-0">
-                            <YadeaLogo wordmark={false} className="h-9 w-auto" />
-                            <span className="text-[30px] sm:text-[34px] leading-none font-black uppercase tracking-[0.06em] text-slate-900 mt-1.5">
+                        <div className="relative z-10 px-6 sm:px-7 pt-5 pb-4 flex justify-between items-start gap-5">
+                          {/* Brand lockup: icon centred above large bold YADEA text */}
+                          <div className="flex flex-col items-center shrink-0">
+                            <YadeaLogo wordmark={false} className="h-8 w-auto" />
+                            <span className="text-[22px] sm:text-[25px] leading-none font-black uppercase tracking-[0.05em] text-slate-900 mt-1.5">
                               Yadea
                             </span>
                           </div>
 
                           {/* Title + document numbers (kept inside the navy wave) */}
-                          <div className="text-right max-w-[250px] shrink-0 mt-0.5 mr-1 sm:mr-2">
+                          <div className="text-right max-w-[240px] shrink-0 mt-0.5 mr-2 sm:mr-6">
                             <h1
                               className="text-[38px] leading-none font-black uppercase"
                               style={{ color: '#FF5400', letterSpacing: '0.03em' }}
@@ -1069,7 +1069,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                               className="ml-auto mt-1.5 h-[3px] w-20 rounded-full"
                               style={{ backgroundColor: '#FF5400' }}
                             />
-                            <div className="mt-3 space-y-2">
+                            <div className="mt-3 space-y-2.5">
                               <div className="flex items-center justify-end gap-2">
                                 <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
                                   Invoice No
@@ -1078,7 +1078,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                                   type="text"
                                   value={form.invoiceNo}
                                   onChange={setField('invoiceNo')}
-                                  className="inv-bare w-24 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
+                                  className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
                                   aria-label="Invoice number"
                                 />
                               </div>
@@ -1091,7 +1091,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                                   placeholder="DD/MM/YYYY"
                                   value={form.dated}
                                   onChange={setField('dated')}
-                                  className="inv-bare w-24 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
+                                  className="inv-bare w-28 text-left bg-transparent border-b border-white/30 focus:border-white/80 text-white font-semibold placeholder-white/40 transition-colors"
                                   aria-label="Invoice date"
                                 />
                               </div>
