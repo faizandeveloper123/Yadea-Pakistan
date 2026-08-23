@@ -163,6 +163,31 @@ function emptyFormWithDefaults(): InvoiceFormState {
 
 /* ----------------------- invoice design studio ------------------------- */
 
+/** Per-element Canva-style overrides: position nudge, scale, colours, size. */
+interface ElemOverride {
+  x: number;
+  y: number;
+  scale: number;
+  colorA?: string;
+  colorB?: string;
+  fontSize?: number;
+  align?: 'left' | 'center' | 'right';
+}
+
+const EMPTY_EL: ElemOverride = { x: 0, y: 0, scale: 1 };
+
+/** Selectable regions on the invoice canvas + the colours each exposes. */
+const REGION_META: Record<string, { label: string; colors: [keyof ElemOverride, string][] }> = {
+  lockup: { label: 'Brand Logo', colors: [['colorA', 'YADEA text']] },
+  titleBlock: { label: 'INVOICE Title', colors: [['colorA', 'Title colour']] },
+  infoCols: { label: 'Info Columns', colors: [['colorA', 'Headings']] },
+  itemsTable: { label: 'Items Table', colors: [['colorA', 'Header pill'], ['colorB', 'Row rules']] },
+  termsBlock: { label: 'Terms & Conditions', colors: [['colorA', 'Text']] },
+  totalsBlock: { label: 'Totals Summary', colors: [['colorA', 'Pill bg'], ['colorB', 'Pill label']] },
+  signature: { label: 'Signature', colors: [['colorA', 'Name colour']] },
+  waves: { label: 'Footer Waves', colors: [['colorA', 'Top wave'], ['colorB', 'Bottom wave']] },
+};
+
 /** Everything the user can customise about the invoice look. */
 interface InvoiceDesign {
   accentColor: string; // title, bars, row rules, pill label
@@ -177,6 +202,7 @@ interface InvoiceDesign {
   showWaves: boolean;
   showTerms: boolean;
   showSignature: boolean;
+  elements: Record<string, Partial<ElemOverride>>;
 }
 
 const DEFAULT_DESIGN: InvoiceDesign = {
@@ -192,6 +218,7 @@ const DEFAULT_DESIGN: InvoiceDesign = {
   showWaves: true,
   showTerms: true,
   showSignature: true,
+  elements: {},
 };
 
 const designStorageKey = (uid?: number | null) => `yadea_invoice_design_v1_u${uid ?? 0}`;
@@ -285,6 +312,69 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
   }, [design, user?.id]);
 
   const updDesign = (patch: Partial<InvoiceDesign>) => setDesign((d) => ({ ...d, ...patch }));
+
+  /* ------------------- Canva-style canvas editing ------------------- */
+
+  /** Selected canvas region id (null = nothing selected). */
+  const [sel, setSel] = useState<string | null>(null);
+
+  const elO = useCallback(
+    (id: string): ElemOverride => ({ ...EMPTY_EL, ...(design.elements?.[id] ?? {}) }),
+    [design.elements]
+  );
+
+  const setElO = (id: string, patch: Partial<ElemOverride>) =>
+    setDesign((d) => {
+      const cur = { ...EMPTY_EL, ...(d.elements?.[id] ?? {}) };
+      return { ...d, elements: { ...(d.elements ?? {}), [id]: { ...cur, ...patch } } };
+    });
+
+  // Esc deselects, like a real design tool.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSel(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const dragState = useRef<null | {
+    mode: 'move' | 'scale';
+    id: string;
+    sx: number;
+    sy: number;
+    ox: number;
+    oy: number;
+    os: number;
+  }>(null);
+
+  const beginGesture = (e: React.PointerEvent, id: string, mode: 'move' | 'scale') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSel(id);
+    const o = elO(id);
+    dragState.current = { mode, id, sx: e.clientX, sy: e.clientY, ox: o.x, oy: o.y, os: o.scale };
+
+    const move = (ev: PointerEvent) => {
+      const st = dragState.current;
+      if (!st) return;
+      const dx = ev.clientX - st.sx;
+      const dy = ev.clientY - st.sy;
+      if (st.mode === 'move') {
+        setElO(st.id, { x: Math.round(st.ox + dx), y: Math.round(st.oy + dy) });
+      } else {
+        const factor = Math.max(0.55, Math.min(1.9, st.os + dx / 220));
+        setElO(st.id, { scale: Math.round(factor * 100) / 100 });
+      }
+    };
+    const up = () => {
+      dragState.current = null;
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
 
   const [invoices, setInvoices] = useState<ApiInvoice[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -519,10 +609,14 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
     }
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    setSel(null);
+    window.print();
+  };
 
   const handleDownloadPdf = async () => {
     if (!docRef.current || pdfBusy) return;
+    setSel(null);
     setPdfBusy(true);
     try {
       const html2pdf = await loadHtml2Pdf();
@@ -546,41 +640,122 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
   /* ------------------------------- view ------------------------------- */
 
-  /* Header building blocks — driven entirely by the Design Studio. */
+  /* Header building blocks — driven entirely by the Design Studio + canvas overrides. */
   const tRight = design.titleAlign === 'right';
 
+  /** Selection chrome: drag grip, scale handle, reset dot (never printed). */
+  const Handles = ({ id }: { id: string }) => {
+    if (sel !== id) return null;
+    return (
+      <>
+        <span
+          className="inv-ui"
+          onPointerDown={(e) => beginGesture(e, id, 'move')}
+          style={{
+            position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+            background: '#2563eb', color: '#fff', borderRadius: 6, padding: '2px 10px',
+            cursor: 'grab', fontSize: 11, fontWeight: 800, zIndex: 40, whiteSpace: 'nowrap',
+            boxShadow: '0 2px 6px rgba(0,0,0,.3)',
+          }}
+          title="Drag to move"
+        >
+          ✥ {REGION_META[id]?.label ?? id}
+        </span>
+        <span
+          className="inv-ui"
+          onPointerDown={(e) => beginGesture(e, id, 'scale')}
+          style={{
+            position: 'absolute', right: -8, bottom: -8, width: 16, height: 16,
+            background: '#2563eb', border: '2px solid #fff', borderRadius: '50%',
+            cursor: 'nwse-resize', zIndex: 40, boxShadow: '0 1px 4px rgba(0,0,0,.35)',
+          }}
+          title="Drag to resize"
+        />
+        <button
+          type="button"
+          className="inv-ui"
+          onClick={(e) => {
+            e.stopPropagation();
+            setElO(id, { x: 0, y: 0, scale: 1 });
+            setDesign((d) => {
+              const elements = { ...(d.elements ?? {}) };
+              delete elements[id];
+              return { ...d, elements };
+            });
+          }}
+          style={{
+            position: 'absolute', top: -12, right: -12, width: 18, height: 18,
+            background: '#ef4444', color: '#fff', borderRadius: '50%',
+            fontSize: 11, lineHeight: '18px', zIndex: 40, border: 'none', cursor: 'pointer',
+            boxShadow: '0 1px 4px rgba(0,0,0,.35)',
+          }}
+          title="Reset this element"
+        >
+          ×
+        </button>
+      </>
+    );
+  };
+
+  /** Shared wrapper props for a canvas region. */
+  const regionProps = (id: string) => {
+    const o = elO(id);
+    return {
+      onClick: (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSel(id);
+      },
+      className: `relative ${sel === id ? 'inv-selected' : ''}`,
+      style: {
+        transform: `translate(${o.x}px, ${o.y}px) scale(${o.scale})`,
+        transition: dragState.current ? 'none' : 'transform .08s ease-out',
+      } as React.CSSProperties,
+    };
+  };
+
   const lockupEl = (
-    <div className="flex flex-col items-center shrink-0 mt-[20px] ml-[20px]">
-      <div className="flex items-end" style={{ height: design.iconSize }}>
-        <YadeaLogo wordmark={false} className="h-full w-auto" />
+    <div {...regionProps('lockup')}>
+      <div className="flex flex-col items-center shrink-0 mt-[20px] ml-[20px]">
+        <div className="flex items-end" style={{ height: design.iconSize }}>
+          <YadeaLogo wordmark={false} className="h-full w-auto" />
+        </div>
+        <span
+          className="leading-none font-black uppercase tracking-[0.05em] mt-1.5"
+          style={{ fontSize: design.brandTextSize, color: elO('lockup').colorA ?? design.brandTextColor }}
+        >
+          Yadea
+        </span>
       </div>
-      <span
-        className="leading-none font-black uppercase tracking-[0.05em] mt-1.5"
-        style={{ fontSize: design.brandTextSize, color: design.brandTextColor }}
-      >
-        Yadea
-      </span>
+      <Handles id="lockup" />
     </div>
   );
 
+  const tAlign = elO('titleBlock').align ?? (tRight ? 'right' : 'left');
+
   const titleEl = (
     <div
-      className={`${tRight ? 'text-right' : 'text-left'} max-w-[240px] shrink-0 mt-0.5 ${
-        tRight ? 'mr-0 sm:mr-[4px]' : 'ml-0 sm:ml-[4px]'
-      }`}
+      {...regionProps('titleBlock')}
+      className={`relative max-w-[240px] shrink-0 mt-0.5 ${
+        sel === 'titleBlock' ? 'inv-selected' : ''
+      } ${tAlign === 'right' ? 'text-right mr-0 sm:mr-[4px]' : 'text-left ml-0 sm:ml-[4px]'}`}
+      style={regionProps('titleBlock').style}
     >
       <h1
-        className="text-[38px] leading-none font-black uppercase"
-        style={{ color: design.accentColor, letterSpacing: '0.03em' }}
+        className="leading-none font-black uppercase"
+        style={{
+          color: elO('titleBlock').colorA ?? design.accentColor,
+          fontSize: elO('titleBlock').fontSize ?? 38,
+          letterSpacing: '0.03em',
+        }}
       >
         Invoice
       </h1>
       <div
-        className={`${tRight ? 'ml-auto' : ''} mt-1.5 h-[3px] w-20 rounded-full`}
-        style={{ backgroundColor: design.accentColor }}
+        className={`${tAlign === 'right' ? 'ml-auto' : ''} mt-1.5 h-[3px] w-20 rounded-full`}
+        style={{ backgroundColor: elO('titleBlock').colorA ?? design.accentColor }}
       />
       <div className="mt-3 space-y-2.5">
-        <div className={`flex items-center gap-2 ${tRight ? 'justify-end' : 'justify-start'}`}>
+        <div className={`flex items-center gap-2 ${tAlign === 'right' ? 'justify-end' : 'justify-start'}`}>
           <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
             Invoice No
           </span>
@@ -592,7 +767,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
             aria-label="Invoice number"
           />
         </div>
-        <div className={`flex items-center gap-2 ${tRight ? 'justify-end' : 'justify-start'}`}>
+        <div className={`flex items-center gap-2 ${tAlign === 'right' ? 'justify-end' : 'justify-start'}`}>
           <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase text-white/70 whitespace-nowrap">
             Invoice Date
           </span>
@@ -606,6 +781,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
           />
         </div>
       </div>
+      <Handles id="titleBlock" />
     </div>
   );
 
@@ -618,6 +794,8 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
         .inv-underlined { border-bottom: 1px solid #1e293b; background: transparent; }
         .inv-underlined:focus { border-bottom: 2px solid #EB5F1B; outline: none; }
         .inv-bare:focus { outline: none; background-color: rgba(254, 243, 199, 0.45); }
+        .inv-selected { outline: 2px dashed #2563eb !important; outline-offset: 2px; cursor: move; }
+        .inv-ui { font-family: Inter, ui-sans-serif, system-ui, sans-serif; user-select: none; }
         .preview-x::-webkit-scrollbar, .inv-scroll-y::-webkit-scrollbar { height: 6px; width: 6px; }
         .preview-x::-webkit-scrollbar-thumb, .inv-scroll-y::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
         .preview-x::-webkit-scrollbar-track, .inv-scroll-y::-webkit-scrollbar-track { background: transparent; }
@@ -633,6 +811,8 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
           body.inv-printing .inv-scroll-host { overflow: visible !important; padding: 0 !important; }
           body.inv-printing .inv-page { position: absolute; left: 0; top: 0; width: 100% !important; min-width: 0 !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }
           body.inv-printing input { border: none !important; box-shadow: none !important; background: transparent !important; }
+          .inv-selected { outline: none !important; }
+          .inv-ui { display: none !important; }
         }
       `}</style>
 
@@ -1317,6 +1497,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                 <div className="w-full min-w-[640px] max-w-[780px] px-0.5">
                   <div
                     ref={docRef}
+                    onClick={() => setSel(null)}
                     className="inv-page bg-white shadow-xl shadow-slate-900/10 rounded-2xl text-slate-900 relative flex flex-col justify-between overflow-hidden ring-1 ring-slate-200 w-full"
                     style={{ minHeight: 1050, fontFamily: "'Poppins', 'Segoe UI', sans-serif" }}
                   >
@@ -1354,10 +1535,29 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       </div>
 
                       {/* Buyer / seller / quick-summary columns */}
-                      <div className="px-8 sm:px-9 mt-3 grid grid-cols-12 gap-2 text-xs leading-snug">
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSel('infoCols');
+                        }}
+                        className={`relative px-8 sm:px-9 mt-3 grid grid-cols-12 gap-2 text-xs leading-snug ${
+                          sel === 'infoCols' ? 'inv-selected' : ''
+                        }`}
+                        style={{
+                          transform: `translate(${elO('infoCols').x}px, ${elO('infoCols').y}px)`,
+                            textAlign: elO('infoCols').align ?? undefined,
+                          transition: dragState.current ? 'none' : 'transform .08s ease-out',
+                        }}
+                      >
+                        <Handles id="infoCols" />
                         {/* Column 1: buyer */}
                         <div className="col-span-4 pr-2">
-                          <h3 className="font-extrabold text-slate-900 text-[13px] mb-1">Invoice To:</h3>
+                          <h3
+                            className="font-extrabold text-[13px] mb-1"
+                            style={{ color: elO('infoCols').colorA || '#0f172a' }}
+                          >
+                            Invoice To:
+                          </h3>
                           <input
                             type="text"
                             placeholder="Customer Name / Buyer Name"
@@ -1370,7 +1570,12 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
 
                         {/* Column 2: seller */}
                         <div className="col-span-4 px-3 border-l-2 border-slate-700">
-                          <h3 className="font-extrabold text-slate-900 text-[13px] mb-1">Invoice From:</h3>
+                          <h3
+                            className="font-extrabold text-[13px] mb-1"
+                            style={{ color: elO('infoCols').colorA || '#0f172a' }}
+                          >
+                            Invoice From:
+                          </h3>
                           <p className="font-bold text-slate-800">Yadea Hussain Motors</p>
                           <input
                             type="text"
@@ -1410,12 +1615,23 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       </div>
 
                         {/* Items table: pill header + accent row rules */}
-                        <div className="px-8 sm:px-9 mt-7">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSel('itemsTable');
+                          }}
+                          className={`relative px-8 sm:px-9 mt-7 ${sel === 'itemsTable' ? 'inv-selected' : ''}`}
+                          style={{
+                            transform: `translate(${elO('itemsTable').x}px, ${elO('itemsTable').y}px)`,
+                            transition: dragState.current ? 'none' : 'transform .08s ease-out',
+                          }}
+                        >
+                          <Handles id="itemsTable" />
                           <div
                             className={`${
                               design.pillRound ? 'rounded-full' : 'rounded-lg'
                             } text-white px-6 py-2.5 flex items-center text-[10px] sm:text-[11px] font-extrabold tracking-wider uppercase`}
-                            style={{ backgroundColor: design.darkColor }}
+                            style={{ backgroundColor: elO('itemsTable').colorA ?? design.darkColor }}
                           >
                             <div className="w-[8%] text-center">Qty</div>
                             <div className="w-[36%] pl-2 text-left">Description</div>
@@ -1441,7 +1657,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             {/* Item row */}
                             <div
                               className="py-3 px-6 flex items-start justify-between border-b-2"
-                              style={{ borderColor: design.accentColor }}
+                              style={{ borderColor: elO('itemsTable').colorB ?? design.accentColor }}
                             >
                               <div className="w-[8%] text-center pt-3">
                                 <input
@@ -1494,7 +1710,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             {/* Total row */}
                             <div
                               className="py-2.5 px-6 flex items-center justify-between border-b-2"
-                              style={{ borderColor: design.accentColor }}
+                              style={{ borderColor: elO('itemsTable').colorB ?? design.accentColor }}
                             >
                               <div className="w-[44%] text-left font-extrabold tracking-wide">TOTAL</div>
                               <div className="w-[14%] text-right font-extrabold">{formatMoney(totalExcl)}</div>
@@ -1502,7 +1718,7 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                               <div className="w-[14%] text-right font-extrabold">{formatMoney(taxPayable)}</div>
                               <div
                                 className="w-[16%] text-right pr-1 font-black text-base"
-                                style={{ color: design.accentColor }}
+                                style={{ color: elO('itemsTable').colorB ?? design.accentColor }}
                               >
                                 {formatMoney(totalIncl)}
                               </div>
@@ -1513,8 +1729,23 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                         {/* Terms & conditions + totals summary */}
                         <div className="px-8 sm:px-9 mt-9 grid grid-cols-12 gap-4 items-start">
                           {design.showTerms && (
-                            <div className="col-span-7 pr-2 text-xs">
-                              <h4 className="font-extrabold text-slate-900 text-[13px] mb-2">Terms and Conditions:</h4>
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSel('termsBlock');
+                              }}
+                              className={`relative col-span-7 pr-2 text-xs ${sel === 'termsBlock' ? 'inv-selected' : ''}`}
+                              style={{
+                                color: elO('termsBlock').colorA || undefined,
+                                transform: `translate(${elO('termsBlock').x}px, ${elO('termsBlock').y}px)`,
+                                  textAlign: elO('termsBlock').align ?? undefined,
+                                transition: dragState.current ? 'none' : 'transform .08s ease-out',
+                              }}
+                            >
+                              <Handles id="termsBlock" />
+                              <h4 className="font-extrabold text-[13px] mb-2" style={{ color: elO('termsBlock').colorA || '#0f172a' }}>
+                                Terms and Conditions:
+                              </h4>
                               <ol className="space-y-1 font-semibold text-slate-700 leading-relaxed list-none p-0 m-0">
                                 <li className="flex gap-1.5">
                                   <span>1.</span>
@@ -1529,10 +1760,20 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                           )}
 
                           <div
-                            className={`ml-auto w-full max-w-[270px] space-y-1.5 text-xs sm:text-[13px] font-extrabold text-slate-900 ${
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSel('totalsBlock');
+                            }}
+                            className={`relative ml-auto w-full max-w-[270px] space-y-1.5 text-xs sm:text-[13px] font-extrabold text-slate-900 ${
                               design.showTerms ? 'col-span-5' : 'col-span-12'
-                            }`}
+                            } ${sel === 'totalsBlock' ? 'inv-selected' : ''}`}
+                            style={{
+                              transform: `translate(${elO('totalsBlock').x}px, ${elO('totalsBlock').y}px)`,
+                                textAlign: elO('totalsBlock').align ?? undefined,
+                              transition: dragState.current ? 'none' : 'transform .08s ease-out',
+                            }}
                           >
+                            <Handles id="totalsBlock" />
                             <div className="flex justify-between items-center px-1 gap-2">
                               <span>Value Excl. Tax:</span>
                               <span className="text-right whitespace-nowrap">Rs {formatMoney(totalExcl)}</span>
@@ -1544,11 +1785,11 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             <div className="pt-2">
                               <div
                                 className="rounded-full overflow-hidden flex items-center justify-between p-1 shadow-sm text-white"
-                                style={{ backgroundColor: design.darkColor }}
+                                style={{ backgroundColor: elO('totalsBlock').colorA ?? design.darkColor }}
                               >
                                 <div
                                   className="px-3.5 py-1 rounded-full text-[10px] sm:text-xs uppercase tracking-wider"
-                                  style={{ backgroundColor: design.accentColor }}
+                                  style={{ backgroundColor: elO('totalsBlock').colorB ?? design.accentColor }}
                                 >
                                   Total Payable:
                                 </div>
@@ -1562,10 +1803,27 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       </div>
 
                       {design.showSignature && (
-                        <div className="px-8 sm:px-9 mt-10 flex justify-between items-end relative z-10">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSel('signature');
+                          }}
+                          className={`relative px-8 sm:px-9 mt-10 flex justify-between items-end z-10 ${
+                            sel === 'signature' ? 'inv-selected' : ''
+                          }`}
+                          style={{
+                            transform: `translate(${elO('signature').x}px, ${elO('signature').y}px)`,
+                              textAlign: elO('signature').align ?? undefined,
+                            transition: dragState.current ? 'none' : 'transform .08s ease-out',
+                          }}
+                        >
+                          <Handles id="signature" />
                           <div className="text-left pb-1">
                             <p className="text-xs font-semibold text-slate-700 italic mb-0.5">For &amp; on Behalf of</p>
-                            <h3 className="text-base md:text-lg font-black tracking-tight" style={{ color: design.accentColor }}>
+                            <h3
+                              className="text-base md:text-lg font-black tracking-tight"
+                              style={{ color: elO('signature').colorA ?? design.accentColor }}
+                            >
                               Yadea Hussain Motors
                             </h3>
                           </div>
@@ -1579,7 +1837,19 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                       )}
 
                       {design.showWaves && (
-                        <div className="relative w-full overflow-hidden mt-2" style={{ height: 120 }}>
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSel('waves');
+                          }}
+                          className={`relative w-full overflow-hidden mt-2 ${sel === 'waves' ? 'inv-selected' : ''}`}
+                          style={{
+                            height: 120,
+                            transform: `translate(${elO('waves').x}px, ${elO('waves').y}px) scale(${elO('waves').scale})`,
+                            transition: dragState.current ? 'none' : 'transform .08s ease-out',
+                          }}
+                        >
+                          <Handles id="waves" />
                           <svg
                             className="absolute bottom-0 left-0 w-full pointer-events-none"
                             style={{ height: 120 }}
@@ -1589,9 +1859,9 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
                             xmlns="http://www.w3.org/2000/svg"
                           >
                             {/* Top wave (accent) */}
-                            <path d="M 0 55 C 220 135, 480 10, 800 55 L 800 140 L 0 140 Z" fill={design.accentColor} />
+                            <path d="M 0 55 C 220 135, 480 10, 800 55 L 800 140 L 0 140 Z" fill={elO('waves').colorA ?? design.accentColor} />
                             {/* Foreground bottom wave (dark) */}
-                            <path d="M 0 75 C 240 10, 500 125, 800 60 L 800 140 L 0 140 Z" fill={design.darkColor} />
+                            <path d="M 0 75 C 240 10, 500 125, 800 60 L 800 140 L 0 140 Z" fill={elO('waves').colorB ?? design.darkColor} />
                           </svg>
                         </div>
                       )}
@@ -1602,6 +1872,98 @@ export default function InvoicesPage({ onNotify }: InvoicesPageProps) {
           </div>
           )}
         </div>
+
+      {/* Canva-style floating context toolbar for the selected element */}
+      {view === 'editor' && sel && REGION_META[sel] && (
+        <div className="inv-no-print fixed bottom-6 left-1/2 -translate-x-1/2 z-[95] bg-slate-900 text-white rounded-xl shadow-2xl px-3 py-2 flex items-center gap-3 text-xs flex-wrap justify-center max-w-[92vw]">
+          <span className="font-bold whitespace-nowrap">{REGION_META[sel].label}</span>
+
+          <div className="flex items-center gap-1.5">
+            {REGION_META[sel].colors.map(([key, label]) => (
+              <label key={key} className="flex items-center gap-1 cursor-pointer" title={label}>
+                <input
+                  type="color"
+                  value={elO(sel)[key] ?? design.accentColor}
+                  onChange={(e) => setElO(sel, { [key]: e.target.value } as Partial<ElemOverride>)}
+                  className="h-6 w-7 rounded cursor-pointer p-0.5 border border-slate-600"
+                />
+              </label>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1 border-l border-slate-700 pl-3">
+            <button
+              type="button"
+              onClick={() =>
+                sel === 'titleBlock'
+                  ? setElO('titleBlock', { fontSize: Math.max(18, (elO('titleBlock').fontSize ?? 38) - 2) })
+                  : setElO(sel, { scale: Math.max(0.55, Math.round((elO(sel).scale - 0.05) * 100) / 100) })
+              }
+              className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 font-bold transition"
+              title="Smaller"
+            >
+              −
+            </button>
+            <span className="font-mono text-[10px] w-10 text-center">
+              {sel === 'titleBlock'
+                ? `${elO('titleBlock').fontSize ?? 38}px`
+                : `${Math.round(elO(sel).scale * 100)}%`}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                sel === 'titleBlock'
+                  ? setElO('titleBlock', { fontSize: Math.min(72, (elO('titleBlock').fontSize ?? 38) + 2) })
+                  : setElO(sel, { scale: Math.min(1.9, Math.round((elO(sel).scale + 0.05) * 100) / 100) })
+              }
+              className="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 font-bold transition"
+              title="Bigger"
+            >
+              +
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 border-l border-slate-700 pl-3">
+            {(['left', 'center', 'right'] as const).map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setElO(sel, { align: a })}
+                className={`px-2 py-0.5 rounded font-bold transition ${
+                  elO(sel).align === a ? 'bg-yadea-orange text-white' : 'bg-slate-700 hover:bg-slate-600'
+                }`}
+              >
+                {a[0].toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setElO(sel, EMPTY_EL);
+              setDesign((d) => {
+                const elements = { ...(d.elements ?? {}) };
+                delete elements[sel];
+                return { ...d, elements };
+              });
+            }}
+            className="flex items-center gap-1 bg-slate-700 hover:bg-red-600 px-2 py-1 rounded transition"
+            title="Reset this element"
+          >
+            <FaRotateRight className="text-[10px]" /> Reset
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSel(null)}
+            className="w-6 h-6 rounded-full bg-slate-700 hover:bg-red-600 font-bold transition"
+            title="Deselect (Esc)"
+          >
+            ×
+          </button>
+        </div>
+      )}
       </div>
     </>
   );
