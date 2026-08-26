@@ -466,19 +466,29 @@ export interface UpdateContactInput {
 }
 
 /**
- * Relative base is preferred: in the Vite dev server it is proxied to Apache
- * (same-origin, no CORS), and when served under Apache it hits the real API
- * directly. The absolute URL is kept as a fallback.
+ * Same-origin API base, auto-detecting the app's sub-directory:
+ * - Apache/Contabo serves the SPA under /Yadea/  -> /Yadea/api/index.php
+ * - yadea.biztrack.uk (nginx) serves it at root  -> /api/index.php
+ * Both same-origin paths are tried, so the CRM works no matter which host
+ * serves it. No hardcoded http://localhost fallback — that only ever worked
+ * on the developer's own machine and broke every other device.
  */
-export const API_BASE = '/Yadea/api/index.php';
+function detectApiBases(): string[] {
+  const underYadea = window.location.pathname.startsWith('/Yadea/');
+  return underYadea
+    ? ['/Yadea/api/index.php', '/api/index.php']
+    : ['/api/index.php', '/Yadea/api/index.php'];
+}
 
-const API_BASE_ALTERNATES: string[] = ['http://localhost/Yadea/api/index.php'];
+export const API_BASE = window.location.pathname.startsWith('/Yadea/')
+  ? '/Yadea/api/index.php'
+  : '/api/index.php';
 
 let workingBase: string | null = null;
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const bases = Array.from(
-    new Set([workingBase, API_BASE, ...API_BASE_ALTERNATES].filter(Boolean) as string[])
+    new Set([workingBase, API_BASE].concat(detectApiBases()).filter(Boolean) as string[])
   );
 
   let lastErr: Error | null = null;
@@ -490,14 +500,24 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         ...options,
       });
 
+      const text = await res.text();
       let payload: unknown = null;
-      try {
-        payload = await res.json();
-      } catch {
-        payload = null;
+      let parseFailed = false;
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          parseFailed = true;
+        }
       }
 
       if (res.ok) {
+        // A 2xx response carrying HTML (e.g. the SPA fallback page) means we
+        // did NOT reach the real API — try the next base instead.
+        if (parseFailed && text.trim().length > 0) {
+          lastErr = new Error(`Non-JSON response from ${base}${path} (HTTP ${res.status})`);
+          continue;
+        }
         workingBase = base;
         return payload as T;
       }
@@ -515,7 +535,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
   }
 
-  throw lastErr ?? new Error('Unable to reach the CRM API');
+  throw lastErr ?? new Error(`Unable to reach the CRM API from ${window.location.origin}`);
 }
 
 function toQuery(params: ListParams): string {

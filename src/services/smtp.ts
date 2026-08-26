@@ -13,15 +13,23 @@
 export const SMTP_FROM_EMAIL = 'crm@yadea.com.pk';
 export const SMTP_FROM_NAME = 'Yadea Pakistan';
 
-const API_BASE = '/Yadea/api/index.php';
-const API_BASE_ALTERNATES: string[] = ['http://localhost/Yadea/api/index.php'];
+/**
+ * Same-origin API base, auto-detecting the app's sub-directory
+ * (/Yadea/ under Apache, root on yadea.biztrack.uk). The other same-origin
+ * path is kept as fallback. No hardcoded http://localhost URL — that only
+ * worked on the developer's machine and broke every other device.
+ */
+function detectApiBases(): string[] {
+  const underYadea = window.location.pathname.startsWith('/Yadea/');
+  return underYadea
+    ? ['/Yadea/api/index.php', '/api/index.php']
+    : ['/api/index.php', '/Yadea/api/index.php'];
+}
 
 let workingBase: string | null = null;
 
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const bases = Array.from(
-    new Set([workingBase, API_BASE, ...API_BASE_ALTERNATES].filter(Boolean) as string[])
-  );
+  const bases = Array.from(new Set([workingBase].concat(detectApiBases()).filter(Boolean) as string[]));
 
   let lastErr: Error | null = null;
 
@@ -33,14 +41,23 @@ async function post<T>(path: string, body: unknown): Promise<T> {
         body: JSON.stringify(body),
       });
 
+      const text = await res.text();
       let payload: unknown = null;
-      try {
-        payload = await res.json();
-      } catch {
-        payload = null;
+      let parseFailed = false;
+      if (text) {
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          parseFailed = true;
+        }
       }
 
       if (res.ok) {
+        // 2xx carrying HTML (SPA fallback) means we did not reach the API.
+        if (parseFailed && text.trim().length > 0) {
+          lastErr = new Error(`Non-JSON response from ${base}${path} (HTTP ${res.status})`);
+          continue;
+        }
         workingBase = base;
         return payload as T;
       }
@@ -56,7 +73,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     }
   }
 
-  throw lastErr ?? new Error('Unable to reach the CRM API');
+  throw lastErr ?? new Error(`Unable to reach the CRM API from ${window.location.origin}`);
 }
 
 export interface SmtpSendResult {
