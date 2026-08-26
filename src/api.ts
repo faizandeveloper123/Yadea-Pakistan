@@ -870,6 +870,9 @@ export const api = {
 
   listForms: () => request<{ data: ApiSmartForm[]; count: number }>('/forms'),
 
+  /** Public single-form fetch — powers short share links (#/f/{id}), no login needed. */
+  getPublicForm: (id: number) => request<{ data: ApiSmartForm }>(`/forms/${id}`),
+
   createForm: (input: SmartFormInput) =>
     request<{ data: ApiSmartForm; message: string }>('/forms', {
       method: 'POST',

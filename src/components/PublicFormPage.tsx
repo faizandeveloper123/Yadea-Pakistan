@@ -32,9 +32,51 @@ function findField(elements: PublicFormPayload['elements'], re: RegExp) {
   return elements.find((el) => re.test(el.label.trim())) ?? null;
 }
 
-export default function PublicFormPage({ data }: { data: string }) {
-  const form = deserializeFormFromUrl(data);
+export default function PublicFormPage({ data, formId }: { data?: string; formId?: number }) {
+  const decoded = data ? deserializeFormFromUrl(data) : null;
+  const [fetched, setFetched] = useState<PublicFormPayload | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const { login } = useAuth();
+
+  // Short share links (#/f/{id}) load the form definition from the server.
+  useEffect(() => {
+    if (!formId) return;
+    let alive = true;
+    api
+      .getPublicForm(formId)
+      .then((res) => {
+        if (!alive) return;
+        const f = res.data;
+        const elements = (Array.isArray(f.elements) ? f.elements : []) as Record<string, unknown>[];
+        setFetched({
+          name: String(f.name ?? ''),
+          columns: Number(f.cols) === 2 ? 2 : 1,
+          campaignId: (f.campaign_id as number | null) ?? undefined,
+          header: (f.header as PublicFormPayload['header']) ?? undefined,
+          elements: elements
+            .filter((el) => el && !el.isHidden)
+            .map((el) => ({
+              label: String(el.label ?? ''),
+              type: String(el.type ?? 'text'),
+              required: !!el.required,
+              placeholder: el.placeholder as string | undefined,
+              options: el.options as string[] | undefined,
+              buttonColor:
+                el.type === 'button' ? (el.buttonColor as string | undefined) : undefined,
+              buttonTextColor:
+                el.type === 'button' ? (el.buttonTextColor as string | undefined) : undefined,
+            })),
+        });
+      })
+      .catch(() => {
+        if (alive) setLoadFailed(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [formId]);
+
+  const form = decoded ?? fetched;
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -72,6 +114,14 @@ export default function PublicFormPage({ data }: { data: string }) {
   }, [dealer, countdown, pendingApproval]);
 
   if (!form) {
+    // Short links still loading their definition from the server.
+    if (formId && !loadFailed) {
+      return (
+        <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+          <div className="text-xs font-medium text-slate-400 animate-pulse">Loading form…</div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8 max-w-sm text-center">

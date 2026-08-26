@@ -27,7 +27,8 @@ export type Route =
   | { name: 'dealership-form' }
   | { name: 'inquiry-form' }
   | { name: 'magic-login'; token: string }
-  | { name: 'form'; data: string };
+  | { name: 'form'; data: string }
+  | { name: 'form-id'; id: number };
 
 export const DEFAULT_ROUTE: Route = { name: 'dashboard' };
 
@@ -71,6 +72,12 @@ export function parseHash(): Route {
     case 'magic-login':
       if (idPart) return { name: 'magic-login', token: decodeURIComponent(idPart) };
       return DEFAULT_ROUTE;
+    case 'f':
+    case 'form-id': {
+      const fid = Number(idPart);
+      if (Number.isInteger(fid) && fid > 0) return { name: 'form-id', id: fid };
+      return DEFAULT_ROUTE;
+    }
     case 'form':
       if (idPart) return { name: 'form', data: idPart };
       return DEFAULT_ROUTE;
@@ -105,6 +112,8 @@ export function routeToHash(route: Route): string {
       return '#/inquiry-form';
     case 'magic-login':
       return `#/magic-login/${encodeURIComponent(route.token)}`;
+    case 'form-id':
+      return `#/f/${route.id}`;
     case 'form':
       return `#/form/${route.data}`;
     case 'contacts':

@@ -2448,6 +2448,20 @@ function list_forms(): void
     respond(['data' => $rows, 'count' => count($rows)]);
 }
 
+/**
+ * GET /forms/{id} -> one saved form. Public on purpose: short share links
+ * (#/f/{id}) must render for visitors who are not signed in.
+ */
+function get_form(int $id): void
+{
+    ensure_forms_table();
+    $stmt = db()->prepare('SELECT * FROM forms WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    if (!$row) fail('Form not found', 404);
+    respond(['data' => form_payload($row)]);
+}
+
 /** POST /forms { name, updated_by?, elements?, header?, cols?, campaign_id? } */
 function create_form(array $body): void
 {
@@ -3318,7 +3332,11 @@ switch ($resource) {
     case 'forms':
         $id = $parts[1] ?? null;
         if ($method === 'GET') {
-            list_forms();
+            if ($id !== null) {
+                get_form(to_int($id));
+            } else {
+                list_forms();
+            }
         } elseif ($method === 'POST') {
             create_form(json_body());
         } elseif ($method === 'PUT') {

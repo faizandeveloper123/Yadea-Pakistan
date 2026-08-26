@@ -1106,6 +1106,9 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
   if (route.name === 'form') {
     return <PublicFormPage data={route.data} />;
   }
+  if (route.name === 'form-id') {
+    return <PublicFormPage formId={route.id} />;
+  }
 
   // Shareable portal forms — no login required.
   if (route.name === 'dealership-form') {

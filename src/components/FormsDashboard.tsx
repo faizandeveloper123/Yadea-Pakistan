@@ -1693,10 +1693,20 @@ function FormsDashboard() {
       })),
   });
 
-  const publicFormUrl = async () => {
+  /** Short share link (#/f/{id}) for a saved form. */
+  const shortShareUrl = (form: { id?: number }) =>
+    form.id ? `${window.location.origin}${window.location.pathname}#/f/${form.id}` : '';
+
+  /** Legacy inline-payload URL, kept only as fallback for unsaved drafts. */
+  const legacyTokenUrl = async () => {
     const payload = await publicPayloadWithHostedImage(publicFormPayload());
     const token = serializeFormForUrl(payload);
     return `${window.location.origin}${window.location.pathname}#/form/${token}`;
+  };
+
+  const publicFormUrl = async () => {
+    if (activeForm?.id) return shortShareUrl(activeForm);
+    return legacyTokenUrl();
   };
 
   const openPublicPreview = async () => {
@@ -1714,24 +1724,26 @@ function FormsDashboard() {
   };
 
   const openFormPreview = async (form: Form) => {
-    const token = serializeFormForUrl(await publicPayloadWithHostedImage({
-      name: form.name,
-      columns: form.columns,
-      campaignId: form.campaignId,
-      header: form.header,
-      elements: form.elements
-        .filter((el) => !el.isHidden)
-        .map((el) => ({
-          label: el.label,
-          type: el.type,
-          required: el.required,
-          placeholder: el.placeholder,
-          options: el.options,
-          buttonColor: el.type === 'button' ? el.buttonColor : undefined,
-          buttonTextColor: el.type === 'button' ? el.buttonTextColor : undefined,
-        })),
-    }));
-    const url = `${window.location.origin}${window.location.pathname}#/form/${token}`;
+    const url = shortShareUrl(form) || (await (async () => {
+      const token = serializeFormForUrl(await publicPayloadWithHostedImage({
+        name: form.name,
+        columns: form.columns,
+        campaignId: form.campaignId,
+        header: form.header,
+        elements: form.elements
+          .filter((el) => !el.isHidden)
+          .map((el) => ({
+            label: el.label,
+            type: el.type,
+            required: el.required,
+            placeholder: el.placeholder,
+            options: el.options,
+            buttonColor: el.type === 'button' ? el.buttonColor : undefined,
+            buttonTextColor: el.type === 'button' ? el.buttonTextColor : undefined,
+          })),
+      }));
+      return `${window.location.origin}${window.location.pathname}#/form/${token}`;
+    })());
     window.open(url, '_blank', 'noopener,noreferrer');
     setOpenMenuFor(null);
     setMenuPos(null);
@@ -1905,6 +1917,8 @@ function FormsDashboard() {
 
   const buildShareModalUrl = async (form: Form) => {
     if (!form) return '';
+    // Saved forms get the short numeric share link (#/f/{id}).
+    if (form.id) return shortShareUrl(form);
     try {
       const token = serializeFormForUrl(await publicPayloadWithHostedImage({
         name: form.name,
