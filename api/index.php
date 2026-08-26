@@ -2369,8 +2369,8 @@ function store_form_image(array $body): void
     if (!is_string($image) || $image === '' || !preg_match('~^data:image/[a-zA-Z0-9.+-]+;base64,~', $image)) {
         fail('Valid base64 image data URI required');
     }
-    if (strlen($image) > 6 * 1024 * 1024) {
-        fail('Image too large (max 6 MB)');
+    if (strlen($image) > 12 * 1024 * 1024) {
+        fail('Image too large (max 12 MB)');
     }
     ensure_form_images_table();
     $stmt = db()->prepare('INSERT INTO form_images (data) VALUES (:data)');
