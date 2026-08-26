@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FaRegCircleCheck, FaRegClock } from 'react-icons/fa6';
+import { FaRegCalendar, FaRegCircleCheck, FaRegClock } from 'react-icons/fa6';
 import { api } from '../api';
 import { logActivity } from '../data/activityLog';
 import { ensureCampaignsLoaded, campaignNameById } from '../data/campaigns';
@@ -391,6 +391,16 @@ export default function PublicFormPage({ data, formId }: { data?: string; formId
                             <span className="text-sm text-slate-600">{o}</span>
                           </label>
                         ))}
+                      </div>
+                    ) : el.type === 'date' || el.type === 'date_picker' ? (
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={values[el.label] ?? ''}
+                          onChange={(e) => setValues((p) => ({ ...p, [el.label]: e.target.value }))}
+                          className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
+                        />
+                        <FaRegCalendar className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
                       </div>
                     ) : TEXT_LIKE.includes(el.type) ? (
                       <input

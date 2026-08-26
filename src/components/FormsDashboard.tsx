@@ -724,7 +724,30 @@ function FieldRenderer({
 
   let control: ReactNode = null;
 
-  if (TEXT_LIKE.includes(t)) {
+  if (t === 'date') {
+    // Birthday / Date of birth — real calendar picker with a calendar icon.
+    control = editable ? (
+      <div className="relative">
+        <input
+          type="text"
+          value={element.placeholder ?? ''}
+          onChange={(e) => onPatch?.({ placeholder: e.target.value })}
+          placeholder="Enter placeholder text"
+          className={`${editInputCls} pl-8`}
+        />
+        <FaRegCalendar className="absolute left-2.5 top-2 text-slate-400 text-xs pointer-events-none" />
+      </div>
+    ) : (
+      <div className="relative">
+        <input
+          type="date"
+          onChange={() => undefined}
+          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-md text-xs bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <FaRegCalendar className="absolute left-2.5 top-2 text-slate-400 text-xs pointer-events-none" />
+      </div>
+    );
+  } else if (TEXT_LIKE.includes(t)) {
     control = editable ? (
       <input
         type="text"
@@ -885,19 +908,28 @@ function FieldRenderer({
       </div>
     );
   } else if (t === 'date_picker') {
-    control = (
+    control = editable ? (
       <div className="relative">
         <input
           type="text"
-          value={editable ? (element.placeholder ?? '') : undefined}
+          value={element.placeholder ?? ''}
           onChange={(e) => onPatch?.({ placeholder: e.target.value })}
-          placeholder={editable ? 'Select date (placeholder)' : 'Select date'}
-          disabled={!editable}
+          placeholder="Select date (placeholder)"
           className={`w-full pl-8 pr-3 py-2 border border-slate-300 rounded-md text-xs ${
             editable ? 'bg-white text-slate-700' : 'bg-slate-50/50'
           }`}
         />
-        <FaRegCalendar className="absolute left-2.5 top-2.5 text-slate-400 text-xs" />
+        <FaRegCalendar className="absolute left-2.5 top-2.5 text-slate-400 text-xs pointer-events-none" />
+      </div>
+    ) : (
+      // Preview mode: real calendar so a date can actually be picked.
+      <div className="relative">
+        <input
+          type="date"
+          onChange={() => undefined}
+          className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-md text-xs bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <FaRegCalendar className="absolute left-2.5 top-2 text-slate-400 text-xs pointer-events-none" />
       </div>
     );
   } else if (t === 'signature') {
