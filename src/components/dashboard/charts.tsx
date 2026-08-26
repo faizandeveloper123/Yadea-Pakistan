@@ -38,13 +38,31 @@ function useCountUp(target: number, duration = 900): number {
   return val;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const full = h.length === 3
+    ? h
+        .split('')
+        .map((c) => c + c)
+        .join('')
+    : h;
+  const n = parseInt(full, 16);
+  if (Number.isNaN(n)) return `rgba(59,130,246,${alpha})`;
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 function useChart(
   type: 'doughnut' | 'bar' | 'line',
   labels: string[],
   values: number[],
   colors: string[],
   horizontal = false,
-  cutout = '62%'
+  cutout = '62%',
+  lineColor = '#3b82f6',
+  fill = true
 ) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
@@ -65,10 +83,10 @@ function useChart(
       : isLine
       ? (context: { chart: Chart }) => {
           const area = context.chart.chartArea;
-          if (!area) return 'rgba(59,130,246,0.15)';
+          if (!area) return hexToRgba(lineColor, 0.15);
           const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-          g.addColorStop(0, 'rgba(59,130,246,0.32)');
-          g.addColorStop(1, 'rgba(59,130,246,0.02)');
+          g.addColorStop(0, hexToRgba(lineColor, 0.32));
+          g.addColorStop(1, hexToRgba(lineColor, 0.02));
           return g;
         }
       : (context: { chart: Chart; dataIndex: number }) => {
@@ -93,11 +111,11 @@ function useChart(
             label: '',
             data: values,
             backgroundColor: datasetBackgroundColor as string,
-            borderColor: isDoughnut ? '#ffffff' : isLine ? '#3b82f6' : colors,
+            borderColor: isDoughnut ? '#ffffff' : isLine ? lineColor : colors,
             borderWidth: isDoughnut ? 3 : isLine ? 2.5 : 1,
             borderRadius: type === 'bar' ? 6 : 0,
             borderSkipped: false,
-            fill: isLine,
+            fill: isLine && fill,
             tension: isLine ? 0.4 : 0,
             pointRadius: isLine ? 0 : undefined,
             pointHoverRadius: isLine ? 5 : undefined,
@@ -146,7 +164,7 @@ function useChart(
       if (chartRef.current) chartRef.current.destroy();
       chartRef.current = null;
     };
-  }, [type, labels, values, colors, horizontal, cutout]);
+  }, [type, labels, values, colors, horizontal, cutout, lineColor, fill]);
 
   return ref;
 }
@@ -211,8 +229,18 @@ export function BarChart({
   );
 }
 
-export function LineChart({ labels, values }: { labels: string[]; values: number[] }) {
-  const ref = useChart('line', labels, values, ['#3b82f6']);
+export function LineChart({
+  labels,
+  values,
+  color = '#3b82f6',
+  fill = true,
+}: {
+  labels: string[];
+  values: number[];
+  color?: string;
+  fill?: boolean;
+}) {
+  const ref = useChart('line', labels, values, [color], false, '62%', color, fill);
   return (
     <div className="h-40">
       <canvas ref={ref} />

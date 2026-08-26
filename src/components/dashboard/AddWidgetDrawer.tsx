@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  FaArrowLeft,
   FaArrowTrendUp,
   FaChartColumn,
   FaChartLine,
@@ -10,7 +11,16 @@ import {
   FaTableCells,
   FaXmark,
 } from 'react-icons/fa6';
-import { WIDGET_CATEGORIES, WIDGET_DEFS, filterDefsForRole, type WidgetChartType, type WidgetDef, type WidgetRole } from './widgets';
+import {
+  WIDGET_CATEGORIES,
+  WIDGET_DEFS,
+  filterDefsForRole,
+  type DashboardDataset,
+  type WidgetChartType,
+  type WidgetDef,
+  type WidgetRole,
+} from './widgets';
+import { WidgetConfigPanel, type WidgetConfigResult } from './WidgetConfig';
 
 const TABS = ['Widgets', 'Elements', 'Themes', 'Custom metrics'];
 
@@ -41,14 +51,14 @@ function CategoryGroup({
   count,
   expanded,
   onToggle,
-  onAdd,
+  onConfigure,
 }: {
   name: string;
   items: WidgetDef[];
   count: number;
   expanded: boolean;
   onToggle: () => void;
-  onAdd: (defId: string) => void;
+  onConfigure: (def: WidgetDef) => void;
 }) {
   return (
     <div className="accordion-item border-b border-slate-100 pb-1">
@@ -76,13 +86,13 @@ function CategoryGroup({
             items.map((w) => (
               <div
                 key={w.id}
-                onClick={() => onAdd(w.id)}
+                onClick={() => onConfigure(w)}
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.setData('application/x-evee-widget', w.id);
                   e.dataTransfer.effectAllowed = 'copy';
                 }}
-                title="Click to add, or drag onto the dashboard"
+                title="Click to configure, or drag onto the dashboard to add instantly"
                 className="p-2.5 bg-white border border-slate-200/90 rounded-xl shadow-sm hover:border-blue-400 hover:shadow cursor-grab active:cursor-grabbing flex items-center gap-3 transition-all group"
               >
                 <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0 group-hover:bg-orange-100 transition-colors">
@@ -109,17 +119,20 @@ export function AddWidgetDrawer({
   open,
   onClose,
   role,
+  dataset,
   onAdd,
 }: {
   open: boolean;
   onClose: () => void;
   role: WidgetRole;
-  onAdd: (defId: string) => void;
+  dataset: DashboardDataset;
+  onAdd: (defId: string, cfg?: WidgetConfigResult) => void;
 }) {
   const [tab, setTab] = useState('Widgets');
   const [search, setSearch] = useState('');
   const [chartType, setChartType] = useState<WidgetChartType | 'all'>('all');
   const [dropHint, setDropHint] = useState(false);
+  const [configuring, setConfiguring] = useState<WidgetDef | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => ({
     [role === 'Admin' ? 'Contacts' : 'Opportunities']: true,
   }));
@@ -185,97 +198,124 @@ export function AddWidgetDrawer({
           </div>
         )}
       </div>
-      <aside className="absolute right-0 top-0 h-full w-80 sm:w-96 bg-white shadow-2xl border-l border-slate-200 flex flex-col">
+      <aside className="absolute right-0 top-0 h-full w-80 sm:w-96 bg-white shadow-2xl border-l border-slate-200 flex flex-col overflow-hidden">
         {/* Drawer header */}
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">Add new widget</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Click to add, or drag onto the dashboard</p>
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {configuring && (
+              <button
+                onClick={() => setConfiguring(null)}
+                className="w-7 h-7 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition flex-shrink-0"
+                title="Back to widget list"
+              >
+                <FaArrowLeft className="text-xs" />
+              </button>
+            )}
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-slate-800 truncate">
+                {configuring ? `Configure: ${configuring.title}` : 'Add new widget'}
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+                {configuring
+                  ? 'Choose how this widget should look'
+                  : 'Click a widget to configure it, or drag to add'}
+              </p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors flex-shrink-0">
             <FaXmark className="text-sm" />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center border-b border-slate-200 px-3 text-xs font-semibold text-slate-600 space-x-5 pt-2">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`pb-2.5 border-b-2 transition-colors ${
-                tab === t ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent hover:text-slate-800'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-
         {/* Drawer content */}
-        <div className="flex-1 overflow-y-auto no-scrollbar">
-          {tab === 'Widgets' ? (
-            <div className="p-4 space-y-4">
-              {/* Search */}
-              <div className="relative">
-                <FaMagnifyingGlass className="absolute left-3 top-2.5 text-xs text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search widget"
-                  className="w-full text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700 placeholder-slate-400"
-                />
-              </div>
-
-              {/* Chart type filter icons */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-600">Chart type</label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {CHART_TYPES.map((t) => {
-                    const active = chartType === t;
-                    return (
-                      <button
-                        key={t}
-                        onClick={() => setChartType(t)}
-                        className={
-                          active
-                            ? 'px-2.5 py-1 text-xs font-semibold border border-blue-600 text-blue-600 bg-blue-50/50 rounded transition-colors'
-                            : 'px-2.5 py-1 text-xs border border-slate-200 text-slate-600 hover:bg-slate-50 rounded transition-colors'
-                        }
-                      >
-                        {t === 'all' ? (
-                          'All'
-                        ) : (
-                          <span className="flex items-center justify-center">
-                            <ChartTypeIcon type={t} />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Categories accordion */}
-              <div className="space-y-1 pt-1 border-t border-slate-100">
-                {filtered.map((c) => (
-                  <CategoryGroup
-                    key={c.name}
-                    name={c.name}
-                    items={c.items}
-                    count={c.items.length}
-                    expanded={!!expanded[c.name] && c.items.length > 0}
-                    onToggle={() => toggleCategory(c.name)}
-                    onAdd={onAdd}
-                  />
+        <div className="flex-1 overflow-y-auto no-scrollbar min-h-0">
+          {configuring ? (
+            <WidgetConfigPanel
+              def={configuring}
+              dataset={dataset}
+              submitLabel="Add to dashboard"
+              onSubmit={(cfg) => onAdd(configuring.id, cfg)}
+              onCancel={() => setConfiguring(null)}
+            />
+          ) : (
+            <>
+              {/* Tabs */}
+              <div className="flex items-center border-b border-slate-200 px-3 text-xs font-semibold text-slate-600 space-x-5 pt-2">
+                {TABS.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className={`pb-2.5 border-b-2 transition-colors ${
+                      tab === t ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent hover:text-slate-800'
+                    }`}
+                  >
+                    {t}
+                  </button>
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-xs text-slate-400">
-              {tab} coming soon.
-            </div>
+
+              {tab === 'Widgets' ? (
+                <div className="p-4 space-y-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <FaMagnifyingGlass className="absolute left-3 top-2.5 text-xs text-slate-400" />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search widget"
+                      className="w-full text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700 placeholder-slate-400"
+                    />
+                  </div>
+
+                  {/* Chart type filter icons */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-slate-600">Chart type</label>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {CHART_TYPES.map((t) => {
+                        const active = chartType === t;
+                        return (
+                          <button
+                            key={t}
+                            onClick={() => setChartType(t)}
+                            className={
+                              active
+                                ? 'px-2.5 py-1 text-xs font-semibold border border-blue-600 text-blue-600 bg-blue-50/50 rounded transition-colors'
+                                : 'px-2.5 py-1 text-xs border border-slate-200 text-slate-600 hover:bg-slate-50 rounded transition-colors'
+                            }
+                          >
+                            {t === 'all' ? (
+                              'All'
+                            ) : (
+                              <span className="flex items-center justify-center">
+                                <ChartTypeIcon type={t} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Categories accordion */}
+                  <div className="space-y-1 pt-1 border-t border-slate-100">
+                    {filtered.map((c) => (
+                      <CategoryGroup
+                        key={c.name}
+                        name={c.name}
+                        items={c.items}
+                        count={c.items.length}
+                        expanded={!!expanded[c.name] && c.items.length > 0}
+                        onToggle={() => toggleCategory(c.name)}
+                        onConfigure={setConfiguring}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-xs text-slate-400">{tab} coming soon.</div>
+              )}
+            </>
           )}
         </div>
       </aside>

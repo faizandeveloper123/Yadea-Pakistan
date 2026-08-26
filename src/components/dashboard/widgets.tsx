@@ -53,6 +53,22 @@ export interface WidgetInstance {
   size: 'sm' | 'md' | 'lg';
   w?: number;
   h?: number;
+  /** User-configured appearance (display type, colours, chart options). */
+  settings?: WidgetSettings;
+}
+
+/** Per-widget appearance settings, editable from the widget config panel. */
+export interface WidgetSettings {
+  /** How the widget is rendered; 'auto' keeps the widget's native style. */
+  display?: WidgetChartType | 'auto';
+  /** Colour palette override (series colours; line uses the first entry). */
+  palette?: string[];
+  /** Bar charts only: render bars horizontally. */
+  horizontal?: boolean;
+  /** Donut charts only: hole size, e.g. '62%'. */
+  cutout?: string;
+  /** Line charts only: fill the area under the curve. */
+  fillArea?: boolean;
 }
 
 export type WidgetRole = 'Admin' | 'Dealer' | 'Follower';
@@ -72,7 +88,7 @@ export interface WidgetDef {
 export type WidgetData =
   | { kind: 'number'; value: number | string; sub?: string; accent?: string }
   | { kind: 'donut'; labels: string[]; values: number[]; colors?: string[]; centerText?: string; cutout?: string }
-  | { kind: 'line'; labels: string[]; values: number[] }
+  | { kind: 'line'; labels: string[]; values: number[]; color?: string; fill?: boolean }
   | { kind: 'bar'; labels: string[]; values: number[]; colors?: string[]; horizontal?: boolean }
   | { kind: 'funnel'; stages: { label: string; value: number; color: string }[] }
   | { kind: 'table'; columns: string[]; rows: (string | number)[][]; contactIds?: (number | null)[] }
@@ -971,6 +987,153 @@ export const CHART_TYPE_LABELS: Record<WidgetChartType, string> = {
   funnel: 'Funnel',
   table: 'Table',
 };
+
+export const DEFAULT_PALETTE = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#06b6d4', '#ec4899'];
+
+interface SeriesShape {
+  labels: string[];
+  values: number[];
+  colors?: string[];
+  horizontal?: boolean;
+}
+
+/** Extract a labels/values series from any chart-like widget data. */
+function seriesOf(data: WidgetData): SeriesShape | null {
+  if (data.kind === 'donut') return { labels: data.labels, values: data.values, colors: data.colors };
+  if (data.kind === 'line') return { labels: data.labels, values: data.values };
+  if (data.kind === 'bar')
+    return { labels: data.labels, values: data.values, colors: data.colors, horizontal: data.horizontal };
+  if (data.kind === 'funnel')
+    return {
+      labels: data.stages.map((s) => s.label),
+      values: data.stages.map((s) => s.value),
+      colors: data.stages.map((s) => s.color),
+    };
+  return null;
+}
+
+function toStages(labels: string[], values: number[], palette: string[]) {
+  return labels.map((label, i) => ({
+    label,
+    value: values[i] ?? 0,
+    color: palette[i % palette.length] ?? DEFAULT_PALETTE[0],
+  }));
+}
+
+/** Which display modes make sense for a widget given the shape of its data. */
+export function allowedDisplays(data: WidgetData): WidgetChartType[] {
+  switch (data.kind) {
+    case 'number':
+      return ['number'];
+    case 'table':
+    case 'stage-list':
+    case 'lead-list':
+      return ['table'];
+    default:
+      return ['number', 'donut', 'line', 'bar', 'funnel'];
+  }
+}
+
+/** The display mode that will actually be rendered for the given settings. */
+export function resolveDisplay(data: WidgetData, s?: WidgetSettings): WidgetChartType {
+  const requested = s?.display ?? 'auto';
+  if (requested !== 'auto') return requested;
+  switch (data.kind) {
+    case 'donut':
+    case 'line':
+    case 'bar':
+    case 'funnel':
+      return data.kind;
+    case 'number':
+      return 'number';
+    default:
+      return 'table';
+  }
+}
+
+/**
+ * Apply user-configured appearance settings to a widget's native data —
+ * converting between display modes (donut ↔ bar ↔ line ↔ funnel ↔ number)
+ * and overriding colours / chart options where requested.
+ */
+export function applyWidgetSettings(data: WidgetData, s?: WidgetSettings): WidgetData {
+  if (!s) return data;
+  const pal = s.palette && s.palette.length > 0 ? s.palette : undefined;
+  const series = seriesOf(data);
+
+  // Tables and lead lists can only render as tables.
+  if (!series) {
+    if ((data.kind === 'stage-list' || data.kind === 'lead-list') && s.display === 'table') {
+      return {
+        kind: 'table',
+        columns: ['Lead', 'Stage'],
+        rows: data.leads.map((l) => [l.name, STATUS_META[l.status].label]),
+      };
+    }
+    return data;
+  }
+
+  const effColors = pal ?? series.colors;
+
+  // 'auto': keep the native chart type, only honour colour/option overrides.
+  if (s.display === undefined || s.display === 'auto') {
+    if (!pal && !s.cutout && s.horizontal === undefined && s.fillArea === undefined) return data;
+    switch (data.kind) {
+      case 'donut':
+        return { ...data, ...(pal ? { colors: pal } : {}), ...(s.cutout ? { cutout: s.cutout } : {}) };
+      case 'bar':
+        return { ...data, ...(pal ? { colors: pal } : {}), ...(s.horizontal !== undefined ? { horizontal: s.horizontal } : {}) };
+      case 'line':
+        return {
+          ...data,
+          ...(effColors && effColors[0] ? { color: effColors[0] } : {}),
+          ...(s.fillArea !== undefined ? { fill: s.fillArea } : {}),
+        };
+      case 'funnel':
+        return pal ? { kind: 'funnel', stages: toStages(series.labels, series.values, pal) } : data;
+      default:
+        return data;
+    }
+  }
+
+  // Explicit display override: convert the series into the requested shape.
+  switch (s.display) {
+    case 'number':
+      return { kind: 'number', value: series.values.reduce((a, b) => a + b, 0), sub: 'total' };
+    case 'donut':
+      return {
+        kind: 'donut',
+        labels: series.labels,
+        values: series.values,
+        ...(effColors ? { colors: effColors } : {}),
+        ...(s.cutout ? { cutout: s.cutout } : {}),
+      };
+    case 'line':
+      return {
+        kind: 'line',
+        labels: series.labels,
+        values: series.values,
+        color: effColors && effColors[0] ? effColors[0] : undefined,
+        fill: s.fillArea ?? true,
+      };
+    case 'bar':
+      return {
+        kind: 'bar',
+        labels: series.labels,
+        values: series.values,
+        ...(effColors ? { colors: effColors } : {}),
+        horizontal: s.horizontal ?? series.horizontal ?? false,
+      };
+    case 'funnel':
+      return { kind: 'funnel', stages: toStages(series.labels, series.values, effColors ?? DEFAULT_PALETTE) };
+    case 'table':
+      return {
+        kind: 'table',
+        columns: ['Label', 'Value'],
+        rows: series.labels.map((l, i) => [l, series.values[i] ?? 0]),
+      };
+  }
+}
 
 /**
  * Widgets that Dealers and Followers can use. These all derive from the

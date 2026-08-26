@@ -12,15 +12,16 @@ import {
   FaRegCopy,
   FaRegTrashCan,
   FaWandMagicSparkles,
-  FaXmark,
 } from 'react-icons/fa6';
 import { api, type ApiContact, type DealerDashboardDealer, type DealerLead, type DealerLeadStatus } from '../../api';
 import { useAuth } from '../../auth';
 import { BarChart, DataTable, DonutChart, FunnelChart, LeadStageList, LeadStatusList, LineChart, NumberCard } from './charts';
 import { STATUS_META } from './widgetMeta';
 import { AddWidgetDrawer } from './AddWidgetDrawer';
+import { WidgetConfigModal, type WidgetConfigResult } from './WidgetConfig';
 import {
   WIDGET_BY_ID,
+  applyWidgetSettings,
   defaultInstancesForRole,
   isWidgetAllowedForRole,
   type DashboardDataset,
@@ -71,7 +72,7 @@ function WidgetBody({
         />
       );
     case 'line':
-      return <LineChart labels={data.labels} values={data.values} />;
+      return <LineChart labels={data.labels} values={data.values} color={data.color} fill={data.fill} />;
     case 'bar':
       return <BarChart labels={data.labels} values={data.values} colors={data.colors} horizontal={data.horizontal} />;
     case 'funnel':
@@ -148,7 +149,10 @@ function WidgetCard({
   onResizeStart: (e: React.PointerEvent, el: HTMLElement, uid: string) => void;
 }) {
   const def = WIDGET_BY_ID[instance.defId];
-  const data = useMemo(() => (def ? def.compute(dataset) : null), [def, dataset]);
+  const data = useMemo(
+    () => (def ? applyWidgetSettings(def.compute(dataset), instance.settings) : null),
+    [def, dataset, instance.settings]
+  );
   const menuRef = useRef<HTMLDivElement | null>(null);
   const sectionRef = useRef<HTMLElement | null>(null);
 
@@ -389,20 +393,22 @@ function DashboardPage({
     [isOwner, dealerId, contacts, dealers, unassigned, dealerLeads]
   );
 
-  const addWidget = (defId: string) => {
+  const addWidget = (defId: string, cfg?: WidgetConfigResult) => {
     const def = WIDGET_BY_ID[defId];
     if (!def) return;
+    const title = cfg?.title?.trim() || def.title;
     setInstances((prev) => [
       ...prev,
       {
         uid: `w-${Date.now()}`,
         defId,
-        title: def.title,
-        size: def.defaultSize,
+        title,
+        size: cfg?.size ?? def.defaultSize,
+        ...(cfg?.settings ? { settings: cfg.settings } : {}),
       },
     ]);
     setDrawerOpen(false);
-    onNotify(`"${def.title}" added to dashboard`);
+    onNotify(`"${title}" added to dashboard`);
   };
 
   const handleLeadStatusChange = async (contactId: number, status: DealerLeadStatus) => {
@@ -639,19 +645,37 @@ function DashboardPage({
         )}
       </div>
 
-      <AddWidgetDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} role={role} onAdd={addWidget} />
+      <AddWidgetDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        role={role}
+        dataset={dataset}
+        onAdd={addWidget}
+      />
 
-      {editUid && (
-        <EditWidgetModal
-          widget={instances.find((w) => w.uid === editUid)}
-          onClose={() => setEditUid(null)}
-          onSave={(uid, title, size) => {
-            setInstances((prev) => prev.map((w) => (w.uid === uid ? { ...w, title, size } : w)));
-            setEditUid(null);
-            onNotify('Widget updated');
-          }}
-        />
-      )}
+      {editUid &&
+        (() => {
+          const w = instances.find((x) => x.uid === editUid);
+          const def = w ? WIDGET_BY_ID[w.defId] : undefined;
+          if (!w || !def) return null;
+          return (
+            <WidgetConfigModal
+              widget={w}
+              def={def}
+              dataset={dataset}
+              onClose={() => setEditUid(null)}
+              onSave={(cfg) => {
+                setInstances((prev) =>
+                  prev.map((x) =>
+                    x.uid === w.uid ? { ...x, title: cfg.title.trim() || x.title, size: cfg.size, settings: cfg.settings } : x
+                  )
+                );
+                setEditUid(null);
+                onNotify('Widget updated');
+              }}
+            />
+          );
+        })()}
 
       {assignOpen && (
         <AssignLeadsModal
@@ -664,87 +688,6 @@ function DashboardPage({
           }}
         />
       )}
-    </div>
-  );
-}
-
-function EditWidgetModal({
-  widget,
-  onClose,
-  onSave,
-}: {
-  widget: WidgetInstance | undefined;
-  onClose: () => void;
-  onSave: (uid: string, title: string, size: WidgetInstance['size']) => void;
-}) {
-  const [title, setTitle] = useState(widget?.title ?? '');
-  const [size, setSize] = useState<WidgetInstance['size']>(widget?.size ?? 'md');
-
-  if (!widget) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-          <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <FaPen className="text-blue-600 text-xs" /> Edit Widget
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-sm">
-            <FaXmark />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <div className="text-[11px] font-semibold text-slate-600 mb-1">Widget title</div>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <div className="text-[11px] font-semibold text-slate-600 mb-1">Size</div>
-            <div className="grid grid-cols-3 gap-2">
-              {(
-                [
-                  ['sm', 'Small', 'w-1/4'],
-                  ['md', 'Medium', 'w-1/2'],
-                  ['lg', 'Full', 'w-full'],
-                ] as const
-              ).map(([key, label, preview]) => (
-                <button
-                  key={key}
-                  onClick={() => setSize(key)}
-                  className={`px-3 py-2 rounded-md border text-[11px] font-medium transition ${
-                    size === key
-                      ? 'bg-blue-50 border-blue-400 text-blue-700'
-                      : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'
-                  }`}
-                >
-                  <span className={`h-1.5 ${preview} bg-slate-300 rounded mb-1.5 mx-auto`} />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-md"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(widget.uid, title.trim() || widget.title, size)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md shadow-sm transition"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
