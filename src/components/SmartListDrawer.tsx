@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   FaArrowsUpDown,
   FaBarsStaggered,
@@ -12,6 +12,7 @@ import { FILTER_GROUPS, SORT_OPTIONS } from '../data/smartListOptions';
 import { TABLE_FILTER_GROUPS } from '../data/tableFields';
 import { GroupedMultiPanel, GroupedSinglePanel } from './FieldPickerPanel';
 import { api, type ApiStaffUser } from '../api';
+import AnchoredPopover from './AnchoredPopover';
 
 export interface SmartList {
   id: string;
@@ -46,6 +47,10 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
   const [openDropdown, setOpenDropdown] = useState<DropdownId | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState<Record<DropdownId, string>>({ filters: '', sort: '', fields: '', dealer: '' });
+  const filtersBtnRef = useRef<HTMLButtonElement>(null);
+  const sortBtnRef = useRef<HTMLButtonElement>(null);
+  const fieldsBtnRef = useRef<HTMLButtonElement>(null);
+  const dealerBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -139,6 +144,7 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
             <label className="block text-xs font-medium text-[#1E293B] mb-1.5">Filters</label>
             <div className="relative">
               <button
+                ref={filtersBtnRef}
                 onClick={() => toggleDropdown('filters')}
                 className="w-full flex items-center justify-between border border-[#E2E8F0] rounded-lg px-3 py-2.5 bg-white hover:border-[#93C5FD] text-xs transition"
               >
@@ -157,20 +163,27 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
                   />
                 </span>
               </button>
-              {openDropdown === 'filters' && (
-                <div className="absolute top-full right-0 left-0 mt-2 bg-white border border-[#E2E8F0] rounded-xl shadow-xl z-40 overflow-hidden">
-                  <GroupedMultiPanel
-                    groups={FILTER_GROUPS}
-                    selected={filters}
-                    onToggle={toggleFilter}
-                    onClear={() => setFilters(new Set())}
-                    collapsedState={collapsed}
-                    onToggleCollapsed={toggleCollapsed}
-                    search={search.filters}
-                    onSearchChange={(v) => setSearch((prev) => ({ ...prev, filters: v }))}
-                  />
-                </div>
-              )}
+              <AnchoredPopover
+                open={openDropdown === 'filters'}
+                anchorEl={filtersBtnRef.current}
+                onClose={() => setOpenDropdown(null)}
+                placement="bottom-start"
+                matchAnchorWidth
+                offset={8}
+                zIndex={100}
+                className="bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden"
+              >
+                <GroupedMultiPanel
+                  groups={FILTER_GROUPS}
+                  selected={filters}
+                  onToggle={toggleFilter}
+                  onClear={() => setFilters(new Set())}
+                  collapsedState={collapsed}
+                  onToggleCollapsed={toggleCollapsed}
+                  search={search.filters}
+                  onSearchChange={(v) => setSearch((prev) => ({ ...prev, filters: v }))}
+                />
+              </AnchoredPopover>
             </div>
           </div>
 
@@ -178,6 +191,7 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
             <label className="block text-xs font-medium text-[#1E293B] mb-1.5">Sort by</label>
             <div className="relative">
               <button
+                ref={sortBtnRef}
                 onClick={() => toggleDropdown('sort')}
                 className="w-full flex items-center justify-between border border-[#E2E8F0] rounded-lg px-3 py-2.5 bg-white hover:border-[#93C5FD] text-xs transition"
               >
@@ -191,20 +205,27 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
                   />
                 </span>
               </button>
-              {openDropdown === 'sort' && (
-                <div className="absolute top-full right-0 left-0 mt-2 bg-white border border-[#E2E8F0] rounded-xl shadow-xl z-40 overflow-hidden">
-                  <GroupedSinglePanel
-                    options={SORT_OPTIONS}
-                    value={sortBy}
-                    onSelect={(v) => {
-                      setSortBy(v);
-                      setOpenDropdown(null);
-                    }}
-                    search={search.sort}
-                    onSearchChange={(v) => setSearch((prev) => ({ ...prev, sort: v }))}
-                  />
-                </div>
-              )}
+              <AnchoredPopover
+                open={openDropdown === 'sort'}
+                anchorEl={sortBtnRef.current}
+                onClose={() => setOpenDropdown(null)}
+                placement="bottom-start"
+                matchAnchorWidth
+                offset={8}
+                zIndex={100}
+                className="bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden"
+              >
+                <GroupedSinglePanel
+                  options={SORT_OPTIONS}
+                  value={sortBy}
+                  onSelect={(v) => {
+                    setSortBy(v);
+                    setOpenDropdown(null);
+                  }}
+                  search={search.sort}
+                  onSearchChange={(v) => setSearch((prev) => ({ ...prev, sort: v }))}
+                />
+              </AnchoredPopover>
             </div>
           </div>
 
@@ -212,6 +233,7 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
             <label className="block text-xs font-medium text-[#1E293B] mb-1.5">Fields</label>
             <div className="relative">
               <button
+                ref={fieldsBtnRef}
                 onClick={() => toggleDropdown('fields')}
                 className="w-full flex items-center justify-between border border-[#E2E8F0] rounded-lg px-3 py-2.5 bg-white hover:border-[#93C5FD] text-xs transition"
               >
@@ -230,20 +252,27 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
                   />
                 </span>
               </button>
-              {openDropdown === 'fields' && (
-                <div className="absolute top-full right-0 left-0 mt-2 bg-white border border-[#E2E8F0] rounded-xl shadow-xl z-40 overflow-hidden">
-                  <GroupedMultiPanel
-                    groups={TABLE_FILTER_GROUPS}
-                    selected={fields}
-                    onToggle={toggleField}
-                    onClear={() => setFields(new Set())}
-                    collapsedState={collapsed}
-                    onToggleCollapsed={toggleCollapsed}
-                    search={search.fields}
-                    onSearchChange={(v) => setSearch((prev) => ({ ...prev, fields: v }))}
-                  />
-                </div>
-              )}
+              <AnchoredPopover
+                open={openDropdown === 'fields'}
+                anchorEl={fieldsBtnRef.current}
+                onClose={() => setOpenDropdown(null)}
+                placement="bottom-start"
+                matchAnchorWidth
+                offset={8}
+                zIndex={100}
+                className="bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden"
+              >
+                <GroupedMultiPanel
+                  groups={TABLE_FILTER_GROUPS}
+                  selected={fields}
+                  onToggle={toggleField}
+                  onClear={() => setFields(new Set())}
+                  collapsedState={collapsed}
+                  onToggleCollapsed={toggleCollapsed}
+                  search={search.fields}
+                  onSearchChange={(v) => setSearch((prev) => ({ ...prev, fields: v }))}
+                />
+              </AnchoredPopover>
             </div>
           </div>
 
@@ -256,6 +285,7 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
             </p>
             <div className="relative">
               <button
+                ref={dealerBtnRef}
                 onClick={() => toggleDropdown('dealer')}
                 className="w-full flex items-center justify-between border border-[#E2E8F0] rounded-lg px-3 py-2.5 bg-white hover:border-[#93C5FD] text-xs transition"
               >
@@ -276,42 +306,49 @@ function SmartListDrawer({ open, onClose, onSave }: SmartListDrawerProps) {
                   />
                 </span>
               </button>
-              {openDropdown === 'dealer' && (
-                <div className="absolute top-full right-0 left-0 mt-2 bg-white border border-[#E2E8F0] rounded-xl shadow-xl z-40 overflow-hidden">
-                  <div className="max-h-64 overflow-y-auto p-1.5">
+              <AnchoredPopover
+                open={openDropdown === 'dealer'}
+                anchorEl={dealerBtnRef.current}
+                onClose={() => setOpenDropdown(null)}
+                placement="bottom-start"
+                matchAnchorWidth
+                offset={8}
+                zIndex={100}
+                className="bg-white border border-[#E2E8F0] rounded-xl shadow-xl overflow-hidden"
+              >
+                <div className="max-h-64 overflow-y-auto p-1.5">
+                  <button
+                    onClick={() => {
+                      setDealerId(0);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition ${
+                      dealerId === 0 ? 'bg-[#2563EB0D] text-[#2563EB] font-semibold' : 'text-[#1E293B] hover:bg-[#F1F5F9]'
+                    }`}
+                  >
+                    Not assigned
+                  </button>
+                  {dealers.length === 0 && (
+                    <p className="px-3 py-2 text-xs text-[#64748B]">No dealers found.</p>
+                  )}
+                  {dealers.map((d) => (
                     <button
+                      key={d.id}
                       onClick={() => {
-                        setDealerId(0);
+                        setDealerId(d.id);
                         setOpenDropdown(null);
                       }}
                       className={`w-full text-left px-3 py-2 rounded-lg text-xs transition ${
-                        dealerId === 0 ? 'bg-[#2563EB0D] text-[#2563EB] font-semibold' : 'text-[#1E293B] hover:bg-[#F1F5F9]'
+                        dealerId === d.id
+                          ? 'bg-[#2563EB0D] text-[#2563EB] font-semibold'
+                          : 'text-[#1E293B] hover:bg-[#F1F5F9]'
                       }`}
                     >
-                      Not assigned
+                      {d.full_name}
                     </button>
-                    {dealers.length === 0 && (
-                      <p className="px-3 py-2 text-xs text-[#64748B]">No dealers found.</p>
-                    )}
-                    {dealers.map((d) => (
-                      <button
-                        key={d.id}
-                        onClick={() => {
-                          setDealerId(d.id);
-                          setOpenDropdown(null);
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs transition ${
-                          dealerId === d.id
-                            ? 'bg-[#2563EB0D] text-[#2563EB] font-semibold'
-                            : 'text-[#1E293B] hover:bg-[#F1F5F9]'
-                        }`}
-                      >
-                        {d.full_name}
-                      </button>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-              )}
+              </AnchoredPopover>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FaArrowsUpDown,
   FaBarsStaggered,
@@ -9,6 +9,7 @@ import {
   FaXmark,
 } from 'react-icons/fa6';
 import { SORT_OPTIONS } from '../data/smartListOptions';
+import AnchoredPopover from './AnchoredPopover';
 
 interface ToolbarProps {
   searchQuery: string;
@@ -37,58 +38,20 @@ function Toolbar({
 }: ToolbarProps) {
   const [sortOpen, setSortOpen] = useState(false);
   const [sortQuery, setSortQuery] = useState('');
-  const [sortPos, setSortPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const sortBtnRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!sortOpen) return;
-    const close = () => {
-      setSortOpen(false);
-      setSortPos(null);
-      setSortQuery('');
-    };
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (sortBtnRef.current?.contains(t) || dropdownRef.current?.contains(t)) return;
-      close();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-    const onViewportChange = () => close();
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('scroll', onViewportChange, true);
-    window.addEventListener('resize', onViewportChange);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('scroll', onViewportChange, true);
-      window.removeEventListener('resize', onViewportChange);
-    };
-  }, [sortOpen]);
 
   useEffect(() => {
     if (sortOpen) searchRef.current?.focus();
   }, [sortOpen]);
 
+  const closeSort = useCallback(() => {
+    setSortOpen(false);
+    setSortQuery('');
+  }, []);
+
   const toggleSort = () => {
-    if (sortOpen) {
-      setSortOpen(false);
-      setSortPos(null);
-      setSortQuery('');
-      return;
-    }
-    const rect = sortBtnRef.current?.getBoundingClientRect();
-    if (rect) {
-      const w = Math.min(256, window.innerWidth - 16);
-      let left = rect.left;
-      if (left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
-      setSortPos({ top: rect.bottom + 6, left, width: w });
-    }
-    setSortOpen(true);
+    setSortOpen((v) => !v);
   };
 
   const filteredSorts = sortQuery.trim()
@@ -97,9 +60,7 @@ function Toolbar({
 
   const pickSort = (s: string) => {
     onSortChange(s);
-    setSortOpen(false);
-    setSortPos(null);
-    setSortQuery('');
+    closeSort();
   };
 
   return (
@@ -143,62 +104,60 @@ function Toolbar({
           )}
         </button>
 
-        {sortOpen && sortPos && (
-          <>
-            <div className="fixed inset-0 z-[60]" onClick={() => setSortOpen(false)} />
-            <div
-              ref={dropdownRef}
-              className="animate-pop fixed z-[70] bg-white border border-slate-200 rounded-lg shadow-xl py-1 text-xs"
-              style={{ top: sortPos.top, left: sortPos.left, width: sortPos.width }}
-            >
-              <div className="px-2 py-1.5 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 border border-slate-200 rounded-md px-2 py-1.5 focus-within:border-blue-400 transition">
-                  <FaMagnifyingGlass className="text-slate-400 text-[10px] flex-shrink-0" />
-                  <input
-                    ref={searchRef}
-                    value={sortQuery}
-                    onChange={(e) => setSortQuery(e.target.value)}
-                    placeholder="Search sort fields..."
-                    className="w-full text-[11px] focus:outline-none"
-                  />
-                  {sortQuery && (
-                    <FaXmark
-                      className="text-slate-400 hover:text-slate-600 cursor-pointer flex-shrink-0"
-                      onClick={() => setSortQuery('')}
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="max-h-[215px] overflow-y-auto py-0.5">
-                {filteredSorts.length === 0 && <div className="px-3 py-2 text-slate-400">No matches</div>}
-                {filteredSorts.map((o) => (
-                  <button
-                    key={o}
-                    onClick={() => pickSort(o)}
-                    className={`w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between gap-2 transition ${
-                      sortBy === o ? 'text-blue-600 font-semibold' : 'text-slate-700'
-                    }`}
-                  >
-                    <span className="truncate">{o}</span>
-                    {sortBy === o && <FaCheck className="text-blue-600 text-[10px] flex-shrink-0" />}
-                  </button>
-                ))}
-              </div>
-
-              {sortBy && (
-                <div className="border-t border-slate-100">
-                  <button
-                    onClick={() => pickSort('')}
-                    className="w-full text-left px-3 py-1.5 text-red-600 hover:bg-red-50 font-medium transition"
-                  >
-                    Clear sort
-                  </button>
-                </div>
+        <AnchoredPopover
+          open={sortOpen}
+          anchorEl={sortBtnRef.current}
+          onClose={closeSort}
+          placement="bottom-start"
+          width={256}
+          className="animate-pop bg-white border border-slate-200 rounded-lg shadow-xl py-1 text-xs"
+        >
+          <div className="px-2 py-1.5 border-b border-slate-100">
+            <div className="flex items-center gap-1.5 border border-slate-200 rounded-md px-2 py-1.5 focus-within:border-blue-400 transition">
+              <FaMagnifyingGlass className="text-slate-400 text-[10px] flex-shrink-0" />
+              <input
+                ref={searchRef}
+                value={sortQuery}
+                onChange={(e) => setSortQuery(e.target.value)}
+                placeholder="Search sort fields..."
+                className="w-full text-[11px] focus:outline-none"
+              />
+              {sortQuery && (
+                <FaXmark
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer flex-shrink-0"
+                  onClick={() => setSortQuery('')}
+                />
               )}
             </div>
-          </>
-        )}
+          </div>
+
+          <div className="max-h-[215px] overflow-y-auto py-0.5">
+            {filteredSorts.length === 0 && <div className="px-3 py-2 text-slate-400">No matches</div>}
+            {filteredSorts.map((o) => (
+              <button
+                key={o}
+                onClick={() => pickSort(o)}
+                className={`w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center justify-between gap-2 transition ${
+                  sortBy === o ? 'text-blue-600 font-semibold' : 'text-slate-700'
+                }`}
+              >
+                <span className="truncate">{o}</span>
+                {sortBy === o && <FaCheck className="text-blue-600 text-[10px] flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+
+          {sortBy && (
+            <div className="border-t border-slate-100">
+              <button
+                onClick={() => pickSort('')}
+                className="w-full text-left px-3 py-1.5 text-red-600 hover:bg-red-50 font-medium transition"
+              >
+                Clear sort
+              </button>
+            </div>
+          )}
+        </AnchoredPopover>
 
         {selectedCount > 0 && (
           <div className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 h-8 rounded-md text-xs whitespace-nowrap flex-shrink-0">

@@ -34,12 +34,19 @@ function UserMenu({ user, onLogout, className }: UserMenuProps) {
 
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
+    const update = () => {
+      const btn = btnRef.current;
+      if (!btn) return;
+      const r = btn.getBoundingClientRect();
+      const next = { top: r.bottom + 8, right: window.innerWidth - r.right };
+      setAnchor((prev) => (prev && prev.top === next.top && prev.right === next.right ? prev : next));
+    };
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
     return () => {
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
     };
   }, [open]);
 

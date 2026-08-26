@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
   FaDownload,
@@ -13,6 +13,7 @@ import {
 import { api, type ApiPortalSubmission, type ApiStaffUser } from '../api';
 import { useAuth } from '../auth';
 import { PROVINCES, citiesForProvince } from '../data/pakistanCities';
+import AnchoredPopover from './AnchoredPopover';
 
 interface PageProps {
   onNotify: (msg: string) => void;
@@ -79,7 +80,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
   const [dealers, setDealers] = useState<ApiStaffUser[]>([]);
   const [assignPick, setAssignPick] = useState<Record<number, number>>({});
   const [openAssign, setOpenAssign] = useState<number | null>(null);
-  const [assignPos, setAssignPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  const assignBtnRefs = useRef<Record<number, HTMLButtonElement | null>>({});
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -449,11 +450,10 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                         <div className="relative inline-block text-left space-x-1.5">
                           {isAdmin && (
                             <button
-                              onClick={(e) => {
-                                const rct = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                setAssignPos({ top: rct.bottom + 6, right: window.innerWidth - rct.right });
-                                setOpenAssign((v) => (v === r.id ? null : r.id));
+                              ref={(el) => {
+                                assignBtnRefs.current[r.id] = el;
                               }}
+                              onClick={() => setOpenAssign((v) => (v === r.id ? null : r.id))}
                               className={`text-[11px] font-bold px-2 py-1 rounded transition ${
                                 openAssign === r.id
                                   ? 'bg-yadea-orange text-white'
@@ -474,48 +474,44 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
                             </button>
                           )}
 
-                          {isAdmin && openAssign === r.id && (
-                            <>
-                              <div
-                                className="fixed inset-0 z-[55]"
-                                onClick={() => setOpenAssign(null)}
-                              />
-                              <div
-                                className="fixed z-[60] bg-white border border-slate-200 rounded-lg shadow-2xl p-2.5 w-56 text-left"
-                                style={{ top: assignPos.top, right: assignPos.right }}
+                          <AnchoredPopover
+                            open={isAdmin && openAssign === r.id}
+                            anchorEl={assignBtnRefs.current[r.id] ?? null}
+                            onClose={() => setOpenAssign(null)}
+                            placement="bottom-end"
+                            width={224}
+                            className="bg-white border border-slate-200 rounded-lg shadow-2xl p-2.5 text-left"
+                          >
+                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
+                              Assign to dealer — {r.code}
+                            </p>
+                            <select
+                              value={assignPick[r.id] ?? 0}
+                              onChange={(e) => setAssignPick((prev) => ({ ...prev, [r.id]: Number(e.target.value) }))}
+                              className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-yadea-orange mb-2"
+                            >
+                              <option value={0}>Select dealer…</option>
+                              {dealers.map((d) => (
+                                <option key={d.id} value={d.id}>{d.full_name}</option>
+                              ))}
+                            </select>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => void assign(r)}
+                                className="flex-1 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
                               >
-                                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
-                                  Assign to dealer — {r.code}
-                                </p>
-                                <select
-                                  value={assignPick[r.id] ?? 0}
-                                  onChange={(e) => setAssignPick((prev) => ({ ...prev, [r.id]: Number(e.target.value) }))}
-                                  className="w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-[11px] outline-none focus:border-yadea-orange mb-2"
+                                Assign & Notify
+                              </button>
+                              {r.assigned_to && (
+                                <button
+                                  onClick={() => void unassign(r)}
+                                  className="flex-1 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-[11px] font-bold py-1.5 rounded-md transition"
                                 >
-                                  <option value={0}>Select dealer…</option>
-                                  {dealers.map((d) => (
-                                    <option key={d.id} value={d.id}>{d.full_name}</option>
-                                  ))}
-                                </select>
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    onClick={() => void assign(r)}
-                                    className="flex-1 bg-yadea-orange hover:bg-yadea-dark text-white text-[11px] font-bold py-1.5 rounded-md transition"
-                                  >
-                                    Assign & Notify
-                                  </button>
-                                  {r.assigned_to && (
-                                    <button
-                                      onClick={() => void unassign(r)}
-                                      className="flex-1 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 text-[11px] font-bold py-1.5 rounded-md transition"
-                                    >
-                                      Remove
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </>
-                          )}
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </AnchoredPopover>
                         </div>
                       </td>
                     </tr>

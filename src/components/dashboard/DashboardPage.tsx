@@ -564,40 +564,6 @@ function DashboardPage({
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        {/* Welcome banner */}
-        {(() => {
-          const h = new Date().getHours();
-          const part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-          const first = user?.first_name || user?.full_name?.split(' ')[0] || 'there';
-          return (
-            <div className="dash-in relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white px-4 sm:px-5 py-3 mb-3 shadow-sm">
-              <div
-                className="absolute -right-6 -top-10 w-36 h-36 rounded-full bg-white/10 pointer-events-none"
-                aria-hidden="true"
-              />
-              <div
-                className="absolute right-16 -bottom-14 w-28 h-28 rounded-full bg-white/5 pointer-events-none"
-                aria-hidden="true"
-              />
-              <div className="relative flex items-center justify-between gap-3 flex-wrap">
-                <div className="min-w-0">
-                  <div className="text-sm sm:text-base font-bold truncate">
-                    {part}, {first}!
-                  </div>
-                  <div className="text-[11px] text-white/80 mt-0.5">
-                    Here is what is happening today ·{' '}
-                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                  </div>
-                </div>
-                <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold bg-white/15 border border-white/25 rounded-full px-2.5 py-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 dash-live-dot" aria-hidden="true" />
-                  Live CRM data
-                </span>
-              </div>
-            </div>
-          );
-        })()}
-
         {editMode && (
           <div className="bg-blue-50 border border-blue-200 text-blue-700 text-[11px] rounded-md px-3 py-2 mb-4 flex items-center justify-between gap-2">
             <span>Editing dashboard — drag widgets to reorder, use the menu on each widget to edit, duplicate, or remove it.</span>

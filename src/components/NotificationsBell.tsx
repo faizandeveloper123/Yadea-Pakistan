@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { FaBell, FaRegBell, FaCheckDouble, FaRegUser, FaComments, FaEnvelope } from 'react-icons/fa6';
 import { useAuth } from '../auth';
 import { api, type ApiNotification } from '../api';
 import { navigate } from '../router';
+import AnchoredPopover from './AnchoredPopover';
 
 interface NotificationsBellProps {
   onNotify?: (msg: string) => void;
@@ -54,7 +54,6 @@ function NotificationsBell({ onNotify }: NotificationsBellProps) {
 
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<{ top: number; right: number } | null>(null);
   const [items, setItems] = useState<ApiNotification[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const lastKnownUnread = useRef<number | null>(null);
@@ -105,24 +104,10 @@ function NotificationsBell({ onNotify }: NotificationsBellProps) {
     };
   }, [refreshCount]);
 
-  // Close the dropdown on scroll/resize so it never floats at stale coords.
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener('scroll', close, true);
-    window.addEventListener('resize', close);
-    return () => {
-      window.removeEventListener('scroll', close, true);
-      window.removeEventListener('resize', close);
-    };
-  }, [open]);
-
+  // Keep the dropdown pinned to the bell on scroll/resize instead of closing,
+  // so it stays open and usable while the page behind it scrolls.
   const openDropdown = async () => {
     const willOpen = !open;
-    if (willOpen && bellBtnRef.current) {
-      const r = bellBtnRef.current.getBoundingClientRect();
-      setAnchor({ top: r.bottom + 8, right: window.innerWidth - r.right });
-    }
     setOpen(willOpen);
     if (willOpen) {
       requestBrowserPermission(onNotify ?? (() => undefined));
@@ -179,15 +164,15 @@ function NotificationsBell({ onNotify }: NotificationsBellProps) {
         )}
       </button>
 
-      {open &&
-        anchor &&
-        createPortal(
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <div
-              className="fixed z-50 w-80 sm:w-96 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden evee-pop"
-              style={{ top: anchor.top, right: anchor.right }}
-            >
+      <AnchoredPopover
+        open={open}
+        anchorEl={bellBtnRef.current}
+        onClose={() => setOpen(false)}
+        placement="bottom-end"
+        width={384}
+        offset={8}
+        className="bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden evee-pop"
+      >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-slate-800">Notifications</span>
@@ -266,10 +251,7 @@ function NotificationsBell({ onNotify }: NotificationsBellProps) {
               Close
             </button>
           </div>
-          </div>
-          </>,
-          document.body
-        )}
+      </AnchoredPopover>
     </div>
   );
 }
