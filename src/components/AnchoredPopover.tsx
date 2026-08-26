@@ -67,6 +67,9 @@ export default function AnchoredPopover({
     if (ph > 0 && top + ph > vh - EDGE) {
       top = Math.max(EDGE, vh - EDGE - ph);
     }
+    // Keep the panel pinned inside the viewport when the anchor scrolls away,
+    // instead of letting it drift off-screen and vanish.
+    if (top < EDGE) top = EDGE;
     setPos((prev) =>
       prev && prev.top === top && prev.left === left && prev.width === w ? prev : { top, left, width: w }
     );
