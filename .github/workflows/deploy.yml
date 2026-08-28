@@ -42,11 +42,19 @@ jobs:
           set -e
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
 
-          # Strip only \r (carriage returns), keep \n (newlines)
-          printf '%s\n' "$SSH_KEY" | sed 's/\r$//' > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          # Debug: show key length and first/last bytes
+          echo "Key length: ${#SSH_KEY} chars"
+          echo "$SSH_KEY" | xxd | tail -3
 
-          # Verify
+          # Write key as-is, then strip only carriage returns
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          sed -i 's/\r//g' ~/.ssh/deploy_key
+
+          echo "File size: $(wc -c < ~/.ssh/deploy_key) bytes"
+          echo "First line: $(head -1 ~/.ssh/deploy_key)"
+          echo "Last line: $(tail -1 ~/.ssh/deploy_key)"
+
+          chmod 600 ~/.ssh/deploy_key
           ssh-keygen -l -f ~/.ssh/deploy_key
 
           ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts 2>/dev/null
