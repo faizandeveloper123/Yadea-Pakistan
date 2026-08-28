@@ -37,6 +37,25 @@
 
 declare(strict_types=1);
 
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'error' => 'Fatal PHP error',
+            'message' => $error['message'],
+            'file' => $error['file'],
+            'line' => $error['line'],
+        ]);
+        exit;
+    }
+});
+
 require __DIR__ . '/config.php';
 
 cors();
@@ -3386,6 +3405,30 @@ switch ($resource) {
             if (!$parts[1]) fail('Submission id required');
             delete_submission(to_int($parts[1]));
         }
+        break;
+
+    case 'health':
+        $info = [
+            'php' => PHP_VERSION,
+            'sapi' => php_sapi_name(),
+            'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'unknown',
+            'db_host' => DB_HOST,
+            'db_name' => DB_NAME,
+            'db_user' => DB_USER,
+            'db_port' => DB_PORT,
+        ];
+        try {
+            $pdo = db();
+            $info['db_status'] = 'connected';
+            $row = $pdo->query('SELECT COUNT(*) AS c FROM contacts')->fetch();
+            $info['contact_count'] = (int)($row['c'] ?? 0);
+            $row2 = $pdo->query('SELECT COUNT(*) AS c FROM staff_users')->fetch();
+            $info['staff_count'] = (int)($row2['c'] ?? 0);
+        } catch (Throwable $e) {
+            $info['db_status'] = 'error';
+            $info['db_error'] = $e->getMessage();
+        }
+        respond($info);
         break;
 
     default:
