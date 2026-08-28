@@ -33,9 +33,6 @@ jobs:
         run: |
           if [ -n "$SMTP_PASS" ]; then
             printf '<?php\ndefine(%s, %s);\n' "'SMTP_PASS'" "'$SMTP_PASS'" > api/mail_secrets.php
-            echo "mail_secrets.php written (password hidden)"
-          else
-            echo "SMTP_PASS secret not set - emails will fail until it is added"
           fi
 
       - name: Deploy to server
@@ -45,14 +42,12 @@ jobs:
           set -e
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
 
-          # Write key from secret, strip all \r and trailing whitespace
-          printf '%s' "$SSH_KEY" | tr -d '\r\n' > ~/.ssh/deploy_key
-          # Re-add newlines at proper positions (every 76 chars won't work for SSH, just keep as-is for OpenSSH format)
-          echo "" >> ~/.ssh/deploy_key
+          # Strip only \r (carriage returns), keep \n (newlines)
+          printf '%s\n' "$SSH_KEY" | sed 's/\r$//' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-          # Verify key fingerprint
-          ssh-keygen -l -f ~/.ssh/deploy_key || { echo "ERROR: SSH key is invalid"; exit 1; }
+          # Verify
+          ssh-keygen -l -f ~/.ssh/deploy_key
 
           ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts 2>/dev/null
 
