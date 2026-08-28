@@ -3416,7 +3416,33 @@ switch ($resource) {
             'db_name' => DB_NAME,
             'db_user' => DB_USER,
             'db_port' => DB_PORT,
+            'doc_root' => $_SERVER['DOCUMENT_ROOT'] ?? 'unknown',
+            'script_name' => $_SERVER['SCRIPT_NAME'] ?? 'unknown',
+            'request_uri' => $_SERVER['REQUEST_URI'] ?? 'unknown',
         ];
+        // Show the deployed dist layout so asset-serving issues are visible.
+        $distDirs = ['/var/www/yadea-pakistan/dist', '/var/www/yadea-pakistan/Yadea', '/var/www/yadea-pakistan'];
+        $layout = [];
+        foreach ($distDirs as $d) {
+            if (is_dir($d)) {
+                $names = @scandir($d);
+                if ($names === false) {
+                    $layout[$d] = 'unreadable';
+                    continue;
+                }
+                $names = array_values(array_diff($names, ['.', '..']));
+                $names = array_slice($names, 0, 30);
+                $detail = [];
+                foreach ($names as $n) {
+                    $p = $d . '/' . $n;
+                    $detail[] = (is_dir($p) ? '[dir] ' : '[file] ') . $n;
+                }
+                $layout[$d] = $detail;
+            } else {
+                $layout[$d] = 'missing';
+            }
+        }
+        $info['dist_layout'] = $layout;
         try {
             $pdo = db();
             $info['db_status'] = 'connected';
