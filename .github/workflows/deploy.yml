@@ -48,32 +48,49 @@ jobs:
 
           ssh-keyscan -H 81.17.101.93 >> ~/.ssh/known_hosts 2>/dev/null
 
-          # Package files
+          # Step 1: Create MySQL user if needed (MariaDB root uses unix_socket auth)
+          ssh -i ~/.ssh/deploy_key root@81.17.101.93 bash << 'SERVERFIX'
+          set -e
+          # Try creating user (ignore error if exists)
+          mysql -u root -e "
+            CREATE USER IF NOT EXISTS 'evee'@'localhost' IDENTIFIED BY 'EveeCrm2026!';
+            GRANT ALL PRIVILEGES ON evee_crm.* TO 'evee'@'localhost';
+            FLUSH PRIVILEGES;
+          " 2>/dev/null || echo "User creation skipped (may already exist)"
+          # Verify the user works
+          mysql -u evee -p'EveeCrm2026!' evee_crm -e "SELECT COUNT(*) AS ok FROM contacts" && echo "DB_USER_OK" || echo "DB_USER_FAIL"
+          SERVERFIX
+
+          # Step 2: Package files
           rm -rf /tmp/site && mkdir -p /tmp/site
           cp -r dist/* /tmp/site/
           cp -r api /tmp/site/api
           tar -czf /tmp/site.tar.gz -C /tmp/site .
 
-          # Backup config on server
+          # Step 3: Backup mail config on server
           ssh -i ~/.ssh/deploy_key root@81.17.101.93 '
-            cp /var/www/yadea-pakistan/api/config.php /tmp/config_backup.php 2>/dev/null || true
             cp /var/www/yadea-pakistan/api/mail_config.php /tmp/mail_backup.php 2>/dev/null || true
           '
 
-          # Upload
+          # Step 4: Upload
           scp -i ~/.ssh/deploy_key /tmp/site.tar.gz root@81.17.101.93:/tmp/site.tar.gz
 
-          # Extract to dist + restore config + restart PHP-FPM
-          ssh -i ~/.ssh/deploy_key root@81.17.101.93 '
-            rm -rf /var/www/yadea-pakistan/dist
-            mkdir -p /var/www/yadea-pakistan/dist
-            tar -xzf /tmp/site.tar.gz -C /var/www/yadea-pakistan/dist/
-            rm -rf /var/www/yadea-pakistan/api
-            mv /var/www/yadea-pakistan/dist/api /var/www/yadea-pakistan/api
-            cp /tmp/config_backup.php /var/www/yadea-pakistan/api/config.php 2>/dev/null || true
-            cp /tmp/mail_backup.php /var/www/yadea-pakistan/api/mail_config.php 2>/dev/null || true
-            chown -R www-data:www-data /var/www/yadea-pakistan
-            rm -f /tmp/site.tar.gz /tmp/config_backup.php /tmp/mail_backup.php
-            systemctl reload php8.3-fpm
-            echo DEPLOY_OK
-          '
+          # Step 5: Extract, fix DB creds in config.php, restore mail, restart PHP-FPM
+          ssh -i ~/.ssh/deploy_key root@81.17.101.93 bash << 'SERVERDEPLOY'
+          set -e
+          rm -rf /var/www/yadea-pakistan/dist
+          mkdir -p /var/www/yadea-pakistan/dist
+          tar -xzf /tmp/site.tar.gz -C /var/www/yadea-pakistan/dist/
+          rm -rf /var/www/yadea-pakistan/api
+          mv /var/www/yadea-pakistan/dist/api /var/www/yadea-pakistan/api
+          cp /tmp/mail_backup.php /var/www/yadea-pakistan/api/mail_config.php 2>/dev/null || true
+
+          # Fix DB credentials in config.php (replace XAMPP defaults with production values)
+          sed -i "s/define('DB_USER',.*$/define('DB_USER', getenv('DB_USER') ?: 'evee');/" /var/www/yadea-pakistan/api/config.php
+          sed -i "s/define('DB_PASS',.*$/define('DB_PASS', getenv('DB_PASS') ?: 'EveeCrm2026!');/" /var/www/yadea-pakistan/api/config.php
+
+          chown -R www-data:www-data /var/www/yadea-pakistan
+          rm -f /tmp/site.tar.gz /tmp/mail_backup.php
+          systemctl reload php8.3-fpm
+          echo DEPLOY_OK
+          SERVERDEPLOY
