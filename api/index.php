@@ -3443,6 +3443,22 @@ switch ($resource) {
             }
         }
         $info['dist_layout'] = $layout;
+        // Read nginx config so server routing is fully visible.
+        $nginx = [];
+        foreach (['/etc/nginx/sites-enabled/', '/etc/nginx/conf.d/'] as $d) {
+            if (!is_dir($d)) continue;
+            $files = @scandir($d);
+            if ($files === false) continue;
+            foreach ($files as $f) {
+                if ($f === '.' || $f === '..') continue;
+                $p = rtrim($d, '/') . '/' . $f;
+                $body = @file_get_contents($p);
+                if ($body !== false) {
+                    $nginx[$p] = $body;
+                }
+            }
+        }
+        $info['nginx_config'] = $nginx;
         try {
             $pdo = db();
             $info['db_status'] = 'connected';
