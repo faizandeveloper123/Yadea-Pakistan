@@ -47,7 +47,12 @@ jobs:
           SSH_KEY: ${{ secrets.CONTABO_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          # Handle both raw key and base64-encoded key (avoids Windows CRLF issues)
+          if echo "$SSH_KEY" | grep -q 'BEGIN OPENSSH PRIVATE KEY'; then
+            echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          else
+            echo "$SSH_KEY" | base64 -d | tr -d '\r' > ~/.ssh/id_ed25519
+          fi
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts 2>/dev/null
 
