@@ -35,31 +35,45 @@ jobs:
             printf "<?php\ndefine('SMTP_PASS', '%s');\n" "$SMTP_PASS" > api/mail_secrets.php
           fi
 
-      - name: Deploy to server
+      - name: Deploy to 81.17.101.93 (yadea.biztrack.uk)
         env:
           SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
           set -euo pipefail
 
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-
           echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keygen -l -f ~/.ssh/deploy_key
 
           ssh-keyscan -H 81.17.101.93 >> ~/.ssh/known_hosts 2>/dev/null
 
+          # Package files
           rm -rf /tmp/site && mkdir -p /tmp/site
           cp -r dist/* /tmp/site/
-          cp logo.svg /tmp/site/ 2>/dev/null || true
           cp -r api /tmp/site/api
           tar -czf /tmp/site.tar.gz -C /tmp/site .
 
-          scp -i ~/.ssh/deploy_key /tmp/site.tar.gz root@81.17.101.93:/tmp/site.tar.gz
+          # Backup config on server
           ssh -i ~/.ssh/deploy_key root@81.17.101.93 '
-            rm -rf /var/www/yadea
-            mkdir -p /var/www/yadea
-            tar -xzf /tmp/site.tar.gz -C /var/www/yadea
-            rm /tmp/site.tar.gz
+            cp /var/www/yadea-pakistan/api/config.php /tmp/config_backup.php 2>/dev/null || true
+            cp /var/www/yadea-pakistan/api/mail_config.php /tmp/mail_backup.php 2>/dev/null || true
+          '
+
+          # Upload
+          scp -i ~/.ssh/deploy_key /tmp/site.tar.gz root@81.17.101.93:/tmp/site.tar.gz
+
+          # Extract to dist + restore config + restart PHP-FPM
+          ssh -i ~/.ssh/deploy_key root@81.17.101.93 '
+            rm -rf /var/www/yadea-pakistan/dist
+            mkdir -p /var/www/yadea-pakistan/dist
+            tar -xzf /tmp/site.tar.gz -C /var/www/yadea-pakistan/dist/
+            rm -rf /var/www/yadea-pakistan/api
+            mv /var/www/yadea-pakistan/dist/api /var/www/yadea-pakistan/api
+            cp /tmp/config_backup.php /var/www/yadea-pakistan/api/config.php 2>/dev/null || true
+            cp /tmp/mail_backup.php /var/www/yadea-pakistan/api/mail_config.php 2>/dev/null || true
+            chown -R www-data:www-data /var/www/yadea-pakistan
+            rm -f /tmp/site.tar.gz /tmp/config_backup.php /tmp/mail_backup.php
+            systemctl reload php8.3-fpm
             echo DEPLOY_OK
           '
