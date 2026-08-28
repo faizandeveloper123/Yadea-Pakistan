@@ -40,12 +40,23 @@ jobs:
 
       - name: Deploy to server
         env:
-          SSH_KEY_B64: ${{ secrets.CONTABO_SSH_KEY }}
+          SSH_KEY: ${{ secrets.CONTABO_SSH_KEY }}
         run: |
           set -e
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
+
+          # Try base64 first; if decoded result doesn't look like a key, use raw
+          DECODED=$(echo "$SSH_KEY" | base64 -d 2>/dev/null || true)
+          if echo "$DECODED" | grep -q 'BEGIN OPENSSH PRIVATE KEY'; then
+            echo "$DECODED" > ~/.ssh/deploy_key
+          else
+            echo "$SSH_KEY" > ~/.ssh/deploy_key
+          fi
           chmod 600 ~/.ssh/deploy_key
+
+          # Verify key loaded
+          ssh-keygen -l -f ~/.ssh/deploy_key || { echo "ERROR: SSH key invalid"; exit 1; }
+
           ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts 2>/dev/null
 
           rm -rf /tmp/site && mkdir -p /tmp/site
