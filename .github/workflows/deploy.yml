@@ -94,3 +94,56 @@ jobs:
           systemctl reload php8.3-fpm
           echo DEPLOY_OK
           SERVERDEPLOY
+
+          # Step 6: Ensure nginx serves the built SPA assets under /Yadea/ too.
+          # The SPA is built with base './' and served at the site root by nginx
+          # (root /var/www/yadea-pakistan/dist), but the same build must also work
+          # when the page is opened at https://yadea.biztrack.uk/Yadea/ (the URL the
+          # CRM has shipped under). At that path a relative reference ./assets/*.js
+          # resolves to /Yadea/assets/* — nginx only routes /Yadea/api/ to PHP, so
+          # those asset requests fall through to the SPA catch-all and come back as
+          # index.html instead of the real JS/CSS, and the app never boots.
+          # Add a plain prefix location that aliases /Yadea/ onto the dist folder;
+          # the regex locations for /Yadea/api/index.php and /Yadea/api/*.php are
+          # still evaluated first (nginx checks regex before non-^~ prefixes), so the
+          # API keeps working unchanged.
+          ssh -i ~/.ssh/deploy_key root@81.17.101.93 bash << 'NGINXFIX'
+          set -e
+          CFG=/etc/nginx/sites-enabled/biztrack-yadea
+          cp "$CFG" /tmp/biztrack-yadea.bak
+
+          if grep -q "# yadea static assets (managed by deploy)" "$CFG"; then
+              echo NGINX_ALREADY_PATCHED
+          else
+              # writes the snippet, then python inserts it before "location /"
+              cat > /tmp/yadea-location.conf << 'BLOCK'
+          # yadea static assets (managed by deploy)
+          location /Yadea/ {
+              alias /var/www/yadea-pakistan/dist/;
+              index index.html;
+              try_files $uri $uri/ /index.html;
+          }
+
+          BLOCK
+              python3 - "$CFG" /tmp/yadea-location.conf << 'PY'
+          import sys
+          path, snip = sys.argv[1], sys.argv[2]
+          with open(snip, encoding='utf-8') as f:
+              block = f.read()
+          with open(path, encoding='utf-8') as f:
+              lines = f.readlines()
+          for i, line in enumerate(lines):
+              if line.strip().startswith('location / {'):
+                  lines[i:i] = [block]
+                  break
+          with open(path, 'w', encoding='utf-8') as f:
+              f.writelines(lines)
+          PY
+              rm -f /tmp/yadea-location.conf
+              echo NGINX_PATCHED
+          fi
+
+          nginx -t && systemctl reload nginx || { cp /tmp/biztrack-yadea.bak "$CFG"; nginx -t && systemctl reload nginx; rm -f /tmp/biztrack-yadea.bak; echo NGINX_REVERTED; exit 1; }
+          rm -f /tmp/biztrack-yadea.bak
+          echo NGINX_OK
+          NGINXFIX
