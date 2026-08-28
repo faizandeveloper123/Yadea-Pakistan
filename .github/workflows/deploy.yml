@@ -38,19 +38,21 @@ jobs:
             echo "SMTP_PASS secret not set - emails will fail until it is added"
           fi
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.CONTABO_SSH_KEY }}
-
-      - name: Add host key
-        run: ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts
-
       - name: Deploy to server
+        env:
+          SSH_KEY_B64: ${{ secrets.CONTABO_SSH_KEY }}
         run: |
+          set -e
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts 2>/dev/null
+
           rm -rf /tmp/site && mkdir -p /tmp/site
           cp -r dist/. /tmp/site/
           cp logo.svg /tmp/site/ 2>/dev/null || true
           cp -r api /tmp/site/api
           tar -czf /tmp/site.tar.gz -C /tmp/site .
-          cat /tmp/site.tar.gz | ssh -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=6 root@169.58.191.84 "cat > /tmp/site.tar.gz && rm -rf /opt/lampp/htdocs/Yadea && mkdir -p /opt/lampp/htdocs/Yadea && tar -xzf /tmp/site.tar.gz -C /opt/lampp/htdocs/Yadea && chown -R root:root /opt/lampp/htdocs/Yadea && echo DEPLOY_OK"
+
+          scp -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key /tmp/site.tar.gz root@169.58.191.84:/tmp/site.tar.gz
+          ssh -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new -i ~/.ssh/deploy_key root@169.58.191.84 "rm -rf /opt/lampp/htdocs/Yadea && mkdir -p /opt/lampp/htdocs/Yadea && tar -xzf /tmp/site.tar.gz -C /opt/lampp/htdocs/Yadea && chown -R root:root /opt/lampp/htdocs/Yadea && echo DEPLOY_OK"
