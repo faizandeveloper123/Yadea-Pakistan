@@ -80,6 +80,26 @@ export default function PublicFormPage({ data, formId }: { data?: string; formId
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  /** Per-field validation messages keyed by element label. */
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  /** Update a field value and clear its validation error when the user types. */
+  const updateValue = (label: string, value: string) => {
+    setValues((p) => ({ ...p, [label]: value }));
+    if (fieldErrors[label]) {
+      setFieldErrors((p) => {
+        const n = { ...p };
+        delete n[label];
+        return n;
+      });
+    }
+  };
+
+  /** Border/ring classes turn rose + show an error for required fields left empty. */
+  const inputClass = (label: string) =>
+    `w-full px-3 py-2 border rounded-md text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none ${
+      fieldErrors[label] ? 'border-rose-400 ring-1 ring-rose-200' : 'border-slate-300'
+    }`;
   /** Dealer credentials created for this submission (dealership forms only). */
   const [dealer, setDealer] = useState<{ email: string; password: string } | null>(null);
   const [countdown, setCountdown] = useState(5);
@@ -134,6 +154,27 @@ export default function PublicFormPage({ data, formId }: { data?: string; formId
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields before anything else — no submission until every
+    // required field carries a non-empty value. Buttons are never checked.
+    const errs: Record<string, string> = {};
+    for (const el of form.elements) {
+      if (el.type === 'button') continue;
+      if (el.required && !(values[el.label] ?? '').trim()) {
+        errs[el.label] =
+          el.type === 'checkbox' || el.type === 'radio' || el.type === 'tnc'
+            ? 'Please select an option'
+            : 'This field is required';
+      }
+    }
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setErrorMsg('');
+      setStatus('idle');
+      return;
+    }
+    setFieldErrors({});
+
     setStatus('submitting');
     setErrorMsg('');
     try {
@@ -343,81 +384,116 @@ export default function PublicFormPage({ data, formId }: { data?: string; formId
                       </label>
                     )}
                     {el.type === 'textarea' ? (
-                      <textarea
-                        rows={3}
-                        value={values[el.label] ?? ''}
-                        onChange={(e) => setValues((p) => ({ ...p, [el.label]: e.target.value }))}
-                        placeholder={el.placeholder || 'Enter response...'}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
-                      />
-                    ) : el.type === 'single_dropdown' || el.type === 'multi_dropdown' || el.type === 'select' ? (
-                      <select
-                        value={values[el.label] ?? ''}
-                        onChange={(e) => setValues((p) => ({ ...p, [el.label]: e.target.value }))}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
-                      >
-                        <option value="">{el.placeholder || 'Select an option'}</option>
-                        {(el.options && el.options.length > 0 ? el.options : DEFAULT_OPTIONS).map((o) => (
-                          <option key={o} value={o}>
-                            {o}
-                          </option>
-                        ))}
-                      </select>
-                    ) : el.type === 'checkbox' ? (
-                      <div className="space-y-1.5">
-                        {(el.options && el.options.length > 0 ? el.options : DEFAULT_OPTIONS).map((o) => (
-                          <label key={o} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              value={o}
-                              onChange={() => setValues((p) => ({ ...p, [el.label]: o }))}
-                              className="rounded border-slate-300 text-blue-600"
-                            />
-                            <span className="text-sm text-slate-600 leading-tight">{o}</span>
-                          </label>
-                        ))}
-                      </div>
-                    ) : el.type === 'radio' ? (
-                      <div className="space-y-1.5">
-                        {(el.options && el.options.length > 0 ? el.options : DEFAULT_OPTIONS).map((o) => (
-                          <label key={o} className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              name={el.label}
-                              value={o}
-                              onChange={() => setValues((p) => ({ ...p, [el.label]: o }))}
-                              className="text-blue-600"
-                            />
-                            <span className="text-sm text-slate-600">{o}</span>
-                          </label>
-                        ))}
-                      </div>
-                    ) : el.type === 'date' || el.type === 'date_picker' ? (
-                      <div className="relative">
-                        <input
-                          type="date"
+                      <>
+                        <textarea
+                          rows={3}
                           value={values[el.label] ?? ''}
-                          onChange={(e) => setValues((p) => ({ ...p, [el.label]: e.target.value }))}
-                          className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
+                          onChange={(e) => updateValue(el.label, e.target.value)}
+                          placeholder={el.placeholder || 'Enter response...'}
+                          className={inputClass(el.label)}
                         />
-                        <FaRegCalendar className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+                        {fieldErrors[el.label] && (
+                          <p className="text-xs text-rose-600 mt-1">{fieldErrors[el.label]}</p>
+                        )}
+                      </>
+                    ) : el.type === 'single_dropdown' || el.type === 'multi_dropdown' || el.type === 'select' ? (
+                      <>
+                        <select
+                          value={values[el.label] ?? ''}
+                          onChange={(e) => updateValue(el.label, e.target.value)}
+                          className={inputClass(el.label)}
+                        >
+                          <option value="">{el.placeholder || 'Select an option'}</option>
+                          {(el.options && el.options.length > 0 ? el.options : DEFAULT_OPTIONS).map((o) => (
+                            <option key={o} value={o}>
+                              {o}
+                            </option>
+                          ))}
+                        </select>
+                        {fieldErrors[el.label] && (
+                          <p className="text-xs text-rose-600 mt-1">{fieldErrors[el.label]}</p>
+                        )}
+                      </>
+                    ) : el.type === 'checkbox' ? (
+                      <>
+                        <div className="space-y-1.5">
+                          {(el.options && el.options.length > 0 ? el.options : DEFAULT_OPTIONS).map((o) => (
+                            <label key={o} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                value={o}
+                                onChange={() => updateValue(el.label, o)}
+                                className="rounded border-slate-300 text-blue-600"
+                              />
+                              <span className="text-sm text-slate-600 leading-tight">{o}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {fieldErrors[el.label] && (
+                          <p className="text-xs text-rose-600 mt-1">{fieldErrors[el.label]}</p>
+                        )}
+                      </>
+                    ) : el.type === 'radio' ? (
+                      <>
+                        <div className="space-y-1.5">
+                          {(el.options && el.options.length > 0 ? el.options : DEFAULT_OPTIONS).map((o) => (
+                            <label key={o} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                name={el.label}
+                                value={o}
+                                onChange={() => updateValue(el.label, o)}
+                                className="text-blue-600"
+                              />
+                              <span className="text-sm text-slate-600">{o}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {fieldErrors[el.label] && (
+                          <p className="text-xs text-rose-600 mt-1">{fieldErrors[el.label]}</p>
+                        )}
+                      </>
+                    ) : el.type === 'date' || el.type === 'date_picker' ? (
+                      <div>
+                        <div className="relative">
+                          <input
+                            type="date"
+                            value={values[el.label] ?? ''}
+                            onChange={(e) => updateValue(el.label, e.target.value)}
+                            className={`${inputClass(el.label)} pl-9`}
+                          />
+                          <FaRegCalendar className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+                        </div>
+                        {fieldErrors[el.label] && (
+                          <p className="text-xs text-rose-600 mt-1">{fieldErrors[el.label]}</p>
+                        )}
                       </div>
                     ) : TEXT_LIKE.includes(el.type) ? (
-                      <input
-                        type={el.type === 'email' ? 'email' : el.type === 'phone' ? 'tel' : 'text'}
-                        value={values[el.label] ?? ''}
-                        onChange={(e) => setValues((p) => ({ ...p, [el.label]: e.target.value }))}
-                        placeholder={el.placeholder || 'Enter response...'}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
-                      />
+                      <>
+                        <input
+                          type={el.type === 'email' ? 'email' : el.type === 'phone' ? 'tel' : 'text'}
+                          value={values[el.label] ?? ''}
+                          onChange={(e) => updateValue(el.label, e.target.value)}
+                          placeholder={el.placeholder || 'Enter response...'}
+                          className={inputClass(el.label)}
+                        />
+                        {fieldErrors[el.label] && (
+                          <p className="text-xs text-rose-600 mt-1">{fieldErrors[el.label]}</p>
+                        )}
+                      </>
                     ) : (
-                      <input
-                        type="text"
-                        value={values[el.label] ?? ''}
-                        onChange={(e) => setValues((p) => ({ ...p, [el.label]: e.target.value }))}
-                        placeholder={el.placeholder || 'Enter response...'}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm text-slate-800 focus:ring-1 focus:ring-blue-500 outline-none"
-                      />
+                      <>
+                        <input
+                          type="text"
+                          value={values[el.label] ?? ''}
+                          onChange={(e) => updateValue(el.label, e.target.value)}
+                          placeholder={el.placeholder || 'Enter response...'}
+                          className={inputClass(el.label)}
+                        />
+                        {fieldErrors[el.label] && (
+                          <p className="text-xs text-rose-600 mt-1">{fieldErrors[el.label]}</p>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
