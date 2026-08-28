@@ -27,10 +27,6 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      # The mailbox password never lives in git. It is injected at deploy time
-      # from the SMTP_PASS repository secret into api/mail_secrets.php
-      # (gitignored locally). Add/update it under:
-      #   Repo -> Settings -> Secrets and variables -> Actions -> SMTP_PASS
       - name: Write SMTP secrets (api/mail_secrets.php)
         env:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
@@ -42,19 +38,13 @@ jobs:
             echo "SMTP_PASS secret not set - emails will fail until it is added"
           fi
 
-      - name: Set up SSH key
-        env:
-          SSH_KEY: ${{ secrets.CONTABO_SSH_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          # Handle both raw key and base64-encoded key (avoids Windows CRLF issues)
-          if echo "$SSH_KEY" | grep -q 'BEGIN OPENSSH PRIVATE KEY'; then
-            echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
-          else
-            echo "$SSH_KEY" | base64 -d | tr -d '\r' > ~/.ssh/id_ed25519
-          fi
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts 2>/dev/null
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.CONTABO_SSH_KEY }}
+
+      - name: Add host key
+        run: ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts
 
       - name: Deploy to server
         run: |
@@ -63,4 +53,4 @@ jobs:
           cp logo.svg /tmp/site/ 2>/dev/null || true
           cp -r api /tmp/site/api
           tar -czf /tmp/site.tar.gz -C /tmp/site .
-          cat /tmp/site.tar.gz | ssh -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_ed25519 root@169.58.191.84 "cat > /tmp/site.tar.gz && rm -rf /opt/lampp/htdocs/Yadea && mkdir -p /opt/lampp/htdocs/Yadea && tar -xzf /tmp/site.tar.gz -C /opt/lampp/htdocs/Yadea && chown -R root:root /opt/lampp/htdocs/Yadea && mkdir -p /root/.ssh && chmod 700 /root/.ssh && grep -q 'evee-opencode' /root/.ssh/authorized_keys 2>/dev/null || echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAJP3IceLZJxwQfMjK498h08Ov3y5GWVrqd15dsxRbe4 evee-opencode' >> /root/.ssh/authorized_keys; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; echo DEPLOY_OK"
+          cat /tmp/site.tar.gz | ssh -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=6 root@169.58.191.84 "cat > /tmp/site.tar.gz && rm -rf /opt/lampp/htdocs/Yadea && mkdir -p /opt/lampp/htdocs/Yadea && tar -xzf /tmp/site.tar.gz -C /opt/lampp/htdocs/Yadea && chown -R root:root /opt/lampp/htdocs/Yadea && echo DEPLOY_OK"
