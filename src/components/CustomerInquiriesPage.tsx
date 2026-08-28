@@ -16,6 +16,7 @@ import {
   type ApiStaffUser,
 } from '../api';
 import { useAuth } from '../auth';
+import { sendSmtpEmail } from '../services/smtp';
 import AnchoredPopover from './AnchoredPopover';
 
 interface PageProps {
@@ -136,7 +137,7 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
 
     setSaving(true);
     try {
-      await api.createPortalSubmission({
+      const res = await api.createPortalSubmission({
         type: 'inquiry',
         name: form.custName.trim(),
         email: form.custEmail.trim(),
@@ -148,6 +149,25 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
         created_by: user?.id ?? null,
       });
       onNotify('Support ticket submitted');
+
+      // Send confirmation email to submitter
+      const refCode = res.data?.code || '';
+      sendSmtpEmail({
+        to: [form.custEmail.trim()],
+        subject: `Support Ticket ${refCode} Received — Yadea Pakistan`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+          <h2 style="color:#12161a;">We've Received Your Support Ticket</h2>
+          <p>Dear ${form.custName.trim()},</p>
+          <p>Thank you for reaching out to Yadea Pakistan. Your support ticket has been successfully submitted.</p>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
+            <p style="margin:4px 0;"><strong>Reference Code:</strong> ${refCode}</p>
+            <p style="margin:4px 0;"><strong>Problem Category:</strong> ${form.problemCategory}</p>
+            <p style="margin:4px 0;"><strong>Chassis Number:</strong> ${form.chassisNumber.trim()}</p>
+          </div>
+          <p>Our team will review your ticket and respond within 48 business hours.</p>
+          <p style="color:#64748b;font-size:12px;margin-top:24px;">Yadea Pakistan — Driving Sustainable Mobility Forward</p>
+        </div>`,
+      }).catch(() => undefined);
       setForm({ chassisNumber: '', orderNumber: '', problemCategory: '', custName: '', custEmail: '', custPhone: '', custReason: '' });
       setConsent(false);
       await load();
@@ -163,8 +183,33 @@ function CustomerInquiriesPage({ onNotify }: PageProps) {
     if (!dealerId) return onNotify('Pick a dealer first');
     try {
       await api.assignPortalSubmission(row.id, dealerId);
-      const name = dealers.find((d) => d.id === dealerId)?.full_name ?? 'dealer';
+      const dealer = dealers.find((d) => d.id === dealerId);
+      const name = dealer?.full_name ?? 'dealer';
       onNotify(`Inquiry ${row.code} assigned to ${name} — dealer notified`);
+
+      // Send assignment notification email to dealer
+      if (dealer?.email) {
+        sendSmtpEmail({
+          to: [dealer.email],
+          subject: `New Inquiry Assigned to You — ${row.code}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+            <h2 style="color:#12161a;">You've Been Assigned a New Inquiry</h2>
+            <p>Dear ${dealer.full_name},</p>
+            <p>A new customer inquiry has been assigned to you. Please review and respond within 48 business hours.</p>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
+              <p style="margin:4px 0;"><strong>Reference Code:</strong> ${row.code}</p>
+              <p style="margin:4px 0;"><strong>Customer Name:</strong> ${row.name}</p>
+              <p style="margin:4px 0;"><strong>Email:</strong> ${row.email}</p>
+              <p style="margin:4px 0;"><strong>Phone:</strong> ${row.phone}</p>
+              <p style="margin:4px 0;"><strong>Problem Category:</strong> ${row.problem_category || 'N/A'}</p>
+              <p style="margin:4px 0;"><strong>Reason:</strong> ${row.reason || 'N/A'}</p>
+            </div>
+            <p>Please log in to the CRM to view the full details and take action.</p>
+            <p style="color:#64748b;font-size:12px;margin-top:24px;">Yadea Pakistan — Driving Sustainable Mobility Forward</p>
+          </div>`,
+        }).catch(() => undefined);
+      }
+
       setAssignPick((prev) => ({ ...prev, [row.id]: 0 }));
       setOpenAssign(null);
       await load();

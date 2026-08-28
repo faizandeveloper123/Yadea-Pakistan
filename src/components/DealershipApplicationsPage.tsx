@@ -13,6 +13,7 @@ import {
 import { api, type ApiPortalSubmission, type ApiStaffUser } from '../api';
 import { useAuth } from '../auth';
 import { PROVINCES, citiesForProvince } from '../data/pakistanCities';
+import { sendSmtpEmail } from '../services/smtp';
 import AnchoredPopover from './AnchoredPopover';
 
 interface PageProps {
@@ -124,7 +125,7 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
 
     setSaving(true);
     try {
-      await api.createPortalSubmission({
+      const res = await api.createPortalSubmission({
         type: 'dealership',
         name: `${form.salutation} ${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
         email: form.email.trim(),
@@ -141,6 +142,26 @@ function DealershipApplicationsPage({ onNotify }: PageProps) {
         created_by: user?.id ?? null,
       });
       onNotify('Dealership application submitted');
+
+      // Send confirmation email to applicant
+      const refCode = res.data?.code || '';
+      sendSmtpEmail({
+        to: [form.email.trim()],
+        subject: `Dealership Application ${refCode} Received — Yadea Pakistan`,
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+          <h2 style="color:#12161a;">Thank You for Your Dealership Application</h2>
+          <p>Dear ${form.salutation} ${form.firstName.trim()} ${form.lastName.trim()},</p>
+          <p>We have received your dealership application. Our team will review it and get back to you soon.</p>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
+            <p style="margin:4px 0;"><strong>Reference Code:</strong> ${refCode}</p>
+            <p style="margin:4px 0;"><strong>Business Name:</strong> ${form.businessName.trim()}</p>
+            <p style="margin:4px 0;"><strong>Province:</strong> ${form.province || 'N/A'}</p>
+            <p style="margin:4px 0;"><strong>City:</strong> ${form.city || 'N/A'}</p>
+          </div>
+          <p>If you have any questions, please don't hesitate to reach out.</p>
+          <p style="color:#64748b;font-size:12px;margin-top:24px;">Yadea Pakistan — Driving Sustainable Mobility Forward</p>
+        </div>`,
+      }).catch(() => undefined);
       setForm((prev) => ({
         ...prev,
         firstName: '', lastName: '', email: '', phone: '', businessName: '', address: '',
