@@ -15,7 +15,7 @@ import {
   FaXmark,
 } from 'react-icons/fa6';
 import type { ImportResult, ImportSheetData } from '../types';
-import { pickColumn } from '../utils';
+import { pickNormalizedColumn } from '../utils';
 
 const steps = [
   { num: 1, title: 'Start', subtitle: 'Select objects to import' },
@@ -129,7 +129,7 @@ function ImportWizard({ open, onClose, onImport, onNotify }: ImportWizardProps) 
 
       setSheets(parsed);
       const allHeaders = Array.from(new Set(parsed.flatMap((s) => s.headers)));
-      setCityColumn(pickColumn(allHeaders, [/city/i]) ?? null);
+      setCityColumn(pickNormalizedColumn(allHeaders, [/city/i]) ?? null);
       setPreviewSheet(0);
       onNotify(`"${f.name}" read successfully (${parsed.length} sheet${parsed.length === 1 ? '' : 's'})`);
     } catch (err) {

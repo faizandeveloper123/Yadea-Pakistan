@@ -205,6 +205,26 @@ export function pickColumn(headers: string[], patterns: RegExp[]): string | unde
   return undefined;
 }
 
+/** Normalize a header (Excel export can give `first_name`, `First-Name`, `FullName`). */
+export function normalizeHeader(h: string): string {
+  return h
+    .trim()
+    .toLowerCase()
+    .replace(/[_\-\s]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Find a column whose normalized header matches any pattern, returning the real header. */
+export function pickNormalizedColumn(headers: string[], patterns: RegExp[]): string | undefined {
+  const norm = headers.map(normalizeHeader);
+  for (const p of patterns) {
+    const idx = norm.findIndex((h) => p.test(h));
+    if (idx >= 0) return headers[idx];
+  }
+  return undefined;
+}
+
 /* ------------------ SMART LIST FILTER EVALUATION ------------------ */
 
 /** Direct fields on the mapped Contact that filters can read. */

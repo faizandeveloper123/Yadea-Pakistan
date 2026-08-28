@@ -3119,6 +3119,73 @@ function delete_submission(int $id): void
     respond(['message' => 'Submission deleted']);
 }
 
+/**
+ * Repair contacts whose name fell back to "Imported Lead".
+ * Their real name lives inside custom_fields.import_data (and, for very old
+ * imports, nested again under import_data.custom_fields as a JSON string).
+ * Idempotent: skips rows that no longer carry the placeholder name.
+ */
+function repair_imported_names(): void
+{
+    $pdo = db();
+    $rows = $pdo->query(
+        "SELECT id, custom_fields FROM contacts WHERE first_name = 'Imported' AND last_name = 'Lead'"
+    )->fetchAll();
+
+    $fixed = 0;
+    $skipped = 0;
+    foreach ($rows as $row) {
+        $id = (int)$row['id'];
+        $cf = decode_custom_fields($row['custom_fields'] ?? null);
+        $imp = $cf['import_data'] ?? null;
+
+        $first = null;
+        $last = null;
+
+        if (is_array($imp)) {
+            // Direct snapshot shape: first_name / last_name at top level.
+            $probeFirst = trim((string)($imp['first_name'] ?? ''));
+            $probeLast = trim((string)($imp['last_name'] ?? ''));
+            if ($probeFirst !== '' && $probeFirst !== 'Imported' && $probeLast !== 'Lead') {
+                $first = $probeFirst;
+                $last = $probeLast;
+            }
+        }
+
+        if ($first === null && is_array($imp) && is_string($imp['custom_fields'] ?? null)) {
+            // Very old imports nested a JSON string with the ORIGINAL sheet row.
+            $nested = decode_json_field($imp['custom_fields']);
+            $nestedImp = is_array($nested) ? ($nested['import_data'] ?? null) : null;
+            if (is_array($nestedImp)) {
+                $name = trim((string)($nestedImp['NAME'] ?? $nestedImp['name'] ?? ''));
+                if ($name !== '') {
+                    $space = strpos($name, ' ');
+                    if ($space === false) {
+                        $first = $name;
+                    } else {
+                        $first = substr($name, 0, $space);
+                        $last = substr($name, $space + 1);
+                    }
+                }
+            }
+        }
+
+        if ($first === null || $first === '' || $first === 'Imported') {
+            $skipped++;
+            continue;
+        }
+
+        $upd = $pdo->prepare('UPDATE contacts SET first_name = :first, last_name = :last WHERE id = :id');
+        $upd->execute([':first' => $first, ':last' => $last ?? '', ':id' => $id]);
+        $fixed++;
+    }
+
+    respond([
+        'data' => ['matched' => count($rows), 'fixed' => $fixed, 'skipped' => $skipped],
+        'message' => 'Imported-name repair finished',
+    ]);
+}
+
 /* ----------------------- ROUTER ----------------------- */
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -3241,6 +3308,13 @@ switch ($resource) {
             if (!$id) fail('Note id required');
             delete_note(to_int($id));
         }
+        break;
+
+    case 'maintenance':
+        if ($method === 'POST' && ($parts[1] ?? null) === 'repair-imported-names') {
+            repair_imported_names();
+        }
+        fail('Unknown maintenance action', 404);
         break;
 
     case 'appointments':

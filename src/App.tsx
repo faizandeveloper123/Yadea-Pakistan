@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaLock, FaXmark } from 'react-icons/fa6';
 import type { Contact, ImportResult } from './types';
 import { api, type ApiSmartList, type ListParams } from './api';
-import { mapApiContact, matchesFilter, matchesRules, pickColumn } from './utils';
+import { mapApiContact, matchesFilter, matchesRules, normalizeHeader, pickNormalizedColumn } from './utils';
 import type { FilterRule } from './data/smartListOptions';
 import { navigate, onHashChange, parseHash, type Route } from './router';
 import { useAuth } from './auth';
@@ -957,22 +957,48 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
 
     for (const sheet of result.sheets) {
       const headers = sheet.headers;
-      const firstCol = pickColumn(headers, [/first\s*name/i, /^first$/i]);
-      const lastCol = pickColumn(headers, [/last\s*name/i, /^last$/i]);
-      const fullCol = pickColumn(headers, [/^(full\s*)?name$/i]);
-      const phoneCol = pickColumn(headers, [/phone|mobile|cell/i]);
-      const emailCol = pickColumn(headers, [/e-?mail/i]);
-      const businessCol = pickColumn(headers, [/business|company|organization|firm/i]);
+      const firstCol = pickNormalizedColumn(headers, [/^first\s*(name)?$/i, /given\s*name/i]);
+      const lastCol = pickNormalizedColumn(headers, [/^last\s*(name)?$/i, /surname/i, /family\s*name/i]);
+      const fullCol = pickNormalizedColumn(headers, [
+        /^name$/i,
+        /^full\s*name$/i,
+        /^fullname$/i,
+        /^lead\s*name$/i,
+        /^customer\s*name$/i,
+        /^contact\s*name$/i,
+        /^client\s*name$/i,
+        /^dealer\s*name$/i,
+        /^applicant\s*name$/i,
+        /^buyer\s*name$/i,
+        /^owner\s*name$/i,
+        /^name\s*of\s*(the\s*)?(lead|customer|contact|person|buyer|dealer|applicant)$/i,
+        /^name\s*\(\s*full\s*\)$/i,
+      ]);
+      const phoneCol = pickNormalizedColumn(headers, [/phone|mobile|cell|whatsapp/i]);
+      const emailCol = pickNormalizedColumn(headers, [/e-?mail/i]);
+      const businessCol = pickNormalizedColumn(headers, [/business|company|organization|firm/i]);
       const cityCol = result.cityColumn;
 
       for (const row of sheet.rows) {
         try {
-          const name =
-            (fullCol && row[fullCol]) ||
-            `${row[firstCol ?? ''] ?? ''} ${row[lastCol ?? ''] ?? ''}`.trim() ||
-            'Imported Lead';
+          const cell = (col?: string) => (col ? String(row[col] ?? '').trim() : '');
+          // Prefer a single full-name column, then first+last, then any name-ish column.
+          const nameFallback =
+            headers
+              .filter((h) => /name/i.test(h) && !/business|company|organization|firm/i.test(h))
+              .map((h) => cell(h))
+              .find(Boolean) || '';
+          const name = cell(fullCol) || [cell(firstCol), cell(lastCol)].filter(Boolean).join(' ').trim() || nameFallback || 'Imported Lead';
           const { first, last } = splitName(name);
           const city = cityCol ? (row[cityCol] ?? '').trim() || null : null;
+          const cleanRow = (r: Record<string, string>) => {
+            const out: Record<string, string> = {};
+            Object.keys(r).forEach((k) => {
+              const v = r[k];
+              if (v !== undefined && v !== null && String(v).trim() !== '') out[k] = String(v).trim();
+            });
+            return out;
+          };
 
           const res = await api.createContact({
             first_name: first || undefined,
@@ -984,7 +1010,7 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
             avatar_color: 'bg-slate-200 text-slate-700',
             tags: ['lead', 'imported'],
             custom_fields: {
-              import_data: row,
+              import_data: cleanRow(row),
               import_sheet: sheet.name,
               ...(city ? { import_city: city } : {}),
             },
@@ -1007,7 +1033,7 @@ const handleAddSmartList = async (list: Omit<SmartList, 'id' | 'members'>) => {
     const importFieldIds = allHeaders
       .filter(
         (h) =>
-          !/^(name|full name|first name|last name|email|phone|mobile|cell|business|company|organization)$/i.test(h.trim()) &&
+          !/^(name|full name|first name|last name|email|phone|mobile|cell|business|company|organization|lead name|customer name|contact name|client name|dealer name)$/i.test(normalizeHeader(h)) &&
           !isStaticFieldLabel(h)
       )
       .map((h) => `import:${h}`);
