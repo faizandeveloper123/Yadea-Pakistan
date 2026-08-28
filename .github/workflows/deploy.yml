@@ -37,13 +37,25 @@ jobs:
 
       - name: Deploy to server
         env:
-          SSH_KEY_B64: ${{ secrets.CONTABO_SSH_KEY }}
+          SSH_KEY_RAW: ${{ secrets.CONTABO_SSH_KEY }}
         run: |
           set -e
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
 
-          # Decode base64 key
-          echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
+          # Try base64 decode first; fall back to raw
+          echo "$SSH_KEY_RAW" | base64 -d 2>/dev/null > ~/.ssh/deploy_key_tmp || true
+
+          if grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/deploy_key_tmp 2>/dev/null; then
+            echo "Using base64-decoded key"
+            mv ~/.ssh/deploy_key_tmp ~/.ssh/deploy_key
+          else
+            echo "Using raw key"
+            echo "$SSH_KEY_RAW" > ~/.ssh/deploy_key
+            rm -f ~/.ssh/deploy_key_tmp
+          fi
+
+          # Clean carriage returns
+          sed -i 's/\r$//' ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
           # Verify
