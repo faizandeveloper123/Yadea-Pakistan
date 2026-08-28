@@ -3420,45 +3420,6 @@ switch ($resource) {
             'script_name' => $_SERVER['SCRIPT_NAME'] ?? 'unknown',
             'request_uri' => $_SERVER['REQUEST_URI'] ?? 'unknown',
         ];
-        // Show the deployed dist layout so asset-serving issues are visible.
-        $distDirs = ['/var/www/yadea-pakistan/dist', '/var/www/yadea-pakistan/Yadea', '/var/www/yadea-pakistan'];
-        $layout = [];
-        foreach ($distDirs as $d) {
-            if (is_dir($d)) {
-                $names = @scandir($d);
-                if ($names === false) {
-                    $layout[$d] = 'unreadable';
-                    continue;
-                }
-                $names = array_values(array_diff($names, ['.', '..']));
-                $names = array_slice($names, 0, 30);
-                $detail = [];
-                foreach ($names as $n) {
-                    $p = $d . '/' . $n;
-                    $detail[] = (is_dir($p) ? '[dir] ' : '[file] ') . $n;
-                }
-                $layout[$d] = $detail;
-            } else {
-                $layout[$d] = 'missing';
-            }
-        }
-        $info['dist_layout'] = $layout;
-        // Read nginx config so server routing is fully visible.
-        $nginx = [];
-        foreach (['/etc/nginx/sites-enabled/', '/etc/nginx/conf.d/'] as $d) {
-            if (!is_dir($d)) continue;
-            $files = @scandir($d);
-            if ($files === false) continue;
-            foreach ($files as $f) {
-                if ($f === '.' || $f === '..') continue;
-                $p = rtrim($d, '/') . '/' . $f;
-                $body = @file_get_contents($p);
-                if ($body !== false) {
-                    $nginx[$p] = $body;
-                }
-            }
-        }
-        $info['nginx_config'] = $nginx;
         try {
             $pdo = db();
             $info['db_status'] = 'connected';
