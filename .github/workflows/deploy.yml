@@ -54,26 +54,36 @@ jobs:
           cp -r api /tmp/site/api
           tar -czf /tmp/site.tar.gz -C /tmp/site .
 
-          # Backup config on server
+          # Backup mail config on server (config.php ships with the code now)
           ssh -i ~/.ssh/deploy_key root@81.17.101.93 '
-            cp /var/www/yadea-pakistan/api/config.php /tmp/config_backup.php 2>/dev/null || true
             cp /var/www/yadea-pakistan/api/mail_config.php /tmp/mail_backup.php 2>/dev/null || true
           '
 
           # Upload
           scp -i ~/.ssh/deploy_key /tmp/site.tar.gz root@81.17.101.93:/tmp/site.tar.gz
 
-          # Extract to dist + restore config + restart PHP-FPM
+          # Extract to dist + restore mail config + restart PHP-FPM
           ssh -i ~/.ssh/deploy_key root@81.17.101.93 '
             rm -rf /var/www/yadea-pakistan/dist
             mkdir -p /var/www/yadea-pakistan/dist
             tar -xzf /tmp/site.tar.gz -C /var/www/yadea-pakistan/dist/
             rm -rf /var/www/yadea-pakistan/api
             mv /var/www/yadea-pakistan/dist/api /var/www/yadea-pakistan/api
-            cp /tmp/config_backup.php /var/www/yadea-pakistan/api/config.php 2>/dev/null || true
             cp /tmp/mail_backup.php /var/www/yadea-pakistan/api/mail_config.php 2>/dev/null || true
             chown -R www-data:www-data /var/www/yadea-pakistan
-            rm -f /tmp/site.tar.gz /tmp/config_backup.php /tmp/mail_backup.php
+            rm -f /tmp/site.tar.gz /tmp/mail_backup.php
+            # Fix existing timestamps: UTC -> PKT (+5 hours)
+            mysql -u root evee_crm -e "
+              UPDATE contacts SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL;
+              UPDATE contacts SET updated_at = DATE_ADD(updated_at, INTERVAL 5 HOUR) WHERE updated_at IS NOT NULL;
+              UPDATE contacts SET last_activity_at = DATE_ADD(last_activity_at, INTERVAL 5 HOUR) WHERE last_activity_at IS NOT NULL;
+              UPDATE contact_activities SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL;
+              UPDATE notes SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL;
+              UPDATE tasks SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL;
+              UPDATE appointments SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL;
+              UPDATE opportunities SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL;
+              UPDATE notifications SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL;
+            " 2>/dev/null || echo "Migration skipped (already applied or tables missing)"
             systemctl reload php8.3-fpm
             echo DEPLOY_OK
           '

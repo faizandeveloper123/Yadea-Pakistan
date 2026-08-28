@@ -1619,6 +1619,43 @@ function create_notification(array $body): void
     respond(['data' => ['ids' => $ids, 'count' => count($ids)], 'message' => 'Notification(s) created'], 201);
 }
 
+/* ----------------------- TIMEZONE MIGRATION ----------------------- */
+
+/**
+ * One-time migration: shift all existing contact timestamps from UTC to PKT (+05:00).
+ * The MySQL server was running in UTC, so created_at / updated_at / last_activity_at
+ * are 5 hours behind the actual PKT time. This adds 5 hours to every row.
+ */
+function fix_timestamps_migration(): void
+{
+    $pdo = db();
+
+    // Contacts table
+    $pdo->exec("UPDATE contacts SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL");
+    $pdo->exec("UPDATE contacts SET updated_at = DATE_ADD(updated_at, INTERVAL 5 HOUR) WHERE updated_at IS NOT NULL");
+    $pdo->exec("UPDATE contacts SET last_activity_at = DATE_ADD(last_activity_at, INTERVAL 5 HOUR) WHERE last_activity_at IS NOT NULL");
+
+    // Contact activities
+    $pdo->exec("UPDATE contact_activities SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL");
+
+    // Notes
+    $pdo->exec("UPDATE notes SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL");
+
+    // Tasks
+    $pdo->exec("UPDATE tasks SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL");
+
+    // Appointments
+    $pdo->exec("UPDATE appointments SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL");
+
+    // Opportunities
+    $pdo->exec("UPDATE opportunities SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL");
+
+    // Notifications
+    $pdo->exec("UPDATE notifications SET created_at = DATE_ADD(created_at, INTERVAL 5 HOUR) WHERE created_at IS NOT NULL");
+
+    respond(['message' => 'All timestamps shifted +5h (UTC -> PKT)']);
+}
+
 /* ----------------------- DEALER / FRANCHISE DASHBOARD ----------------------- */
 
 /**
@@ -3385,6 +3422,14 @@ switch ($resource) {
         } elseif ($method === 'DELETE') {
             if (!$parts[1]) fail('Submission id required');
             delete_submission(to_int($parts[1]));
+        }
+        break;
+
+    case 'admin':
+        if ($method === 'POST') {
+            $sub = $parts[1] ?? null;
+            if ($sub === 'fix-timestamps') fix_timestamps_migration();
+            else fail('Unknown admin action', 404);
         }
         break;
 
