@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: Deploy to yadea.biztrack.uk
 
 on:
   push:
@@ -41,29 +41,23 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Decode SSH key
           echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-
-          # Verify key
           ssh-keygen -l -f ~/.ssh/deploy_key
 
-          # Add host key
-          ssh-keyscan -H 169.58.191.84 >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H 81.17.101.93 >> ~/.ssh/known_hosts 2>/dev/null
 
-          # Prepare files
           rm -rf /tmp/site && mkdir -p /tmp/site
           cp -r dist/* /tmp/site/
           cp logo.svg /tmp/site/ 2>/dev/null || true
           cp -r api /tmp/site/api
           tar -czf /tmp/site.tar.gz -C /tmp/site .
 
-          # Deploy
-          scp -i ~/.ssh/deploy_key /tmp/site.tar.gz root@169.58.191.84:/tmp/site.tar.gz
-          ssh -i ~/.ssh/deploy_key root@169.58.191.84 '
-            rm -rf /opt/lampp/htdocs/Yadea
-            mkdir -p /opt/lampp/htdocs/Yadea
-            tar -xzf /tmp/site.tar.gz -C /opt/lampp/htdocs/Yadea
+          scp -i ~/.ssh/deploy_key /tmp/site.tar.gz root@81.17.101.93:/tmp/site.tar.gz
+          ssh -i ~/.ssh/deploy_key root@81.17.101.93 '
+            rm -rf /var/www/yadea
+            mkdir -p /var/www/yadea
+            tar -xzf /tmp/site.tar.gz -C /var/www/yadea
             rm /tmp/site.tar.gz
             echo DEPLOY_OK
           '
