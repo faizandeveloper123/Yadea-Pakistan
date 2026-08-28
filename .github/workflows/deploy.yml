@@ -41,6 +41,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+
           echo "$SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keygen -l -f ~/.ssh/deploy_key
