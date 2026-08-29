@@ -342,6 +342,7 @@ function create_contact(array $body): void
                 );
             }
             $updates[] = 'last_activity_at = NOW()';
+            $updates[] = 'deleted_at = NULL';
             if ($updates) {
                 $pdo->prepare('UPDATE contacts SET ' . implode(', ', $updates) . ' WHERE id = :id')
                     ->execute($params);
@@ -404,24 +405,24 @@ function create_contact(array $body): void
     respond(['data' => ['id' => $contactId], 'message' => 'Contact created'], 201);
 }
 
-/** Delete one contact. */
+/** Soft-delete one contact: hides it from every live view but keeps the DB row. */
 function delete_contact(int $id): void
 {
-    $stmt = db()->prepare('DELETE FROM contacts WHERE id = :id');
+    $stmt = db()->prepare('UPDATE contacts SET deleted_at = NOW(), last_activity_at = NOW() WHERE id = :id AND deleted_at IS NULL');
     $stmt->execute([':id' => $id]);
     if ($stmt->rowCount() === 0) fail('Contact not found', 404);
     prune_smart_lists_when_empty();
     respond(['message' => 'Contact deleted']);
 }
 
-/** Delete many contacts. */
+/** Soft-delete many contacts (rows stay in the DB, only hidden from live views). */
 function bulk_delete(array $body): void
 {
     $ids = array_values(array_filter(array_map('to_int', (array)($body['ids'] ?? [])), fn($i) => $i > 0));
     if (!$ids) fail('No ids provided');
 
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $stmt = db()->prepare("DELETE FROM contacts WHERE id IN ($placeholders)");
+    $stmt = db()->prepare("UPDATE contacts SET deleted_at = NOW(), last_activity_at = NOW() WHERE id IN ($placeholders) AND deleted_at IS NULL");
     $stmt->execute($ids);
 
     prune_smart_lists_when_empty();
@@ -435,7 +436,7 @@ function bulk_delete(array $body): void
  */
 function prune_smart_lists_when_empty(): void
 {
-    $count = (int)db()->query('SELECT COUNT(*) FROM contacts')->fetchColumn();
+    $count = (int)db()->query('SELECT COUNT(*) FROM contacts WHERE deleted_at IS NULL')->fetchColumn();
     if ($count === 0) {
         db()->exec('DELETE FROM smart_lists');
     }
@@ -1272,6 +1273,89 @@ function ensure_approval_column(): void
             "ALTER TABLE staff_users ADD COLUMN approved TINYINT(1) NOT NULL DEFAULT 1 AFTER password_plain"
         );
     }
+}
+
+/**
+ * Soft-delete support for contacts: DELETE always keeps the row, it just stamps
+ * deleted_at so the live views hide it. Idempotent migration (safe to run on
+ * every request) that (1) adds contacts.deleted_at when missing and (2) rebuilds
+ * v_contacts_with_tags / v_leads to exclude soft-deleted rows. The rebuilt views
+ * match the production shape (custom_fields + assigned_to staff join).
+ */
+function ensure_soft_delete_support(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+
+    $pdo = db();
+
+    // 1) Column migration.
+    $colCheck = $pdo->prepare(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'contacts'
+            AND COLUMN_NAME  = 'deleted_at'"
+    );
+    $colCheck->execute();
+    if ((int)$colCheck->fetchColumn() === 0) {
+        $pdo->exec('ALTER TABLE contacts ADD COLUMN deleted_at DATETIME DEFAULT NULL AFTER notes');
+    }
+
+    // 2) View migration: rebuild only when the view still lacks deleted_at (idempotent).
+    $viewCheck = $pdo->prepare(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'v_contacts_with_tags'
+            AND COLUMN_NAME  = 'deleted_at'"
+    );
+    $viewCheck->execute();
+    if ((int)$viewCheck->fetchColumn() > 0) return;
+
+    $pdo->exec('DROP VIEW IF EXISTS v_leads');
+    $pdo->exec('DROP VIEW IF EXISTS v_contacts_with_tags');
+    $pdo->exec(
+        "CREATE VIEW v_contacts_with_tags AS
+         SELECT
+           c.id,
+           c.full_name            AS name,
+           c.first_name,
+           c.last_name,
+           c.phone,
+           c.email,
+           c.business_name,
+           c.contact_type,
+           c.is_lead,
+           c.avatar_color,
+           c.avatar_data,
+           c.assigned_to,
+           CONCAT(s.first_name, ' ', s.last_name) AS assigned_to_name,
+           s.avatar_data AS assigned_to_avatar,
+           c.notes,
+           c.deleted_at,
+           c.custom_fields,
+           c.created_at,
+           c.last_activity_at,
+           c.updated_at,
+           COALESCE(GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ','), '') AS tags,
+           COALESCE(GROUP_CONCAT(t.id   ORDER BY t.name SEPARATOR ','), '') AS tag_ids
+         FROM contacts c
+         LEFT JOIN staff_users s ON s.id = c.assigned_to
+         LEFT JOIN contact_tags ct ON ct.contact_id = c.id
+         LEFT JOIN tags t         ON t.id         = ct.tag_id
+         WHERE c.deleted_at IS NULL
+         GROUP BY c.id"
+    );
+    $pdo->exec(
+        "CREATE VIEW v_leads AS
+         SELECT *
+         FROM v_contacts_with_tags
+         WHERE is_lead = 1
+            OR contact_type = 'Lead'
+            OR FIND_IN_SET('warm lead', tags)
+            OR FIND_IN_SET('hot lead',  tags)
+            OR FIND_IN_SET('cold lead', tags)"
+    );
 }
 
 /**
@@ -3194,6 +3278,11 @@ $filters = $_GET;
 
 $resource = $parts[0] ?? 'contacts';
 
+// Soft-delete support: DELETE keeps the DB row (deleted_at), views hide it.
+if (in_array($resource, ['contacts', 'leads', 'maintenance'], true)) {
+    ensure_soft_delete_support();
+}
+
 switch ($resource) {
     case 'contacts':
         if ($method === 'GET') {
@@ -3313,6 +3402,20 @@ switch ($resource) {
     case 'maintenance':
         if ($method === 'POST' && ($parts[1] ?? null) === 'repair-imported-names') {
             repair_imported_names();
+        }
+        if ($method === 'POST' && ($parts[1] ?? null) === 'restore-contact') {
+            $id = to_int($parts[2] ?? 0);
+            if ($id <= 0) fail('Contact id required');
+            $stmt = db()->prepare('UPDATE contacts SET deleted_at = NULL WHERE id = :id AND deleted_at IS NOT NULL');
+            $stmt->execute([':id' => $id]);
+            if ($stmt->rowCount() === 0) fail('Contact not found (or already active)', 404);
+            respond(['message' => 'Contact restored']);
+        }
+        if ($method === 'GET' && ($parts[1] ?? null) === 'deleted-contacts') {
+            $rows = db()->query(
+                "SELECT id, first_name, last_name, phone, email, deleted_at FROM contacts WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC"
+            )->fetchAll();
+            respond(['data' => $rows, 'count' => count($rows), 'message' => 'Archived contacts (kept in DB, hidden from live views)']);
         }
         fail('Unknown maintenance action', 404);
         break;
