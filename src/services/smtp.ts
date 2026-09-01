@@ -14,16 +14,15 @@ export const SMTP_FROM_EMAIL = 'crm@yadea.com.pk';
 export const SMTP_FROM_NAME = 'Yadea Pakistan';
 
 /**
- * Same-origin API base, auto-detecting the app's sub-directory
- * (/Yadea/ under Apache, root on yadea.biztrack.uk). The other same-origin
- * path is kept as fallback. No hardcoded http://localhost URL — that only
- * worked on the developer's machine and broke every other device.
+ * Same-origin API base, auto-detecting the app's sub-directory.
+ * Derives the path from the current URL so it works regardless of the
+ * deployment folder name (e.g. /Yadea/, /Yadea-Pakistan/, or root /).
  */
 function detectApiBases(): string[] {
-  const underYadea = window.location.pathname.startsWith('/Yadea/');
-  return underYadea
-    ? ['/Yadea/api/index.php', '/api/index.php']
-    : ['/api/index.php', '/Yadea/api/index.php'];
+  const path = window.location.pathname;
+  const dir = path.substring(0, path.lastIndexOf('/') + 1);
+  const bases = [`${dir}api/index.php`, '/api/index.php'];
+  return [...new Set(bases)];
 }
 
 let workingBase: string | null = null;

@@ -466,23 +466,22 @@ export interface UpdateContactInput {
 }
 
 /**
- * Same-origin API base, auto-detecting the app's sub-directory:
- * - Apache/Contabo serves the SPA under /Yadea/  -> /Yadea/api/index.php
- * - yadea.biztrack.uk (nginx) serves it at root  -> /api/index.php
- * Both same-origin paths are tried, so the CRM works no matter which host
- * serves it. No hardcoded http://localhost fallback — that only ever worked
- * on the developer's own machine and broke every other device.
+ * Same-origin API base, auto-detecting the app's sub-directory.
+ * Derives the path from the current URL so it works regardless of the
+ * deployment folder name (e.g. /Yadea/, /Yadea-Pakistan/, or root /).
  */
 function detectApiBases(): string[] {
-  const underYadea = window.location.pathname.startsWith('/Yadea/');
-  return underYadea
-    ? ['/Yadea/api/index.php', '/api/index.php']
-    : ['/api/index.php', '/Yadea/api/index.php'];
+  const path = window.location.pathname;
+  const dir = path.substring(0, path.lastIndexOf('/') + 1);
+  const bases = [`${dir}api/index.php`, '/api/index.php'];
+  return [...new Set(bases)];
 }
 
-export const API_BASE = window.location.pathname.startsWith('/Yadea/')
-  ? '/Yadea/api/index.php'
-  : '/api/index.php';
+export const API_BASE = (() => {
+  const path = window.location.pathname;
+  const dir = path.substring(0, path.lastIndexOf('/') + 1);
+  return `${dir}api/index.php`;
+})();
 
 let workingBase: string | null = null;
 

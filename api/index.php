@@ -3429,17 +3429,22 @@ switch ($resource) {
         break;
 
     case 'auth':
-        if ($method === 'POST') {
-            $sub = $parts[1] ?? null;
-            if ($sub === 'register-dealer') {
-                register_dealer(json_body());
-            } elseif ($sub === 'reveal-password') {
-                reveal_password(json_body());
-            } elseif ($sub === 'magic-login') {
-                magic_login(json_body());
-            } else {
-                login(json_body());
-            }
+        if ($method === 'OPTIONS') {
+            http_response_code(204);
+            exit;
+        }
+        if ($method !== 'POST') {
+            fail('Only POST is allowed on /auth', 405);
+        }
+        $sub = $parts[1] ?? null;
+        if ($sub === 'register-dealer') {
+            register_dealer(json_body());
+        } elseif ($sub === 'reveal-password') {
+            reveal_password(json_body());
+        } elseif ($sub === 'magic-login') {
+            magic_login(json_body());
+        } else {
+            login(json_body());
         }
         break;
 
