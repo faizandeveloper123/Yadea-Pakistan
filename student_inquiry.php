@@ -232,6 +232,7 @@ if (count($params) > 0) {
 while ($row = $r->fetch_assoc()) { $inquiries[] = $row; }
 
 $statuses = ['New', 'In-Process', 'Interested', 'Admitted', 'Cancelled'];
+$courseNames = ['Graphic Designing', 'AI', 'Web Development', 'Sales', 'English Spoken', 'E-commerce'];
 $statusCounts = [];
 $sr = db_query("SELECT status, COUNT(*) c FROM student_inquiries GROUP BY status");
 while ($row = $sr->fetch_assoc()) { $statusCounts[$row['status']] = (int) $row['c']; }
@@ -386,10 +387,13 @@ foreach ($statCards as $st => $info):
 <input name="to" value="<?php echo e($filter_to ?: date('Y-m-d')); ?>" type="date" class="form-control">
 </div>
 <div class="form-group">
-<label class="required">Class</label>
+<label class="required">Course/Class</label>
 <select name="class_id" class="form-control" onchange="getSections(this.value,'txt_section1')">
 <option value="All">All</option>
-<?php foreach ($classes as $c): ?>
+<?php
+foreach ($classes as $c):
+    if (!in_array($c['class_name'], $courseNames)) continue;
+?>
 <option value="<?php echo $c['class_id']; ?>" <?php echo $filter_class_id === (string)$c['class_id'] ? 'selected' : ''; ?>><?php echo e($c['class_name']); ?></option>
 <?php endforeach; ?>
 </select>
@@ -453,7 +457,7 @@ Show <select id="siShowEntries"><option value="10">10</option><option value="25"
 <th width="5%">S.No</th>
 <th width="10%">Student Name</th>
 <th width="8%">Student Cell</th>
-<th width="12%">Class/Section</th>
+<th width="12%">Course/Class</th>
 <th width="8%">Status</th>
 <th width="7%">Locality</th>
 <th width="7%">Visiting</th>
@@ -513,7 +517,7 @@ Show <select id="siShowEntries"><option value="10">10</option><option value="25"
 <tr><td><strong>Father Name</strong></td><td><?php echo e($i['father_name'] ?? '-'); ?></td></tr>
 <tr><td><strong>Student Cell</strong></td><td><?php echo e($i['phone'] ?? '-'); ?></td></tr>
 <tr><td><strong>Father Cell</strong></td><td><?php echo e($i['father_cellno'] ?? '-'); ?></td></tr>
-<tr><td><strong>Class / Section</strong></td><td><?php echo e($i['class_name'] ?? '-'); ?> / <?php echo e($i['section_name'] ?? '-'); ?></td></tr>
+<tr><td><strong>Course/Class</strong></td><td><?php echo e($i['class_name'] ?? '-'); ?> / <?php echo e($i['section_name'] ?? '-'); ?></td></tr>
 <tr><td><strong>Status</strong></td><td><span class="si-status-pill" style="background-color:<?php echo $statusColors[$i['status']] ?? '#6B7280'; ?>;"><?php echo e($i['status']); ?></span></td></tr>
 <tr><td><strong>Locality</strong></td><td><?php echo e($i['locality'] ?? '-'); ?></td></tr>
 <tr><td><strong>Visiting Date</strong></td><td><?php echo $i['visit_date'] ? date('d-M-Y', strtotime($i['visit_date'])) : '-'; ?></td></tr>
@@ -556,10 +560,10 @@ Show <select id="siShowEntries"><option value="10">10</option><option value="25"
 <div class="modal-header" style="border-bottom:none;"><button type="button" class="close" data-dismiss="modal">&times;</button><h4 class="modal-title" style="text-align:center;">Are you sure you want to Enroll this Student? <br> <?php echo e($i['name']); ?> - <?php echo e($i['father_name'] ?? ''); ?></h4></div>
 <div class="modal-body">
 <div class="col-md-12" style="padding:8px;">
-<div class="form-group"><label>Class</label>
+<div class="form-group"><label>Course/Class</label>
 <select name="class_id" class="form-control" required>
 <option value="">-- Select --</option>
-<?php foreach ($classes as $c): ?>
+<?php foreach ($classes as $c): if (!in_array($c['class_name'], $courseNames)) continue; ?>
 <option value="<?php echo $c['class_id']; ?>" <?php echo ($i['class_id'] == $c['class_id']) ? 'selected' : ''; ?>><?php echo e($c['class_name']); ?></option>
 <?php endforeach; ?>
 </select></div>
@@ -596,7 +600,7 @@ Show <select id="siShowEntries"><option value="10">10</option><option value="25"
 <div class="form-group col-md-4"><label>Email</label><input type="email" name="email" class="form-control"></div>
 </div>
 <div class="row">
-<div class="form-group col-md-4"><label>Interested Class</label><select name="class_id" class="form-control" onchange="getSections(this.value,'ai_section')"><option value="0">Any</option><?php foreach ($classes as $c): ?><option value="<?php echo $c['class_id']; ?>"><?php echo e($c['class_name']); ?></option><?php endforeach; ?></select></div>
+<div class="form-group col-md-4"><label>Interested Course/Class</label><select name="class_id" class="form-control" onchange="getSections(this.value,'ai_section')"><option value="0">Any</option><?php foreach ($classes as $c): if (!in_array($c['class_name'], $courseNames)) continue; ?><option value="<?php echo $c['class_id']; ?>"><?php echo e($c['class_name']); ?></option><?php endforeach; ?></select></div>
 <div class="form-group col-md-4"><label>Section</label><select name="section_id" id="ai_section" class="form-control"><option value="0">Any</option></select></div>
 <div class="form-group col-md-4"><label>Session</label><input type="text" name="session" class="form-control" value="<?php echo e(get_setting('session_year', '2026-2027')); ?>"></div>
 </div>
