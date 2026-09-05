@@ -74,7 +74,7 @@ if ($fr) { while ($row = $fr->fetch_assoc()) { $feeHeads[] = $row; } }
 // Class / section labels for the summary line
 $classLabel = '';
 if ($student && !empty($student['class_id'])) {
-    $cr = db_prepare('Select Course/Class_name FROM classes WHERE class_id = ?');
+    $cr = db_prepare('Select class_name FROM classes WHERE class_id = ?');
     $cr->bind_param('i', $student['class_id']);
     $cr->execute();
     $classLabel = $cr->get_result()->fetch_row()[0] ?? '';

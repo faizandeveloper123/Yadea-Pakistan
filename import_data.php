@@ -9,7 +9,7 @@ $message = '';
 $error = '';
 
 $classes = [];
-$res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$res = db_query("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 function imp_parse_date($d) {
@@ -112,7 +112,7 @@ include __DIR__ . '/includes/header.php';
                 <div class="row">
                     <div class="form-group col-md-4">
                         <label>Course/Class <span style="color:red;">*</span></label>
-                        <select name="Course/Class" class="form-control" required>
+                        <select name="class_id" class="form-control" required>
                             <option value="">Select Course/Class</option>
                             <?php foreach ($classes as $c): ?><option value="<?php echo $c['class_id']; ?>"><?php echo e($c['class_name']); ?></option><?php endforeach; ?>
                         </select>

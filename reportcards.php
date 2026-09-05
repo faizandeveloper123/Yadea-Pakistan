@@ -13,7 +13,7 @@ $res = db_query("SELECT * FROM exams ORDER BY exam_id DESC");
 while ($row = $res->fetch_assoc()) { $exams[] = $row; }
 
 $classes = [];
-$res = db_query("Select Course/Class_id, class_name FROM classes ORDER BY class_name");
+$res = db_query("Select class_id, class_name FROM classes ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 $students = [];

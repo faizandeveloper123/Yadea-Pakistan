@@ -11,7 +11,7 @@ $message = '';
 $error = '';
 
 $classes = [];
-$res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$res = db_query("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 $periods = [];
@@ -145,7 +145,7 @@ include __DIR__ . '/includes/header.php';
                                 <td><strong><?php echo $day; ?></strong></td>
                                 <?php foreach ($periods as $p): ?>
                                     <td>
-                                        <Select Course/Class="form-control" name="tt[<?php echo $day; ?>][<?php echo $p['period_id']; ?>]" style="padding:4px; font-size:12px;">
+                                        <select class="form-control" name="tt[<?php echo $day; ?>][<?php echo $p['period_id']; ?>]" style="padding:4px; font-size:12px;">
                                             <option value="0">—</option>
                                             <?php foreach ($subjects as $sub): ?>
                                                 <option value="<?php echo $sub['subject_id']; ?>" <?php echo ($grid[$day][$p['period_id']] ?? 0) == $sub['subject_id'] ? 'selected' : ''; ?>><?php echo e($sub['subject_name']); ?></option>

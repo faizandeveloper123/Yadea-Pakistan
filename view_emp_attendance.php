@@ -420,7 +420,7 @@ include __DIR__ . '/includes/header.php';
           </div>
           <div class="form-group">
             <label>Change Attendance Status:</label>
-            <Select Course/Class="form-control" id="attendance_status" name="attendance_status" required="">
+            <select class="form-control" id="attendance_status" name="attendance_status" required="">
               <option value="">Select Status</option>
               <option value="P">Present (P)</option>
               <option value="A">Absent (A)</option>

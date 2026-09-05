@@ -77,7 +77,7 @@ function lookup_rows($sql) {
     if ($r) { while ($row = $r->fetch_assoc()) { $out[] = $row; } }
     return $out;
 }
-$classes    = lookup_rows("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$classes    = lookup_rows("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 $localities = lookup_rows("SELECT locality_id, locality_name FROM localities WHERE status=1 ORDER BY locality_name");
 $boards     = lookup_rows("SELECT id, name FROM boards ORDER BY name");
 $groups     = lookup_rows("SELECT id, name FROM `groups` ORDER BY name");
@@ -421,7 +421,7 @@ include __DIR__ . '/includes/header.php';
                                 </div>
                                 <div class="floating-label-group">
                                     <label>Select Course/Class *</label>
-                                    <select name="Course/Class" id="Course/Class" class="custom-input" required onchange="getSection(this.value)">
+                                    <select name="class_id" id="class_id" class="custom-input" required onchange="getSection(this.value)">
                                         <option value="">Select Course/Class</option>
                                         <?php foreach ($classes as $c): ?>
                                             <option value="<?php echo $c['class_id']; ?>"><?php echo e($c['class_name']); ?></option>

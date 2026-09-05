@@ -17,7 +17,7 @@ $date            = $_GET['date'] ?? date('Y-m-d');
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) { $date = date('Y-m-d'); }
 
 $classes = [];
-$res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$res = db_query("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 // Fetch all students (for stats) with lightweight filters build later for the table
@@ -184,7 +184,7 @@ include __DIR__ . '/includes/header.php';
             <div class="col-md-2 col-xs-9" style="padding:0 4px;">
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="required">Attendance</label>
-                    <Select Course/Class="form-control" id="attendance" name="attendance">
+                    <select class="form-control" id="attendance" name="attendance">
                         <option value="All" <?php echo $sel_attendance === 'All' ? 'selected' : ''; ?>>All</option>
                         <option value="P"  <?php echo $sel_attendance === 'P' ? 'selected' : ''; ?>>Present</option>
                         <option value="A"  <?php echo $sel_attendance === 'A' ? 'selected' : ''; ?>>Absent</option>

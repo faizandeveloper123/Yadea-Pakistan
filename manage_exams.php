@@ -193,12 +193,12 @@ include __DIR__ . '/includes/header.php';
             <div class="nav-bar">
                 <a href="<?php echo BASE_URL; ?>manage_exams.php" class="nav-item active"><i class="fa fa-plus"></i>Manage Exams</a>
                 <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-book"></i>Manage Subjects</a>
-                <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-layer-group"></i>Course/Course/Class Subjects</a>
+                <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-layer-group"></i>Course/Class Subjects</a>
                 <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-chalkboard-teacher"></i>Teacher Subjects</a>
                 <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-list"></i>Award List</a>
                 <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-star"></i>Grade Settings</a>
                 <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-signature"></i>Academic Settings</a>
-                <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-users"></i>Course/Course/Class &amp; Sections</a>
+                <a href="<?php echo BASE_URL; ?>academic_setup.php" class="nav-item"><i class="fa fa-users"></i>Course/Class &amp; Sections</a>
             </div>
         </div>
 

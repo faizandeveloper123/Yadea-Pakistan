@@ -140,7 +140,7 @@ for ($y = 2018; $y <= 2030; $y++) { $sessions[] = $y . '-' . substr($y + 1, -2);
 if (!in_array($sel_session, $sessions)) { $sel_session = get_setting('session_year', '2026-2027'); }
 
 $classHeads = [];
-$res = db_query("Select Course/Class_head_id, class_head_name FROM class_heads WHERE status=1 ORDER BY class_head_name");
+$res = db_query("Select class_head_id, class_head_name FROM class_heads WHERE status=1 ORDER BY class_head_name");
 while ($row = $res->fetch_assoc()) { $classHeads[] = $row; }
 
 $sel_head = (int) ($p('class_head') ?: 0);

@@ -11,7 +11,7 @@ $class_id   = (int) ($_GET['class_id'] ?? 0);
 $section_id = (int) ($_GET['section_id'] ?? 0);
 
 $classes = [];
-$res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$res = db_query("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 $periods = [];
@@ -24,7 +24,7 @@ $class = null;
 $section_name = '';
 $grid = [];
 if ($class_id > 0) {
-    $stmt = db_prepare("Select Course/Class_name FROM classes WHERE class_id=?");
+    $stmt = db_prepare("Select class_name FROM classes WHERE class_id=?");
     $stmt->bind_param('i', $class_id);
     $stmt->execute();
     $res = $stmt->get_result();

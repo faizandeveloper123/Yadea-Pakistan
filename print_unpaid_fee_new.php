@@ -419,7 +419,7 @@ include __DIR__ . '/includes/header.php';
                                 <select name="orderBy" class="form-control">
                                     <option value="GRnoWise" <?php echo $sel_order === 'GRnoWise' ? 'selected' : ''; ?>>By GR No</option>
                                     <option value="Alphabet" <?php echo $sel_order === 'Alphabet' ? 'selected' : ''; ?>>By Alphabet</option>
-                                    <option value="Course/Class" <?php echo $sel_order === 'Class' ? 'selected' : ''; ?>>By Class</option>
+                                    <option value="Class" <?php echo $sel_order === 'Class' ? 'selected' : ''; ?>>By Course/Class</option>
                                     <option value="DefaultOrder" <?php echo $sel_order === 'DefaultOrder' ? 'selected' : ''; ?>>Default Order</option>
                                 </select>
                             </div>

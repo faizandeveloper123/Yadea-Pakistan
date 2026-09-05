@@ -267,7 +267,7 @@ include __DIR__ . '/includes/header.php';
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="complainantType">Complainant Type:</label>
-                                        <Select Course/Class="form-control" id="complainantType" name="complainantType">
+                                        <select class="form-control" id="complainantType" name="complainantType">
                                             <?php foreach ($typeOptions as $t): ?>
                                                 <option value="<?php echo $t; ?>"><?php echo $t; ?></option>
                                             <?php endforeach; ?>
@@ -301,7 +301,7 @@ include __DIR__ . '/includes/header.php';
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="sendSMS">Send SMS:</label>
-                                        <Select Course/Class="form-control" id="sendSMS" name="sendSMS">
+                                        <select class="form-control" id="sendSMS" name="sendSMS">
                                             <option value="No">No</option>
                                             <option value="Yes">Yes</option>
                                         </select>

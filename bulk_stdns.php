@@ -9,7 +9,7 @@ $message = '';
 $error = '';
 
 $classes = [];
-$res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$res = db_query("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 $sessions = [];
@@ -137,7 +137,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="row">
                         <div class="form-group col-md-3">
                             <label>Course/Class <span style="color:red;">*</span></label>
-                            <select name="Course/Class" id="Course/Class" class="form-control" required onchange="loadSections(this.value)">
+                            <select name="class_id" id="class_id" class="form-control" required onchange="loadSections(this.value)">
                                 <option value="">Select Course/Class</option>
                                 <?php foreach ($classes as $c): ?><option value="<?php echo $c['class_id']; ?>"><?php echo e($c['class_name']); ?></option><?php endforeach; ?>
                             </select>

@@ -8,7 +8,7 @@ $page_title = 'Admission Form';
 $school_name = get_setting('school_name') ?: 'HIIFI';
 
 $classes = [];
-$res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$res = db_query("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 $student = null;
@@ -120,7 +120,7 @@ include __DIR__ . '/includes/header.php';
 
                 <div class="sign no-print">
                     <div><div class="line">Guardian / Parent Signature</div></div>
-                    <div><div class="line">Course/Course/Class Teacher</div></div>
+                    <div><div class="line">Course/Class Teacher</div></div>
                     <div><div class="line">Principal / Authorised Signatory</div></div>
                 </div>
             </div>

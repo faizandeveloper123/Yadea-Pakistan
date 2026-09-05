@@ -149,7 +149,7 @@ $sel_session = $_GET['session'] ?? get_setting('session_year', '2026-2027');
 if (!in_array($sel_session, $sessions)) { $sel_session = get_setting('session_year', '2026-2027'); }
 
 $classHeads = [];
-$res = db_query("Select Course/Class_head_id, class_head_name FROM class_heads WHERE status=1 ORDER BY class_head_name");
+$res = db_query("Select class_head_id, class_head_name FROM class_heads WHERE status=1 ORDER BY class_head_name");
 while ($row = $res->fetch_assoc()) { $classHeads[] = $row; }
 
 $sel_head = (int) ($_GET['class_head'] ?? 0);
@@ -325,7 +325,7 @@ foreach ($challans as $c) {
     $html .= '</tbody></table>';
     $html .= '<div class="form-group">';
     $html .= '<label style="font-size:12px;">Add Fee Head (optional)</label>';
-    $html .= '<Select Course/Class="form-control" name="new_head_ids[]" style="margin-bottom:6px;"><option value="">Select fee head to add</option>';
+    $html .= '<select class="form-control" name="new_head_ids[]" style="margin-bottom:6px;"><option value="">Select fee head to add</option>';
     foreach ($feeHeads as $fh) {
         $html .= '<option value="' . $fh['head_id'] . '">' . e($fh['head_name']) . '</option>';
     }

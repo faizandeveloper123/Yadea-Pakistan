@@ -379,7 +379,7 @@ include __DIR__ . '/includes/header.php';
                         </a>
                         <a href="<?php echo BASE_URL; ?>manage_students.php" class="quick-link2">
                             <span class="ql-icon"><i class="fa fa-list"></i></span>
-                            <span>Course/Course/Class Wise Reports</span>
+                            <span>Course/Class Wise Reports</span>
                             <i class="fa fa-chevron-right ql-chevron"></i>
                         </a>
                         <a href="<?php echo BASE_URL; ?>manage_students.php?status=1" class="quick-link2">
@@ -409,7 +409,7 @@ include __DIR__ . '/includes/header.php';
                         </a>
                         <a href="<?php echo BASE_URL; ?>class_promotion.php" class="quick-link2">
                             <span class="ql-icon"><i class="fa fa-arrow-up"></i></span>
-                            <span>Course/Course/Class Promotion</span>
+                            <span>Course/Class Promotion</span>
                             <i class="fa fa-chevron-right ql-chevron"></i>
                         </a>
                         <a href="<?php echo BASE_URL; ?>student_inquiry.php" class="quick-link2">

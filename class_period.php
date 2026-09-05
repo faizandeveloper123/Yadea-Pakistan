@@ -11,7 +11,7 @@ $message = '';
 $error = '';
 
 $classes = [];
-$res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$res = db_query("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 $categories = [];
@@ -261,7 +261,7 @@ include __DIR__ . '/includes/header.php';
                 <thead>
                     <tr>
                         <th style="width:60px; text-align:center;">Check<br><input type="checkbox" id="checkAll" class="cp-check"></th>
-                        <th>Course/Course/Class Name</th>
+                        <th>Course/Class Name</th>
                         <th>Section</th>
                         <th>Period Category</th>
                         <th style="width:150px; text-align:center;">Action</th>
@@ -374,7 +374,7 @@ include __DIR__ . '/includes/header.php';
                                     <td><strong><?php echo $day; ?></strong></td>
                                     <?php foreach ($periods as $p): ?>
                                         <td>
-                                            <Select Course/Class="form-control" name="tt[<?php echo $day; ?>][<?php echo $p['period_id']; ?>]" style="padding:4px; font-size:12px;">
+                                            <select class="form-control" name="tt[<?php echo $day; ?>][<?php echo $p['period_id']; ?>]" style="padding:4px; font-size:12px;">
                                                 <option value="0">—</option>
                                                 <?php foreach ($subjects as $sub): ?>
                                                     <option value="<?php echo $sub['subject_id']; ?>" <?php echo ($grid[$day][$p['period_id']] ?? 0) == $sub['subject_id'] ? 'selected' : ''; ?>><?php echo e($sub['subject_name']); ?></option>
@@ -410,7 +410,7 @@ include __DIR__ . '/includes/header.php';
                     <input type="hidden" name="action" value="EditClassPeriod">
                     <input type="hidden" name="periodCat" value="<?php echo $sel_cat; ?>">
                     <div class="form-group">
-                        <label class="required">Course/Course/Class Name</label>
+                        <label class="required">Course/Class Name</label>
                         <select name="class_id" id="ecpClass" class="form-control" required>
                             <option value="">Select Course/Class</option>
                             <?php foreach ($classes as $c): ?>

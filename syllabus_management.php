@@ -87,7 +87,7 @@ foreach ($terms as $t) { if ((int)$t['exam_id'] === $f_term) { $term_info = $t; 
 
 $classes = [];
 try {
-    $res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+    $res = db_query("Select class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
     while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 } catch (Throwable $e) { $classes = []; }
 
