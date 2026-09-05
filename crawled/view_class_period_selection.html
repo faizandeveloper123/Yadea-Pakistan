@@ -1,0 +1,458 @@
+<!DOCTYPE html><html lang="en"><head>
+    
+    <title>Class Period Selection | EduPortal</title>
+    
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/customizedStyling.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min1.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/style11.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/font-awesome-5.min.css" rel="stylesheet">
+
+    <style>
+    /* Global: neutralize legacy wrapper <div class="col-md-3 left_col"> present on 600+ pages */
+    .col-md-3.left_col { display: contents !important; width: auto !important; padding: 0 !important; margin: 0 !important; float: none !important; }
+    </style>
+<style>
+  
+.nav-container {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #eaecef;
+  /* padding: 10px 20px; */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  margin-top:15px;
+}
+
+.nav-bar {
+  display: flex;
+  gap: 1px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: center;   /* ✅ Items center mai */
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 15px;  
+  text-decoration: none;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  border: 1px solid #eaecef;
+}
+
+.nav-item:hover {
+  background: #fff4e6;
+  border-color: #ffd8b3;
+  color: #e67e22;
+}
+
+.nav-item.active {
+  background: #ff7800;
+  color: white;
+  border-color: #ff7800;
+  box-shadow: 0 3px 8px rgba(230, 126, 34, 0.3);
+}
+
+.nav-item.active i {
+  color: white;
+}
+
+.nav-item i {
+  font-size: 14px;
+  margin-right: 6px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.nav-item:hover i {
+  color: #e67e22;
+}
+
+.nav-bar::-webkit-scrollbar {
+  display: none;
+}
+.nav-bar {
+  -ms-overflow-style: none;  
+  scrollbar-width: none; 
+}
+
+</style>   
+<style>
+
+.tdStyle{border-bottom:1px solid lightgray;}
+.thStyle{background-color:#00AFEF;color:white;}
+
+</style>
+  <script type="text/javascript">
+  	
+
+function getTeachers(id,row){
+     // alert(id+row);   
+          
+            
+            if (window.XMLHttpRequest) {
+
+              // code for IE7+, Firefox, Chrome, Opera, Safari
+
+              xmlhttp=new XMLHttpRequest();
+
+            } else { // code for IE6, IE5
+
+              xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+
+            }
+
+            xmlhttp.onreadystatechange=function() {
+
+              if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+
+                document.getElementById("tech"+row).innerHTML=xmlhttp.responseText;
+               // alert(xmlhttp.responseText);
+
+              }
+
+            }
+
+            xmlhttp.open("GET","get_teachers.php?subc="+id,true);
+
+            xmlhttp.send();
+
+          }
+
+
+  </script><script src="js/ajax_functions.js"></script><style type="text/css">.jqstooltip { position: absolute;left: 0px;top: 0px;visibility: hidden;background: rgb(0, 0, 0) transparent;background-color: rgba(0,0,0,0.6);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";color: white;font: 10px arial, san serif;text-align: left;white-space: nowrap;padding: 5px;border: 1px solid white;box-sizing: content-box;z-index: 10000;}.jqsfield { color: white;font: 10px arial, san serif;text-align: left;}</style></head>
+  
+
+ 
+
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+       
+     
+            
+                   
+        <!-- page content -->
+          <div class="" role="main" style="margin-left: 25px;margin-right: 25px;">
+          <div class="row" style="background-color: white;">
+           
+     <h3>View Time Table <span style="font-size: 16px;"> (7 records) </span></h3>
+
+   
+
+    <form class="form-style-7" action="view_class_period_selection.php" method="Get">
+
+  
+              
+   <div class="col-md-3 col-xs-12" style="padding: 8px;">
+                <div class="form-group ">
+                  <label class="required">Class</label>
+ 
+
+                  <div class="select2-container chosen-multi-select inputfield form-control" id="s2id_class_id" style="width: 100%;"><a href="javascript:void(0)" onclick="return false;" class="select2-choice" tabindex="-1">   <span class="select2-chosen">Select Class</span><abbr class="select2-search-choice-close"></abbr>   <span class="select2-arrow"><b></b></span></a><input class="select2-focusser select2-offscreen" type="text" id="s2id_autogen1"><div class="select2-drop select2-display-none select2-with-searchbox">   <div class="select2-search">       <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="select2-input">   </div>   <ul class="select2-results">   </ul></div></div><select name="class_id" id="class_id" data-placeholder="Select" class="chosen-multi-select inputfield form-control select2-offscreen" onchange="getsec(this.value)" tabindex="-1">
+                    <option value="">Select Class</option>
+
+                    
+                       <option value="15550">KG-2</option>
+
+
+                            
+                       <option value="15551">1ST</option>
+
+
+                            
+                       <option value="15552">2ND</option>
+
+
+                            
+                       <option value="15553">3RD</option>
+
+
+                            
+                       <option value="15554">4TH</option>
+
+
+                            
+                       <option value="15555">5TH</option>
+
+
+                            
+                       <option value="15556">6TH</option>
+
+
+                            
+                       <option value="15557">7TH</option>
+
+
+                            
+                       <option value="15832">8TH</option>
+
+
+                            
+                       <option value="15833">9TH</option>
+
+
+                            
+                       <option value="15834">10TH</option>
+
+
+                            
+                       <option value="15905">BS Computer Science</option>
+
+
+                            
+                       <option value="16136">Bs English</option>
+
+
+                            
+                       <option value="16540">New Fee Head Class</option>
+
+
+                            
+                       <option value="16613">reminder sms class</option>
+
+
+                            
+                       <option value="16766">BSCS</option>
+
+
+                            
+                       <option value="16795">BSIT</option>
+
+
+                            
+                       <option value="16922">Class 7</option>
+
+
+                            
+                       <option value="17073">Pharm-D 2021-26</option>
+
+
+                            
+                       <option value="17184">MIT</option>
+
+
+                            
+                       <option value="17807">14th</option>
+
+
+                            
+                       <option value="17890">DMS Play Group</option>
+
+
+                            
+                </select> 
+                </div>
+              </div>
+
+
+                <div class="col-md-2 col-xs-12" style="padding: 8px;">
+                <div class="form-group ">
+                  <label class="required">Section</label>
+                    <select name="section" id="txt_section" class="form-control" onchange="getSubjects(this.value)">
+                      
+                   
+                    </select>
+
+                  
+                </div>
+              </div> 
+
+
+
+              <div class="col-md-4 " style="padding:2px;">
+    
+        
+                <div class="form-group ">
+                   
+                <button id="month" type="submit" class="btn btn-primary" style="margin-top: 27px;">Search</button>
+              
+                </div>
+        
+              </div>
+             
+</form>
+  <section class="add_sub_agent" id="table_sub_agent">
+  <div class="container">
+
+ <div class="" style="margin-top:10px;">
+    
+      <div class="clearfix"></div>
+    </div>
+    <br>
+
+     
+          
+          
+      
+
+          
+          
+
+
+<form class="form-style-7" action="https://apps.eduportal.pk/Production/parent/InsertMe.php" method="post" enctype="multipart/form-data">
+
+<input type="hidden" name="action" value="LectureTime"> 
+
+<input type="hidden" value="" name="class_id">
+<input type="hidden" value="" name="section">
+
+
+
+<div style="overflow-x:auto;">
+
+<table id="listofstudents" class="table table-striped table-bordered" style="width:100%;background-color: white;">
+        <thead>
+            <tr>
+
+          
+                <th width="">Days</th>
+
+      
+              
+                
+                
+                
+            </tr>
+        </thead>
+        <tbody>
+
+
+   
+     
+      
+        <tr>
+
+        		
+      
+        <td> Monday </td>
+
+			  
+        </tr><tr>
+
+        		
+      
+        <td> Tuesday </td>
+
+			  
+        </tr><tr>
+
+        		
+      
+        <td> Wednesday </td>
+
+			  
+        </tr><tr>
+
+        		
+      
+        <td> Thursday </td>
+
+			  
+        </tr><tr>
+
+        		
+      
+        <td> Friday </td>
+
+			  
+        </tr><tr>
+
+        		
+      
+        <td> Saturday </td>
+
+			  
+        </tr><tr>
+
+        		
+      
+        <td> Sunday </td>
+
+			 
+
+
+           
+        </tr></tbody>
+        
+    </table>
+
+  </div>
+
+<!-- <button type="submit" style="margin: 30px;" class="btn btn-success" name="submit" >Submit </button> -->
+    </form>
+
+    <br><br>
+
+
+  </div>
+  <div class="clearfix"></div>
+</section>          
+    
+
+           
+          </div>
+        </div>
+
+            
+          </div>
+        </div>
+        <!-- /page content -->
+     
+  <!-- jQuery -->
+<script src="../vendors/jquery/dist/jqueryfile.js"></script>
+<!-- Bootstrap -->
+<script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+<!-- Custom Theme Scripts -->
+<script src="../build/js/custom.min.js"></script>
+<!-- jQuery Sparklines -->
+<script src="../vendors/jquery-sparkline/dist/jquery.sparkline.min.js"></script>
+
+   
+
+<!-- <script src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script> -->
+ <!-- jQuery -->
+    
+
+
+     <!-- searchable dropdown -->
+    
+    <link href="autosearch_select/select2.css" rel="stylesheet">
+    <link href="autosearch_select/select2-default.css" rel="stylesheet">
+    <script src="autosearch_select/select2.min.js"></script>
+    
+    <script>
+    $(function() {
+    $('.chosen-select').select2( { width:'100%', maximumSelectionSize: 1 } );
+    $(document).ready(function() {
+    $(".chosen-multi-select").select2( { width:'100%', } ); }); }); function slideout(){ setTimeout(function(){
+    $(".alert-success").fadeOut("slow", function () { });
+    $(".alert-danger").fadeOut("slow", function () { }); }, 4000);}
+    </script>
+
+
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;3650377dd59a42ccbb65668736c3a93b&quot;,&quot;r&quot;:1}" crossorigin="anonymous"></script>
+
+
+</body></html>

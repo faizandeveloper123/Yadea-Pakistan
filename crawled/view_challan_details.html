@@ -1,0 +1,5131 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>View Challan | EduPortal </title>
+       
+    
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/customizedStyling.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min1.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/style11.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/font-awesome-5.min.css" rel="stylesheet">
+
+    <style>
+    /* Global: neutralize legacy wrapper <div class="col-md-3 left_col"> present on 600+ pages */
+    .col-md-3.left_col { display: contents !important; width: auto !important; padding: 0 !important; margin: 0 !important; float: none !important; }
+    </style>
+<style>
+  
+.nav-container {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #eaecef;
+  /* padding: 10px 20px; */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  margin-top:15px;
+}
+
+.nav-bar {
+  display: flex;
+  gap: 1px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: center;   /* ✅ Items center mai */
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 15px;  
+  text-decoration: none;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  border: 1px solid #eaecef;
+}
+
+.nav-item:hover {
+  background: #fff4e6;
+  border-color: #ffd8b3;
+  color: #e67e22;
+}
+
+.nav-item.active {
+  background: #ff7800;
+  color: white;
+  border-color: #ff7800;
+  box-shadow: 0 3px 8px rgba(230, 126, 34, 0.3);
+}
+
+.nav-item.active i {
+  color: white;
+}
+
+.nav-item i {
+  font-size: 14px;
+  margin-right: 6px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.nav-item:hover i {
+  color: #e67e22;
+}
+
+.nav-bar::-webkit-scrollbar {
+  display: none;
+}
+.nav-bar {
+  -ms-overflow-style: none;  
+  scrollbar-width: none; 
+}
+
+</style>    <!-- Bootstrap Datepicker CSS (for Challan Month popup) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+
+    <style type="text/css">
+
+  ul li {font-size:14px;}
+  .inputheight{height: 45px;}
+
+/* Basic Toast Style */
+#toast {
+  visibility: hidden;
+  min-width: 300px;
+  max-width: 380px;
+  background-color: #1a7a4a !important;
+  color: #fff;
+  text-align: left;
+  border-radius: 8px;
+  padding: 14px 18px;
+  position: fixed;
+  z-index: 9999;
+  right: 24px;
+  bottom: 30px;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+  border-left: 5px solid #0f5c34;
+  letter-spacing: 0.1px;
+  line-height: 1.5;
+}
+
+/* Show the toast message */
+#toast.show {
+  visibility: visible;
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+#toast.show.toast-long {
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 3.5s;
+  animation: fadein 0.5s, fadeout 0.5s 3.5s;
+}
+#toast.error { background-color: #c0392b !important; border-left-color: #922b21 !important; }
+
+/* Animations for fade in and out */
+@-webkit-keyframes fadein {
+  from {right: 0; opacity: 0;} 
+  to {right: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+  from {right: 0; opacity: 0;}
+  to {right: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+  from {right: 30px; opacity: 1;} 
+  to {right: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+  from {right: 30px; opacity: 1;}
+  to {right: 0; opacity: 0;}
+}
+
+      
+/* This page's content was capped by Bootstrap's fixed .container max-width, leaving
+   dead space on wide screens. Widen just this page's wrapper to use full available width. */
+.container.body {
+  width: 100%;
+  max-width: 100%;
+}
+
+.checkmark {border: 1px black gray;}
+.thStyle {
+  background-color: #2B2B36;
+  text-align:center;
+  color: white;}
+  table tr th {    background: #2B2B36;
+  color: white;}
+
+  .modal-body {
+  max-height: 70vh; /* Set maximum height for the modal body */
+  overflow-y: auto; /* Allow vertical scrolling if content exceeds max height */
+}
+
+.fee-challans-loader {
+  display: none;
+  padding: 12px 0 18px;
+}
+
+.fee-progress-wrap {
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: center;
+  font-weight: 600;
+  color: #f28c00;
+}
+
+.fee-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #f1f1f1;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
+
+.fee-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #111 0%, #f28c00 100%);
+  transition: width 0.2s ease;
+}
+
+.fee-progress-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #444;
+}
+
+/* Fee History Modal - Student info chips */
+.fee-student-info-bar {
+  display: none;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fee-info-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 20px;
+  padding: 3px 11px;
+  font-size: 12px;
+  color: #fff;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+}
+
+/* Fee History Modal - Professional UI */
+#fee_payments .modal-content {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 0 1px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+#fee_payments .modal-header {
+  background: linear-gradient(135deg, #2B2B36 0%, #3d3d4a 100%);
+  color: #fff;
+  padding: 16px 20px;
+  border-bottom: none;
+}
+#fee_payments .modal-header .close {
+  color: #fff;
+  opacity: 0.9;
+  text-shadow: none;
+  margin-top: -2px;
+}
+#fee_payments .modal-header .fee-payments-heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+#fee_payments .modal-body {
+  padding: 20px;
+  background: #f8f9fa;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+#fee_payments .modal-footer {
+  padding: 14px 20px;
+  background: #fff;
+  border-top: 1px solid #e9ecef;
+  border-radius: 0 0 12px 12px;
+}
+#fee_payments .modal-footer .btn-default {
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-weight: 500;
+}
+
+/* Fee History modal only: style content from student_fee_ladger_new.php (no change in that file) */
+#fee_payments #fee_payments_content {
+  padding: 0;
+  overflow-x: auto;
+}
+
+/* Fix: <style> tag inside #myID creates visible block space in some browsers — force hidden */
+#fee_payments_content style,
+#fee_payments_content script {
+  display: none !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+}
+
+#fee_payments #fee_payments_content #myID {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 16px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  overflow: hidden; /* BFC: contains floated Print Report button */
+  width: 100%;
+}
+#fee_payments #fee_payments_content #myID > a.btn.pull-right {
+  float: right;
+  margin: 0 0 10px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 7px 14px;
+  font-size: 13px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+#fee_payments #fee_payments_content #myID table.responsive {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #fff;
+  border: none !important;
+  table-layout: auto;
+}
+#fee_payments #fee_payments_content #myID table.responsive th,
+#fee_payments #fee_payments_content #myID table.responsive .thStyle {
+  background: #2B2B36 !important;
+  color: #fff !important;
+  font-weight: 600;
+  text-align: center;
+  padding: 12px 10px;
+  border: none;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(1) { width: 10%; }
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(2) { width: 25%; }
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(3) { width: 10%; }
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(4) { width: 12%; }
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(7) { width: 12%; }
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(8) { width: 12%; }
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(9) { width: 12%; }
+#fee_payments #fee_payments_content #myID table.responsive td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+  word-wrap: break-word;
+}
+#fee_payments #fee_payments_content #myID table.responsive tr:not(:first-child):not(:last-child) {
+  transition: background 0.15s ease;
+}
+#fee_payments #fee_payments_content #myID table.responsive tr:not(:first-child):not(:last-child):hover {
+  background: #f8f9fa !important;
+}
+#fee_payments #fee_payments_content #myID table.responsive tr:not(:first-child):not(:last-child)[style*="F9E1CD"] {
+  background: #fff8f6 !important;
+}
+#fee_payments #fee_payments_content #myID table.responsive tr:not(:first-child):not(:last-child)[style*="FFF3CD"] {
+  background: #fffef5 !important;
+}
+#fee_payments #fee_payments_content #myID table.responsive tr:last-child {
+  background: #2B2B36 !important;
+  color: #fff;
+  font-weight: 600;
+}
+#fee_payments #fee_payments_content #myID table.responsive tr:last-child td {
+  border-bottom: none;
+  padding: 14px 10px;
+  border: none;
+  color: #fff;
+}
+/* Total row: sumPaid (5th td) and sumRemaining (6th td) — ensure visible and centered */
+#fee_payments #fee_payments_content #myID table.responsive tr:last-child td:nth-child(5),
+#fee_payments #fee_payments_content #myID table.responsive tr:last-child td:nth-child(6) {
+  display: table-cell !important;
+  visibility: visible !important;
+  text-align: center !important;
+  color: #fff !important;
+  padding: 14px 10px !important;
+}
+#fee_payments #fee_payments_content #myID table.responsive .btn-group .btn.btn-warning {
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+}
+#fee_payments #fee_payments_content #myID table.responsive .btn-primary.btn-xs {
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+}
+#fee_payments #fee_payments_content #myID table.responsive .btn-success.btn-xs {
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #10b981;
+  color: #fff;
+  border: none;
+}
+#fee_payments #fee_payments_content #myID table.responsive .btn-danger.btn-xs {
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+}
+#fee_payments #fee_payments_content #myID table.responsive .btn-warning.btn-xs {
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+}
+/* Hide Print column (.hideColumn) in all rows including header and total row */
+#fee_payments #fee_payments_content #myID table.responsive .hideColumn,
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(5) {
+  display: none !important;
+}
+/* Hide Payments/View column: 6th TH in header, 6th TD in data rows, 4th TD in total row (colspan shifts positions) */
+#fee_payments #fee_payments_content #myID table.responsive th:nth-child(6),
+#fee_payments #fee_payments_content #myID table.responsive tr:not(:last-child) td:nth-child(6),
+#fee_payments #fee_payments_content #myID table.responsive tr:last-child td:nth-child(4) {
+  display: none !important;
+}
+
+/* ============ Compact & Colorful Filter Panel ============ */
+.fee-filter-panel {
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.fee-filter-panel > .panel-heading {
+  background: linear-gradient(135deg, #2B2B36 0%, #3d3d4a 100%);
+  color: #fff;
+  padding: 12px 20px;
+  border-bottom: none;
+}
+.fee-filter-panel > .panel-heading h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #fff;
+}
+.fee-filter-panel > .panel-heading #fee_challans_count {
+  color: #f2b466;
+}
+.fee-filter-panel > .panel-body {
+  padding: 14px 16px 16px;
+  background: #fbfbfc;
+}
+.fee-filter-panel label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #f28c00;
+  margin-bottom: 4px;
+}
+.fee-filter-panel .form-group { margin-bottom: 0; }
+
+/* Filter fields + button in a single full-width row */
+#advanceSearch.fee-filter-fields-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+}
+.fee-filter-field {
+  flex: 1 1 150px;
+  min-width: 130px;
+}
+.fee-filter-btn-col {
+  flex: 0 0 auto;
+}
+.fee-filter-btn-col button.inputheight {
+  margin: 0 !important;
+  float: none !important;
+  white-space: nowrap;
+  padding-left: 26px;
+  padding-right: 26px;
+}
+@media (max-width: 767px) {
+  .fee-filter-field,
+  .fee-filter-btn-col {
+    flex: 1 1 100%;
+  }
+  .fee-filter-btn-col button.inputheight {
+    width: 100%;
+  }
+}
+.fee-filter-panel .inputheight {
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid #e2e4e8;
+  font-size: 13px;
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.fee-filter-panel .inputheight:focus {
+  border-color: #f28c00;
+  box-shadow: 0 0 0 3px rgba(242,140,0,0.12);
+  outline: none;
+}
+.fee-filter-panel button.btn-primary.inputheight {
+  background: linear-gradient(135deg, #f28c00 0%, #d97600 100%);
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(242,140,0,0.3);
+}
+.fee-filter-panel button.btn-primary.inputheight:hover {
+  background: linear-gradient(135deg, #d97600 0%, #c26800 100%);
+}
+
+/* ============ Fee Summary Stat Cards ============ */
+.fee-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 18px;
+}
+.stat-card {
+  flex: 1 1 150px;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-left: 4px solid #ccc;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+.stat-card .stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.stat-card .stat-label {
+  font-size: 10.5px;
+  color: #888;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.stat-card .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.3;
+}
+.stat-total       { border-left-color: #6c757d; }
+.stat-total .stat-icon       { background: #eceef0; color: #495057; }
+.stat-paid        { border-left-color: #10b981; }
+.stat-paid .stat-icon        { background: #d1fae5; color: #059669; }
+.stat-partial     { border-left-color: #f59e0b; }
+.stat-partial .stat-icon     { background: #fef3c7; color: #b45309; }
+.stat-unpaid      { border-left-color: #ef4444; }
+.stat-unpaid .stat-icon      { background: #fee2e2; color: #dc2626; }
+
+@media (max-width: 767px) {
+  .stat-card { flex: 1 1 45%; }
+}
+
+/* ============ Empty State (before Filter is clicked) ============ */
+.fee-empty-state {
+  text-align: center;
+  padding: 50px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  color: #6c757d;
+}
+.fee-empty-state i.fa-filter {
+  font-size: 34px;
+  color: #f28c00;
+  background: #fde9cc;
+  width: 64px;
+  height: 64px;
+  line-height: 64px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-bottom: 14px;
+}
+.fee-empty-state p {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px;
+}
+.fee-empty-state span {
+  font-size: 13px;
+  color: #888;
+}
+
+
+</style>
+
+  <script>
+    var apiStatus  = 0;
+    var branchName = "Test Portal";
+
+function getsec(id){
+    
+    if (window.XMLHttpRequest) {
+      xmlhttp=new XMLHttpRequest();
+
+    } else { // code for IE6, IE5
+
+      xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+
+    }
+
+    xmlhttp.onreadystatechange=function() {
+
+      if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+
+        document.getElementById("txt_section").innerHTML=xmlhttp.responseText;
+      }
+
+    }
+
+    xmlhttp.open("GET","get_section_all.php?class_id="+id,true);
+
+    xmlhttp.send();
+
+  }
+                 
+  </script><style type="text/css">.jqstooltip { position: absolute;left: 0px;top: 0px;visibility: hidden;background: rgb(0, 0, 0) transparent;background-color: rgba(0,0,0,0.6);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";color: white;font: 10px arial, san serif;text-align: left;white-space: nowrap;padding: 5px;border: 1px solid white;box-sizing: content-box;z-index: 10000;}.jqsfield { color: white;font: 10px arial, san serif;text-align: left;}</style></head>
+
+ 
+
+
+
+  <body class="nav-md sidebar-collapsed">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col">
+     
+        <style>
+  :root {
+    --sb-collapsed: 90px;
+    --sb-expanded: 240px;
+    --sb-bg: #2B2B36;
+    --sb-fly: #3A3A4D;
+    --text: #fff;
+  }
+
+  /* Sidebar main */
+  .left_col {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: var(--sb-bg);
+    z-index: 1000;
+    transition: width .25s ease;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+    /* scroll always */
+  }
+
+  body.sidebar-collapsed .left_col {
+    width: var(--sb-collapsed);
+  }
+
+  body.sidebar-expanded .left_col {
+    width: var(--sb-expanded);
+  }
+
+  /* Fix content positioning - ensure it's to the right of sidebar, not underneath */
+  body.sidebar-collapsed .right_col {
+    margin-left: var(--sb-collapsed) !important;
+    transition: margin-left .25s ease;
+    width: calc(100% - var(--sb-collapsed));
+  }
+
+  body.sidebar-expanded .right_col {
+    margin-left: var(--sb-expanded) !important;
+    transition: margin-left .25s ease;
+    width: calc(100% - var(--sb-expanded));
+  }
+
+  /* Ensure main content container is properly positioned */
+  .right_col {
+    position: relative;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  /* Additional fix for any content that might be going underneath */
+  .main_content,
+  .content-wrapper,
+  .dashboard-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Sidebar header toggle */
+  .ds-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    height: 60px;
+    box-sizing: border-box;
+  }
+
+  .ds-brand .ds-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #fff;
+  }
+
+  .ds-brand .ds-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Branch info */
+  .ds-branch {
+    color: #fff;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 12px;
+    opacity: .9;
+  }
+
+  body.sidebar-collapsed .ds-branch {
+    display: none;
+  }
+
+  /* Menu styling */
+  #sidebar-menu {
+    padding: 6px 0 16px;
+  }
+
+  #sidebar-menu .side-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #sidebar-menu .side-menu>li {
+    position: relative;
+  }
+
+  #sidebar-menu .side-menu>li>a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 10px;
+    margin: 4px 8px;
+    white-space: nowrap;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.2px;
+    transition: all 0.2s ease;
+  }
+
+  #sidebar-menu .side-menu>li>a:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(2px);
+  }
+
+  #sidebar-menu .side-menu>li>a i {
+    min-width: 20px;
+    text-align: center;
+    font-size: 18px;
+    opacity: 0.9;
+  }
+
+  #sidebar-menu .side-menu>li>a .chev {
+    margin-left: auto;
+    opacity: .6;
+    transition: transform 0.2s ease;
+  }
+
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>a {
+    justify-content: center;
+    font-size: 0;
+    padding: 8px 6px;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>a i {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  /* Show label under icon in collapsed mode */
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>a .label {
+    display: block;
+    font-size: 10px;
+    margin-top: 2px;
+    line-height: 1.05;
+    max-width: 64px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>a .chev {
+    display: none;
+  }
+
+  /* Child menu expanded */
+  .child_menu {
+    display: none;
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    background: var(--sb-fly);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .child_menu li a {
+    display: block;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #fff;
+    text-decoration: none;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.1px;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    margin: 2px 6px;
+  }
+
+  .child_menu li a:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(3px);
+    color: #fff;
+  }
+
+  body.sidebar-expanded #sidebar-menu .side-menu>li.active>.child_menu {
+    display: block;
+    position: static;
+    margin: 2px 8px 8px 44px;
+    border-radius: 8px;
+    animation: slideIn 0.2s ease;
+  }
+
+  /* Child menu collapsed flyout */
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>.child_menu {
+    position: fixed;
+    left: var(--sb-collapsed);
+    min-width: 220px;
+    max-height: 80vh;
+    overflow: auto;
+    display: none;
+    z-index: 2001;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    .left_col {
+      width: var(--sb-collapsed) !important;
+    }
+
+    body.sidebar-collapsed .right_col {
+      margin-left: var(--sb-collapsed) !important;
+      width: calc(100% - var(--sb-collapsed)) !important;
+    }
+
+    /* Larger touch targets for mobile */
+    #sidebar-menu .side-menu>li>a {
+      min-height: 44px;
+      /* iOS recommended touch target size */
+      padding: 12px 8px;
+    }
+
+    /* Better mobile submenu positioning */
+    body.sidebar-collapsed #sidebar-menu .side-menu>li>.child_menu {
+      left: var(--sb-collapsed);
+      min-width: 200px;
+      max-width: calc(100vw - var(--sb-collapsed) - 20px);
+    }
+
+    /* Mobile-friendly tooltip positioning */
+    .child_menu {
+      font-size: 14px;
+    }
+
+    .child_menu li a {
+      padding: 12px 16px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  /* Professional typography improvements */
+  body.sidebar-expanded #sidebar-menu .side-menu>li>a .label {
+    font-weight: 500;
+    font-size: 14px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  body.sidebar-expanded #sidebar-menu .side-menu>li>a .chev {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+  }
+
+  body.sidebar-expanded #sidebar-menu .side-menu>li:hover>a .chev {
+    transform: rotate(90deg);
+  }
+
+  /* Branch info professional styling */
+  .ds-branch {
+    color: #fff;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-weight: 500;
+    opacity: .9;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 8px;
+  }
+
+  /* Animations */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Logout button */
+  .ds-logout {
+    margin: 12px;
+  }
+
+  .ds-logout a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: #fff;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    transition: all .2s ease;
+  }
+
+  .ds-logout a:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+
+  /* === Sidebar Scrollbar Styling === */
+  .left_col::-webkit-scrollbar {
+    width: 2px;
+    /* ultra-thin scrollbar */
+  }
+
+  /* Track (background) */
+  .left_col::-webkit-scrollbar-track {
+    background: transparent;
+    /* transparent rakha for clean look */
+  }
+
+  /* Thumb (scroll handle) */
+  .left_col::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgb(67, 67, 68), rgb(241, 243, 245));
+    /* purple → blue gradient */
+    border-radius: 10px;
+  }
+
+  /* Hover effect */
+  .left_col::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgb(86, 85, 87), rgb(237, 232, 247));
+    /* stylish darker gradient */
+  }
+
+  /* Firefox ke liye */
+  .left_col {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(100, 98, 101) transparent;
+    /* thumb color, track transparent */
+    border-top-right-radius: 1%;
+    border-bottom-right-radius: 1%;
+
+  }
+
+
+
+  /* === Sidebar Logo Styling === */
+  .sidebar-logo {
+    text-align: center;
+    /* center me rakhega */
+    padding: 8px 0;
+    /* upar niche thoda gap */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* halka separator line */
+  }
+
+  .sidebar-logo img {
+    height: 55px;
+    /* aap adjust kar sakte ho */
+    width: 55px;
+    border-radius: 50%;
+    /* thoda rounded look */
+    object-fit: cover;
+    /* image ko fit karega */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    /* stylish shadow */
+  }
+</style>
+
+<style>
+  /* === iOS-only overlay sidebar mode === */
+  body.ios-device .left_col {
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    width: 260px !important;
+    /* fixed width for iOS */
+    z-index: 2003;
+    /* above backdrop and close to toggle */
+  }
+
+  body.ios-device.ios-sidebar-open .left_col {
+    transform: translateX(0);
+  }
+
+  /* On iOS overlay mode, don't shift content area */
+  body.ios-device .right_col {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Floating toggle button (iOS only) */
+  #ios_toggle_btn {
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    z-index: 2002;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 0;
+    background: #2B2B36;
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  body.ios-device #ios_toggle_btn {
+    display: inline-flex;
+  }
+
+  /* Backdrop behind sidebar when open (iOS only) */
+  #ios_sidebar_backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 2000;
+    display: none;
+  }
+
+  body.ios-device.ios-sidebar-open #ios_sidebar_backdrop {
+    display: block;
+  }
+
+  /* === iOS simple menu (requested structure) === */
+  #menu-ios {
+    display: none;
+    padding: 8px 10px 16px;
+  }
+
+  body.ios-device #menu-web {
+    display: none;
+  }
+
+  body.ios-device #menu-ios {
+    display: block;
+  }
+
+  .ios-nav .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    text-decoration: none;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 2px 6px;
+    background: transparent;
+  }
+
+  .ios-nav .nav-item:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .ios-nav .nav-item .nav-icon {
+    display: none;
+  }
+
+  .ios-nav .nav-item .nav-text {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: .2px;
+  }
+
+  .ios-nav .submenu {
+    display: none;
+    background: var(--sb-fly);
+    border: 1px solid rgba(255, 255, 255, .05);
+    border-radius: 10px;
+    margin: 4px 8px 8px 12px;
+    padding: 6px 0;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+  }
+
+  .ios-nav .submenu-item {
+    display: block;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    margin: 2px 6px;
+  }
+
+  .ios-nav .submenu-item:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+</style>
+
+<!-- iOS toggle button mounted near top-left of the page -->
+<button id="ios_toggle_btn" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></button>
+
+<div class="left_col scroll-view" id="dsLeftCol">
+  <!-- Toggle Only -->
+  <!-- iOS toggle button (hidden by default, shown via JS/CSS on iOS) -->
+  <!-- Moved OUTSIDE sidebar so it's visible when sidebar is off-canvas -->
+
+  <!-- Logo Section -->
+  <div class="sidebar-logo">
+    <img src="https://apps.eduportal.pk/Production/img/355497hassan.jpeg" onerror="this.onerror=null; this.src='https://efsvolume-backup.s3.amazonaws.com/apps.eduportal-pk.com/img/355497hassan.jpeg';" alt="Logo">
+  </div>
+
+  <div class="ds-branch">
+    <div style="font-weight:700; font-size:12px;">Test Portal</div>
+    <div style="font-size:12px;">(2026-2027)</div>
+  </div>
+
+  <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+    <!-- Web/Android original menu -->
+    <ul class="side-menu" id="menu-web">
+      <li><a href="software_demo_videos.php"><i class="fa fa-play"></i><span class="label" style="font-weight: normal !important;">Guidline Videos</span></a></li>
+
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-phone"></i>
+              <span class="label" style="font-weight: normal !important;">Front Office</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="front_desk_analytics.php">
+                      Front Desk Overview                    </a>
+                  </li>
+                                <li>
+                    <a href="student_inquiry.php">
+                      Admission Inquiries                    </a>
+                  </li>
+                                <li>
+                    <a href="manage_complaint.php">
+                      Complaint Hub                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-dashboard"></i>
+              <span class="label" style="font-weight: normal !important;">Dashboard</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="dashboard.php">
+                      Executive Dashboard                    </a>
+                  </li>
+                                <li>
+                    <a href="basic_dashboard.php">
+                      Staff Dashboard                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-users"></i>
+              <span class="label" style="font-weight: normal !important;">Students</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="add_student.php">
+                      Add New Student                    </a>
+                  </li>
+                                <li>
+                    <a href="students_analytics_dashboard.php">
+                      Student Analytics                    </a>
+                  </li>
+                                <li>
+                    <a href="class_promotion.php">
+                      Class Promotion                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-microphone"></i>
+              <span class="label" style="font-weight: normal !important;">Attendance</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="mark_attend.php">
+                      Mark Attendance                    </a>
+                  </li>
+                                <li>
+                    <a href="mark_attendanceReport_list.php">
+                      Attendance Analytics                    </a>
+                  </li>
+                                <li>
+                    <a href="send_msgs.php?attendance=A">
+                      Send SMS Report                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-envelope"></i>
+              <span class="label" style="font-weight: normal !important;">Messages</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="new_message.php">
+                      New Message                    </a>
+                  </li>
+                                <li>
+                    <a href="messages_history.php">
+                      View Messages                    </a>
+                  </li>
+                                <li>
+                    <a href="view_templates.php">
+                      View Templates                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-money"></i>
+              <span class="label" style="font-weight: normal !important;">Fee Collection</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="monthly_challan.php">
+                      Create Challan                    </a>
+                  </li>
+                                <li>
+                    <a href="view_challan_details.php">
+                      View Challan                    </a>
+                  </li>
+                                <li>
+                    <a href="multi_fee_reports.php">
+                      Fee Reporting                    </a>
+                  </li>
+                                <li>
+                    <a href="update_fee_settings.php">
+                      Fee Settings                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-graduation-cap"></i>
+              <span class="label" style="font-weight: normal !important;">Examination</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="view_marksheet.php">
+                      Add Marks Sheet                    </a>
+                  </li>
+                                <li>
+                    <a href="reportcards.php">
+                      View Marks Sheet                    </a>
+                  </li>
+                                <li>
+                    <a href="manage_exams.php">
+                      Academic Setting                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-clock-o"></i>
+              <span class="label" style="font-weight: normal !important;">Timetable</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="period_categories.php">
+                      Periods Category                    </a>
+                  </li>
+                                <li>
+                    <a href="create_period_details.php">
+                      Create/Manage Periods                    </a>
+                  </li>
+                                <li>
+                    <a href="class_period.php">
+                      Assign Periods to Classes                    </a>
+                  </li>
+                                <li>
+                    <a href="class_period_selection.php">
+                      Create Timetable                    </a>
+                  </li>
+                                <li>
+                    <a href="view_class_period_selection.php">
+                      View Timetable                    </a>
+                  </li>
+                                <li>
+                    <a href="view_teachers_timetable.php">
+                      Teachers Timetable                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-user"></i>
+              <span class="label" style="font-weight: normal !important;">Employees/HRM</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="add_emp.php">
+                      Add Employee                    </a>
+                  </li>
+                                <li>
+                    <a href="view_emp.php">
+                      View Employees                    </a>
+                  </li>
+                                <li>
+                    <a href="view_emp_attendance.php">
+                      Staff Attendance                    </a>
+                  </li>
+                                <li>
+                    <a href="monthly_attendance.php">
+                      Attendance Report                    </a>
+                  </li>
+                                <li>
+                    <a href="old_employee.php">
+                      Old Employees                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-clock-o"></i>
+              <span class="label" style="font-weight: normal !important;">Datesheet</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="create_datesheet.php">
+                      Create Datesheet                    </a>
+                  </li>
+                                <li>
+                    <a href="view_datesheet.php">
+                      View Datesheet                    </a>
+                  </li>
+                                <li>
+                    <a href="generate_rollnoSlips.php">
+                      Generate Roll No Slips                    </a>
+                  </li>
+                                <li>
+                    <a href="syllabus_management.php">
+                      Syllabus Management                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-truck"></i>
+              <span class="label" style="font-weight: normal !important;">Transport</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="vehicles.php">
+                      Vehicles                    </a>
+                  </li>
+                                <li>
+                    <a href="route.php">
+                      Routes                    </a>
+                  </li>
+                                <li>
+                    <a href="vehicle_route.php">
+                      Assign Vehicles                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-book"></i>
+              <span class="label" style="font-weight: normal !important;">Library</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="list_books.php">
+                      Book List                    </a>
+                  </li>
+                                <li>
+                    <a href="issue_return.php">
+                      Issue Return                    </a>
+                  </li>
+                                <li>
+                    <a href="issue_return_employee.php">
+                      Employee Issue&amp;Return                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-paypal"></i>
+              <span class="label" style="font-weight: normal !important;">PayRoll</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="creat_payroll.php">
+                      Create PayRoll                    </a>
+                  </li>
+                                <li>
+                    <a href="view_payroll.php">
+                      View PayRoll                     </a>
+                  </li>
+                                <li>
+                    <a href="staff_security.php">
+                      Staff Security Fee                    </a>
+                  </li>
+                                <li>
+                    <a href="payroll_setting.php">
+                      PayRoll Setting                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-home"></i>
+              <span class="label" style="font-weight: normal !important;">Parents Portal</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="parents_portal_dashboard.php">
+                      Parents Overview                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-money"></i>
+              <span class="label" style="font-weight: normal !important;">Expenses</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="manage_expenses.php">
+                      Add/View Expenses                    </a>
+                  </li>
+                                <li>
+                    <a href="monthly_expenses_report.php">
+                      Expenses Report                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-file"></i>
+              <span class="label" style="font-weight: normal !important;">Cards Generator</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="cards.php">
+                      Staff Cards                    </a>
+                  </li>
+                                <li>
+                    <a href="students_card.php">
+                      Students Cards                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-search"></i>
+              <span class="label" style="font-weight: normal !important;">Point of Sale</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="canteen_dashboard.php">
+                      POS Dashboard                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-dollar"></i>
+              <span class="label" style="font-weight: normal !important;">Academic Setup</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="academic_setup.php">
+                      Manage Academics                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-gear"></i>
+              <span class="label" style="font-weight: normal !important;">System Settings</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="settings.php">
+                      Update Settings                    </a>
+                  </li>
+                                <li>
+                    <a href="manage_localities.php">
+                      Manage Localities                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-calculator"></i>
+              <span class="label" style="font-weight: normal !important;">Accounts</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="add_revenue.php">
+                      Add Revenue                    </a>
+                  </li>
+                                <li>
+                    <a href="revenue_list.php">
+                      List of Revenues                    </a>
+                  </li>
+                                <li>
+                    <a href="revenue_heads.php">
+                      Revenue Heads                    </a>
+                  </li>
+                          </ul>
+          </li>
+      
+      <li class="ds-logout">
+        <a href="#" onclick="localStorage.clear(); window.location.href='logout.php'; return false;">
+          <span>LOGOUT</span> <i class="fa fa-sign-out" aria-hidden="true"></i>
+        </a>
+      </li>
+    </ul>
+
+    <!-- iOS simple menu with requested structure -->
+    <div id="menu-ios" class="ios-nav">
+      <a href="software_demo_videos.php" class="nav-item">
+        <div class="nav-icon"><i class="fa fa-play"></i></div>
+        <div class="nav-text">Guidline Videos</div>
+      </a>
+      <a href="front_desk_analytics.php" class="nav-item">
+        <div class="nav-icon"><i class="fa fa-line-chart"></i></div>
+        <div class="nav-text">Front Desk Analytics</div>
+      </a>
+
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-phone"></i></div>
+            <div class="nav-text">Front Office</div>
+          </a>
+          <div class="submenu">
+                            <a href="front_desk_analytics.php" class="submenu-item">Front Desk Overview</a>
+                            <a href="student_inquiry.php" class="submenu-item">Admission Inquiries</a>
+                            <a href="manage_complaint.php" class="submenu-item">Complaint Hub</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-dashboard"></i></div>
+            <div class="nav-text">Dashboard</div>
+          </a>
+          <div class="submenu">
+                            <a href="dashboard.php" class="submenu-item">Executive Dashboard</a>
+                            <a href="basic_dashboard.php" class="submenu-item">Staff Dashboard</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-users"></i></div>
+            <div class="nav-text">Students</div>
+          </a>
+          <div class="submenu">
+                            <a href="add_student.php" class="submenu-item">Add New Student</a>
+                            <a href="students_analytics_dashboard.php" class="submenu-item">Student Analytics</a>
+                            <a href="class_promotion.php" class="submenu-item">Class Promotion</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-microphone"></i></div>
+            <div class="nav-text">Attendance</div>
+          </a>
+          <div class="submenu">
+                            <a href="mark_attend.php" class="submenu-item">Mark Attendance</a>
+                            <a href="mark_attendanceReport_list.php" class="submenu-item">Attendance Analytics</a>
+                            <a href="send_msgs.php?attendance=A" class="submenu-item">Send SMS Report</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-envelope"></i></div>
+            <div class="nav-text">Messages</div>
+          </a>
+          <div class="submenu">
+                            <a href="new_message.php" class="submenu-item">New Message</a>
+                            <a href="messages_history.php" class="submenu-item">View Messages</a>
+                            <a href="view_templates.php" class="submenu-item">View Templates</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-money"></i></div>
+            <div class="nav-text">Fee Collection</div>
+          </a>
+          <div class="submenu">
+                            <a href="monthly_challan.php" class="submenu-item">Create Challan</a>
+                            <a href="view_challan_details.php" class="submenu-item">View Challan</a>
+                            <a href="multi_fee_reports.php" class="submenu-item">Fee Reporting</a>
+                            <a href="update_fee_settings.php" class="submenu-item">Fee Settings</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-graduation-cap"></i></div>
+            <div class="nav-text">Examination</div>
+          </a>
+          <div class="submenu">
+                            <a href="view_marksheet.php" class="submenu-item">Add Marks Sheet</a>
+                            <a href="reportcards.php" class="submenu-item">View Marks Sheet</a>
+                            <a href="manage_exams.php" class="submenu-item">Academic Setting</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-clock-o"></i></div>
+            <div class="nav-text">Timetable</div>
+          </a>
+          <div class="submenu">
+                            <a href="period_categories.php" class="submenu-item">Periods Category</a>
+                            <a href="create_period_details.php" class="submenu-item">Create/Manage Periods</a>
+                            <a href="class_period.php" class="submenu-item">Assign Periods to Classes</a>
+                            <a href="class_period_selection.php" class="submenu-item">Create Timetable</a>
+                            <a href="view_class_period_selection.php" class="submenu-item">View Timetable</a>
+                            <a href="view_teachers_timetable.php" class="submenu-item">Teachers Timetable</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-user"></i></div>
+            <div class="nav-text">Employees/HRM</div>
+          </a>
+          <div class="submenu">
+                            <a href="add_emp.php" class="submenu-item">Add Employee</a>
+                            <a href="view_emp.php" class="submenu-item">View Employees</a>
+                            <a href="view_emp_attendance.php" class="submenu-item">Staff Attendance</a>
+                            <a href="monthly_attendance.php" class="submenu-item">Attendance Report</a>
+                            <a href="old_employee.php" class="submenu-item">Old Employees</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-clock-o"></i></div>
+            <div class="nav-text">Datesheet</div>
+          </a>
+          <div class="submenu">
+                            <a href="create_datesheet.php" class="submenu-item">Create Datesheet</a>
+                            <a href="view_datesheet.php" class="submenu-item">View Datesheet</a>
+                            <a href="generate_rollnoSlips.php" class="submenu-item">Generate Roll No Slips</a>
+                            <a href="syllabus_management.php" class="submenu-item">Syllabus Management</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-truck"></i></div>
+            <div class="nav-text">Transport</div>
+          </a>
+          <div class="submenu">
+                            <a href="vehicles.php" class="submenu-item">Vehicles</a>
+                            <a href="route.php" class="submenu-item">Routes</a>
+                            <a href="vehicle_route.php" class="submenu-item">Assign Vehicles</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-book"></i></div>
+            <div class="nav-text">Library</div>
+          </a>
+          <div class="submenu">
+                            <a href="list_books.php" class="submenu-item">Book List</a>
+                            <a href="issue_return.php" class="submenu-item">Issue Return</a>
+                            <a href="issue_return_employee.php" class="submenu-item">Employee Issue&amp;Return</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-paypal"></i></div>
+            <div class="nav-text">PayRoll</div>
+          </a>
+          <div class="submenu">
+                            <a href="creat_payroll.php" class="submenu-item">Create PayRoll</a>
+                            <a href="view_payroll.php" class="submenu-item">View PayRoll </a>
+                            <a href="staff_security.php" class="submenu-item">Staff Security Fee</a>
+                            <a href="payroll_setting.php" class="submenu-item">PayRoll Setting</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-home"></i></div>
+            <div class="nav-text">Parents Portal</div>
+          </a>
+          <div class="submenu">
+                            <a href="parents_portal_dashboard.php" class="submenu-item">Parents Overview</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-money"></i></div>
+            <div class="nav-text">Expenses</div>
+          </a>
+          <div class="submenu">
+                            <a href="manage_expenses.php" class="submenu-item">Add/View Expenses</a>
+                            <a href="monthly_expenses_report.php" class="submenu-item">Expenses Report</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-file"></i></div>
+            <div class="nav-text">Cards Generator</div>
+          </a>
+          <div class="submenu">
+                            <a href="cards.php" class="submenu-item">Staff Cards</a>
+                            <a href="students_card.php" class="submenu-item">Students Cards</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-search"></i></div>
+            <div class="nav-text">Point of Sale</div>
+          </a>
+          <div class="submenu">
+                            <a href="canteen_dashboard.php" class="submenu-item">POS Dashboard</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-dollar"></i></div>
+            <div class="nav-text">Academic Setup</div>
+          </a>
+          <div class="submenu">
+                            <a href="academic_setup.php" class="submenu-item">Manage Academics</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-gear"></i></div>
+            <div class="nav-text">System Settings</div>
+          </a>
+          <div class="submenu">
+                            <a href="settings.php" class="submenu-item">Update Settings</a>
+                            <a href="manage_localities.php" class="submenu-item">Manage Localities</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-calculator"></i></div>
+            <div class="nav-text">Accounts</div>
+          </a>
+          <div class="submenu">
+                            <a href="add_revenue.php" class="submenu-item">Add Revenue</a>
+                            <a href="revenue_list.php" class="submenu-item">List of Revenues</a>
+                            <a href="revenue_heads.php" class="submenu-item">Revenue Heads</a>
+                      </div>
+      
+      <a href="#" class="nav-item" onclick="localStorage.clear(); window.location.href='logout.php'; return false;">
+        <div class="nav-icon"><i class="fa fa-sign-out"></i></div>
+        <div class="nav-text">Logout</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- iOS backdrop -->
+<div id="ios_sidebar_backdrop"></div>
+
+<script>
+  (function() {
+    if (!document.body.classList.contains('sidebar-expanded') &&
+      !document.body.classList.contains('sidebar-collapsed')) {
+      document.body.classList.add('sidebar-collapsed');
+    }
+  })();
+
+  // Detect iOS / iPadOS / Mac with touch and enable overlay mode
+  (function() {
+    var ua = navigator.userAgent || navigator.vendor || window.opera;
+    var isiOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isiOS) {
+      document.body.classList.add('ios-device');
+      var btn = document.getElementById('ios_toggle_btn');
+      var backdrop = document.getElementById('ios_sidebar_backdrop');
+      if (btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          document.body.classList.toggle('ios-sidebar-open');
+        }, {
+          passive: false
+        });
+      }
+      if (backdrop) {
+        backdrop.addEventListener('click', function() {
+          document.body.classList.remove('ios-sidebar-open');
+        });
+      }
+      // Close on escape
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          document.body.classList.remove('ios-sidebar-open');
+        }
+      });
+    }
+  })();
+
+  var dsToggle = document.getElementById('ds_toggle_btn');
+  if (dsToggle) {
+    dsToggle.addEventListener('click', function() {
+      document.body.classList.toggle('sidebar-expanded');
+      document.body.classList.toggle('sidebar-collapsed');
+    });
+  }
+
+  // Make state accessible to other handlers
+  var activeFlyout = null;
+  var hoverTimeout = null;
+
+  // Mobile detection
+  var isMobile = function() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      ('ontouchstart' in window) ||
+      (navigator.maxTouchPoints > 0);
+  };
+
+  function bindFlyouts() {
+    var isCollapsed = function() {
+      return document.body.classList.contains('sidebar-collapsed');
+    };
+
+
+
+    // Handle items with submenus
+    document.querySelectorAll('#sidebar-menu .has-children').forEach(function(li) {
+      var fly = li.querySelector('.child_menu');
+      if (!fly) return;
+
+      // Function to show submenu
+      function showSubmenu() {
+        if (!isCollapsed()) return;
+
+        // Clear any existing timeout
+        if (hoverTimeout) {
+          clearTimeout(hoverTimeout);
+          hoverTimeout = null;
+        }
+
+        // Hide any other active flyout first
+        if (activeFlyout && activeFlyout !== fly) {
+          activeFlyout.style.display = 'none';
+        }
+
+        var r = li.getBoundingClientRect();
+        fly.style.display = 'block';
+        fly.style.position = 'fixed';
+        fly.style.left = getComputedStyle(document.documentElement).getPropertyValue('--sb-collapsed').trim() || '60px';
+        // First render to measure height, then adjust to keep within viewport and align near item
+        fly.style.top = r.top + 'px';
+        fly.style.maxHeight = (window.innerHeight - 16) + 'px';
+        // After layout, adjust top so flyout fits in viewport
+        var fh = fly.offsetHeight || 0;
+        var desiredTop = Math.max(8, Math.min(window.innerHeight - fh - 8, r.top - 6));
+        fly.style.top = desiredTop + 'px';
+        fly.style.overflowY = 'auto';
+        fly.style.zIndex = 2001;
+
+        activeFlyout = fly;
+      }
+
+      // Function to hide submenu
+      function hideSubmenu() {
+        if (!isCollapsed()) return;
+
+        // Don't hide immediately, give user time to move to submenu
+        hoverTimeout = setTimeout(function() {
+          if (activeFlyout === fly) {
+            fly.style.display = 'none';
+            activeFlyout = null;
+          }
+        }, 150);
+      }
+
+      // Click events for both desktop and mobile
+      li.addEventListener('click', function(e) {
+        // Only prevent default if clicking on the parent link, not submenu links
+        var clickedLink = e.target.closest('a');
+        if (clickedLink && clickedLink.parentElement === li) {
+          e.preventDefault();
+          e.stopPropagation();
+        } else {
+          // Submenu link clicked — close flyout/dropdown before navigating
+          if (isCollapsed()) {
+            fly.style.display = 'none';
+            activeFlyout = null;
+          } else {
+            li.classList.remove('active');
+          }
+          return;
+        }
+
+        if (isCollapsed()) {
+          // Collapsed sidebar behavior
+          if (fly.style.display === 'block') {
+            fly.style.display = 'none';
+            activeFlyout = null;
+          } else {
+            // Hide any other active flyout first
+            if (activeFlyout && activeFlyout !== fly) {
+              activeFlyout.style.display = 'none';
+            }
+            showSubmenu();
+          }
+        } else {
+          // Expanded sidebar behavior
+          var isActive = li.classList.contains('active');
+
+          // Remove active class from all menu items
+          document.querySelectorAll('#sidebar-menu .has-children').forEach(function(item) {
+            item.classList.remove('active');
+          });
+
+          // Toggle active class on current item
+          if (!isActive) {
+            li.classList.add('active');
+          } else {
+            li.classList.remove('active');
+          }
+        }
+      });
+
+      // Hide submenu when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!li.contains(e.target) && !fly.contains(e.target)) {
+          if (isCollapsed()) {
+            fly.style.display = 'none';
+            activeFlyout = null;
+          } else {
+            li.classList.remove('active');
+          }
+        }
+      });
+    });
+
+    // Handle items without submenus - show tooltip on hover/touch
+    document.querySelectorAll('#sidebar-menu li:not(.has-children)').forEach(function(li) {
+      var link = li.querySelector('a');
+      if (!link) return;
+
+      var label = link.querySelector('.label');
+      if (!label) return;
+
+      // Function to show tooltip
+      function showTooltip() {
+        if (!isCollapsed()) return;
+
+        // Create tooltip with EXACT same structure as submenu
+        var tooltip = document.createElement('ul');
+        tooltip.className = 'child_menu';
+        tooltip.style.cssText = `
+        position: fixed;
+        left: var(--sb-collapsed);
+        top: ${li.getBoundingClientRect().top + 10}px;
+        min-width: 220px;
+        max-height: 80vh;
+        overflow: auto;
+        display: block;
+        z-index: 2001;
+        background: var(--sb-fly);
+        box-shadow: 0 8px 24px rgba(0,0,0,.25);
+        border-radius: 10px;
+        list-style: none;
+        margin: 0;
+        padding: 6px 0;
+      `;
+
+        // Add content with EXACT same structure as submenu items
+        tooltip.innerHTML = '<li>\
+          <a href="' + link.href + '" style="display: block; padding: 8px 14px; font-size: 13px; color: #fff; text-decoration: none;">\
+            ' + (label.textContent || '') + '\
+          </a>\
+        </li>';
+
+        // Add hover effect like submenu
+        var tooltipLink = tooltip.querySelector('a');
+        tooltipLink.addEventListener('mouseenter', function() {
+          this.style.background = 'rgba(255,255,255,0.08)';
+        });
+        tooltipLink.addEventListener('mouseleave', function() {
+          this.style.background = 'transparent';
+        });
+
+        document.body.appendChild(tooltip);
+        li._tooltip = tooltip;
+      }
+
+      // Function to hide tooltip
+      function hideTooltip() {
+        if (!isCollapsed()) return;
+
+        if (li._tooltip) {
+          li._tooltip.remove();
+          li._tooltip = null;
+        }
+      }
+
+      // Desktop hover events
+      if (!isMobile()) {
+        li.addEventListener('mouseenter', showTooltip);
+        li.addEventListener('mouseleave', hideTooltip);
+      } else {
+        // Mobile touch events - show tooltip on long press or tap
+        var touchStartTime = 0;
+        var touchTimeout = null;
+
+        li.addEventListener('touchstart', function(e) {
+          touchStartTime = Date.now();
+          touchTimeout = setTimeout(function() {
+            showTooltip();
+          }, 500); // Show after 500ms long press
+        });
+
+        li.addEventListener('touchend', function(e) {
+          if (touchTimeout) {
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+          }
+
+          // If it was a quick tap (not long press), hide tooltip
+          if (Date.now() - touchStartTime < 500) {
+            hideTooltip();
+          }
+        });
+
+        li.addEventListener('touchmove', function(e) {
+          if (touchTimeout) {
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+          }
+        });
+
+        // Hide tooltip when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!li.contains(e.target)) {
+            hideTooltip();
+          }
+        });
+      }
+    });
+  }
+  bindFlyouts();
+
+  // iOS simple menu interactions
+  (function() {
+    // Only bind on iOS devices
+    if (!document.body.classList.contains('ios-device')) return;
+
+    // Toggle submenu on tap
+    document.querySelectorAll('#menu-ios .has-submenu').forEach(function(item) {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // keep sidebar open while interacting
+        document.body.classList.add('ios-sidebar-open');
+        var submenu = this.nextElementSibling;
+        // Close others
+        document.querySelectorAll('#menu-ios .submenu').forEach(function(sm) {
+          if (sm !== submenu) {
+            sm.style.display = 'none';
+          }
+        });
+        // Toggle current
+        if (submenu) {
+          submenu.style.display = (submenu.style.display === 'block') ? 'none' : 'block';
+        }
+      }, {
+        passive: false
+      });
+    });
+
+    // Close submenus on outside click
+    document.addEventListener('click', function(e) {
+      var iosMenu = document.getElementById('menu-ios');
+      if (iosMenu && !iosMenu.contains(e.target)) {
+        document.querySelectorAll('#menu-ios .submenu').forEach(function(sm) {
+          sm.style.display = 'none';
+        });
+      }
+    });
+  })();
+
+  // Close all flyouts on every page show (handles bfcache and normal loads)
+  function closeAllFlyouts() {
+    document.querySelectorAll('#sidebar-menu .child_menu').forEach(function(flyout) {
+      flyout.style.display = 'none';
+    });
+    activeFlyout = null;
+    document.querySelectorAll('#sidebar-menu .has-children').forEach(function(item) {
+      item.classList.remove('active');
+    });
+  }
+  window.addEventListener('pageshow', closeAllFlyouts);
+
+  // Direct listeners on all child menu links — failsafe close before navigation
+  document.querySelectorAll('#sidebar-menu .child_menu a').forEach(function(link) {
+    link.addEventListener('click', closeAllFlyouts);
+  });
+
+  // Better scroll handling - don't hide immediately
+  var scrollTimeout;
+  window.addEventListener('scroll', function() {
+    if (!document.body.classList.contains('sidebar-collapsed')) return;
+
+    // Clear previous timeout
+    if (scrollTimeout) clearTimeout(scrollTimeout);
+
+    // Only hide after scrolling stops for a while
+    scrollTimeout = setTimeout(function() {
+      if (activeFlyout) {
+        activeFlyout.style.display = 'none';
+        activeFlyout = null;
+      }
+    }, 500); // Increased to 500ms
+  });
+
+  // Hide flyouts when clicking outside
+  document.addEventListener('click', function(e) {
+    var sidebar = document.getElementById('dsLeftCol');
+    var flyouts = document.querySelectorAll('#sidebar-menu .child_menu');
+
+    if (!sidebar.contains(e.target)) {
+      if (document.body.classList.contains('sidebar-collapsed')) {
+        flyouts.forEach(function(flyout) {
+          flyout.style.display = 'none';
+        });
+        activeFlyout = null;
+      } else {
+        // For expanded sidebar, remove active class from all menu items
+        document.querySelectorAll('#sidebar-menu .has-children').forEach(function(item) {
+          item.classList.remove('active');
+        });
+      }
+    }
+  });
+
+  // Additional fix: Prevent submenu from disappearing when hovering over scrollbar
+  document.addEventListener('mouseover', function(e) {
+    if (!document.body.classList.contains('sidebar-collapsed')) return;
+
+    // If hovering over a submenu, keep it open
+    if (e.target.closest('.child_menu')) {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+        hoverTimeout = null;
+      }
+    }
+  });
+
+  // Mobile-specific: Hide flyouts on orientation change
+  window.addEventListener('orientationchange', function() {
+    setTimeout(function() {
+      if (activeFlyout) {
+        activeFlyout.style.display = 'none';
+        activeFlyout = null;
+      }
+    }, 100);
+  });
+
+  // Mobile-specific: Hide flyouts on window resize
+  window.addEventListener('resize', function() {
+    if (activeFlyout) {
+      activeFlyout.style.display = 'none';
+      activeFlyout = null;
+    }
+  });
+</script>
+        
+
+
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Only animate notification badges if they exist
+    const notificationIcons = document.querySelectorAll('.notificationIcon');
+    if (notificationIcons.length) {
+      setInterval(function toggleNotification() {
+        notificationIcons.forEach(function(icon) {
+          icon.classList.toggle('hidden');
+        });
+      }, 3000);
+    }
+  });
+
+  document.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+  });
+</script>
+
+
+<style>
+  .user-dropdown {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+  }
+  .dropdown-card {
+    min-width: 280px;
+  }
+  .dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    font-weight: 600;
+    color: #111827;
+    border-bottom: 1px solid #eef2f7;
+    background: #f9fafb;
+  }
+  .dropdown-section-title {
+    padding: 8px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #6b7280;
+    background: #fafafa;
+    border-top: 1px solid #f1f5f9;
+  }
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: #111827;
+  }
+  .dropdown-item i {
+    width: 18px;
+    text-align: center;
+    color: #64748b;
+  }
+  .dropdown-item:hover {
+    background: #f3f4f6;
+  }
+  .dropdown-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .usage-card {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .usage-title {
+    font-weight: 600;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .usage-metrics {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #6b7280;
+  }
+  .usage-bar {
+    width: 100%;
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    margin-top: 6px;
+  }
+  .usage-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .notif-item {
+    display: block;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    text-decoration: none;
+    color: #111827;
+  }
+  .notif-item.unread {
+    background: #f8fafc;
+  }
+  .notif-title {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .notif-meta {
+    font-size: 11px;
+    color: #6b7280;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Header layout - all in one div */
+  .header{ display:flex; align-items:center; justify-content: space-between; gap: 0; padding: 0 24px; height: 80px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+  .header > * { display: flex; }
+  /* Right side layout polish */
+  .right-nav a{ text-decoration:none; display:flex; align-items:center; }
+  .quick-link-btn{ position:relative; margin:0; flex-shrink:0; }
+  .quick-link-btn .btn{ display:flex; align-items:center; height:36px; padding:6px 12px; border-radius:18px; }
+  .message{ position:relative; display:flex; align-items:center; height:36px; flex-shrink:0; }
+  .chip{ display:flex; align-items:center; justify-content:center; height:36px; border-radius:18px; padding:0 10px; cursor:pointer; }
+  .sms-chip{ width:36px; padding:0; }
+  .user-chip{ gap:8px; }
+  .avtar{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#3949ab; color:#fff; font-weight:600; }
+  .chip.user-chip{ position: relative; }
+  #logout_btn_mobile, #logout_btn_desktop{ position: absolute; right: 0; top: 100%; z-index: 99999; width: 230px !important; box-sizing: border-box; border-radius: 14px; }
+  @media (min-width: 769px){
+    #logout_btn_desktop{ position: fixed !important; left: auto !important; right: 20px !important; top: 84px !important; width: 230px !important; }
+  }
+  #logout_btn_mobile .dropdown-header, #logout_btn_desktop .dropdown-header{
+    padding: 9px 12px;
+    font-size: 12.5px;
+    gap: 6px;
+  }
+  #logout_btn_mobile .dropdown-header i, #logout_btn_desktop .dropdown-header i{
+    font-size: 13px;
+    color: #3949ab;
+  }
+  #logout_btn_mobile .dropdown-section-title, #logout_btn_desktop .dropdown-section-title{
+    padding: 5px 12px 2px;
+    font-size: 9.5px;
+    font-weight: 700;
+  }
+  #logout_btn_mobile .dropdown-item, #logout_btn_desktop .dropdown-item{
+    padding: 6px 12px;
+    font-size: 12.5px;
+    gap: 8px;
+    transition: background .15s ease, padding-left .15s ease;
+  }
+  #logout_btn_mobile .dropdown-item:hover, #logout_btn_desktop .dropdown-item:hover{
+    background: #f4f6ff;
+    padding-left: 15px;
+  }
+  #logout_btn_mobile .dropdown-item i, #logout_btn_desktop .dropdown-item i{
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #f1f3f9;
+    color: #475569;
+    font-size: 10.5px;
+  }
+  #logout_btn_mobile .dropdown-item:hover i, #logout_btn_desktop .dropdown-item:hover i{
+    background: #3949ab;
+    color: #fff;
+  }
+  #logout_btn_mobile a[href*="logout"], #logout_btn_desktop a[href*="logout"]{
+    color: #dc2626;
+  }
+  #logout_btn_mobile a[href*="logout"] i, #logout_btn_desktop a[href*="logout"] i{
+    color: #dc2626;
+    background: #fef2f2;
+  }
+  #logout_btn_mobile a[href*="logout"]:hover i, #logout_btn_desktop a[href*="logout"]:hover i{
+    background: #dc2626;
+    color: #fff;
+  }
+  .user-info{ display:flex; flex-direction:column; line-height:1; }
+  .user-name{ font-size:13px; font-weight:600; }
+  .user-designation{ font-size:11px; opacity:.7; }
+  @media (max-width: 1200px){ .user-info{ display:none; } }
+  
+  /* Desktop: Show desktop profile, hide mobile profile */
+  .mobile-profile {
+    display: none !important;
+  }
+  .desktop-profile {
+    display: flex !important;
+  }
+  .menu-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border-radius:10px;
+    color:#637381; text-decoration:none;
+    border:1px solid rgba(99,115,129,0.2);
+    background: transparent;
+    transition: all .2s ease;
+  }
+  .menu-btn:hover{ background: rgba(145,158,171,0.12); border-color: rgba(99,115,129,0.35); }
+  .menu-btn i{ font-size:18px; line-height:1; }
+
+  /* Ensure header/search aligns with sidebar width */
+  .top_nav{ position: sticky; top: 0; z-index: 900; background:#fff; box-sizing: border-box; padding-bottom: 6px;}
+  /* Neutralize theme's left offset on header */
+  .main_container .top_nav{ margin-left: 0 !important; }
+  .top_nav .nav_menu{ transition: padding-left .25s ease; box-sizing: border-box; padding-right:16px; }
+  body.sidebar-collapsed .top_nav .nav_menu{ padding-left: var(--sb-collapsed); }
+  body.sidebar-expanded  .top_nav .nav_menu{ padding-left: var(--sb-expanded); }
+
+  /* Brand block (left side) */
+  .brand-info{ display:flex; flex-direction:column; justify-content:center; min-width:260px; padding:6px 10px; }
+  .brand-title{ font-weight:700; font-size:16px; color:#212B36; }
+  .brand-subtitle{ font-style:italic; color:#919EAB; font-size:13px; margin-top:2px; }
+  @media (max-width: 992px){ .brand-info{ display:none; } }
+
+  /* Search bar pill */
+  .searchbar-container{ width: 20%; display:flex; align-items:center; justify-content:flex-start; margin-left:0; }
+  .search-bar{ display:flex; align-items:center; gap:10px; width:100%; height:44px; padding:0 14px; border-radius:28px; background:#fff; border:1px solid rgba(145,158,171,0.20); box-shadow: 0 6px 16px rgba(145,158,171,0.15); }
+  .search-bar i{ color:#637381; font-size:18px; }
+  .search-bar input{ border:0; outline:0; width:100%; font-size:14px; color:#212B36; }
+
+
+
+
+  
+#filter {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 28px;
+  background: #fff;
+  border: 1px solid rgba(145, 158, 171, 0.20);
+  box-shadow: 0 6px 16px rgba(145, 158, 171, 0.15);
+}
+
+#livesearch {
+  position: absolute;    /* input ke niche fix karne ke liye */
+  top: 100%;             /* input field ke just neeche */
+  left: 0;
+  width: 100%;           /* input ke width ke barabar */
+  background-color: white;
+  z-index: 902;
+  padding: 10px;
+  border: 1px solid rgba(145,158,171,0.20);
+  box-shadow: 0 6px 16px rgba(145,158,171,0.15);
+  display: none; /* default me hide, search ke result me show karo */
+}
+.search-item {
+  display: block;
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #111;
+  text-decoration: none;
+  font-size: 13px;
+}
+.search-item:last-child {
+  border-bottom: none;
+}
+.search-item:hover,
+.search-item.active {
+  background: #f4f6f8;
+}
+.search-item .student-name {
+  font-weight: 600;
+}
+@media (max-width: 768px){
+  .header{ 
+    flex-wrap: wrap; 
+    height: auto; 
+    padding: 8px 12px; 
+    gap: 8px; 
+    width: 100vw !important;
+    max-width: 100vw !important;
+    position: relative !important;
+    top: auto !important;
+    z-index: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+  }
+  .brand-info{
+    display: block !important;
+    width: 100% !important;
+    min-width: auto !important;
+    max-width: none !important;
+    flex: 1 1 100% !important;
+    padding: 0;
+    text-align: left !important;
+    margin-right: 0 !important;
+  }
+  .brand-title{ 
+    font-size: 18px !important; 
+    text-align: left !important;
+    width: 100% !important;
+  }
+  .brand-subtitle{ 
+    font-size: 12px !important; 
+    text-align: left !important;
+    width: 100% !important;
+  }
+  .searchbar-container{
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: 1 1 100% !important;
+    margin: 0 !important;
+    padding-bottom: 0 !important;
+    text-align: left !important;
+    margin-left: 0 !important;
+  }
+  #filter{ 
+    width: 100% !important; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important; 
+    text-align: left !important;
+  }
+  .quick-link-btn{ 
+    width: 100% !important; 
+    margin-left: 0 !important; 
+    text-align: left !important;
+    margin-right: 0 !important;
+  }
+  .quick-link-btn .btn{ 
+    width: 100% !important; 
+    justify-content: space-between; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important; 
+    text-align: left !important;
+  }
+  .message{ 
+    margin-left: 0 !important; 
+    width: 100% !important;
+    margin-right: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    order: 4 !important;
+    flex-wrap: nowrap !important;
+  }
+  .chip.user-chip{ 
+    margin-left: 0 !important; 
+    width: auto !important;
+    order: 5 !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+  .chip, .sms-chip{ 
+    height: 34px !important; 
+    width: auto !important;
+    flex-shrink: 0 !important;
+  }
+  /* Ensure notification icons stay in one row */
+  .message > div {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+  /* Make sure all notification elements are inline */
+  #msg_wrap, #div2, .user-chip {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+  /* Show user info on mobile */
+  .user-info {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+  }
+  .user-name, .user-designation {
+    display: block !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+  .avtar {
+    width: 32px !important;
+    height: 32px !important;
+    flex-shrink: 0 !important;
+  }
+  /* Force all notification elements to stay in one line */
+  .message, .message > *, .user-chip, #msg_wrap, #div2 {
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  /* Show mobile profile, hide desktop profile on mobile */
+  .mobile-profile {
+    display: flex !important;
+  }
+  .desktop-profile {
+    display: none !important;
+  }
+  /* Hide the duplicate profile that appears below header on mobile */
+  .top_nav .nav_menu nav ul {
+    display: none !important;
+  }
+  #sms_show_hide{ 
+    left: auto !important; 
+    right: 0 !important; 
+    width: 90vw !important;
+  }
+  #msg_show_hide{ 
+    right: 0 !important; 
+    left: auto !important; 
+    width: 90vw !important; 
+  }
+}
+</style>
+
+
+
+
+<!-- top navigation -->
+
+
+
+
+
+<div class="top_nav">
+
+<div class="nav_menu">
+
+<nav>
+
+
+
+    <div class="flex header" style="padding:0px;">
+
+
+
+  <!-- Branch Name Section - Left Side -->
+  <div class="brand-info" style="width: 260px; min-width: 180px; max-width: 400px; flex: 1 1 260px; margin-right: 0;">
+    <div class="brand-title" style="font-size: 15px; font-weight: 700; color: #212B36; line-height: 1.2;">Test Portal</div>
+    <div class="brand-subtitle" style="font-size: 14px; color: #637381; font-style: normal; margin-top: 4px;">2026-2027</div>
+  </div>
+
+  <!-- Search Section -->
+  <div class="searchbar-container" style="width: 260px; min-width: 180px; max-width: 400px; flex: 1 1 260px; margin: 0 0px; padding-bottom: 11px; margin-left:25px; position: relative;">
+    
+  
+              <input type="text" id="filter" class="" style="width: 100%; height: 44px; padding: 0 14px; border-radius: 28px; background:#fff; border:1px solid rgba(145,158,171,0.20); box-shadow: 0 6px 16px rgba(145,158,171,0.15);" placeholder="Search Student with | Name | GR No | Family Code | Cell No" onkeyup="showResult(this.value)" name="">
+              
+
+    
+  <div id="livesearch" role="listbox" aria-label="Student search results" style="background-color:white; z-index:902; padding:10px;">
+  </div>
+
+     
+  </div>
+
+  <!-- Quick Links Section -->
+      <div class="quick-link-btn" style="margin-left: auto; margin-right: 10px;">
+      <button id="quickLinkBtn" class="btn" style="width: 214px; height: 44px; border: 1px solid #e0e0e0; color: #637381; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-radius: 22px; font-size: 14px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.background='#FFA500'; this.style.color='white'; this.style.borderColor='#FFA500'; this.style.boxShadow='0 4px 12px rgba(255,165,0,0.3)';" onmouseout="this.style.background='white'; this.style.color='#637381'; this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)';">
+        <span>Quick Links</span>
+        <i class="fa fa-chevron-down" style="font-size: 12px; margin-left: 8px;"></i>
+      </button>
+      <div id="dropdownContent" class="dropdown-content" style="z-index: 99999; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 200px; display: none;">
+        <a href="https://apps.eduportal.pk/Production/graph_analytics.php">Analytics Dashboard</a>
+        <a href="https://apps.eduportal.pk/Production/data_health_checker.php">Data Health Checker</a>  
+        <a href="https://apps.eduportal.pk/Production/students_reports.php">Students Reports</a>
+        <a href="https://apps.eduportal.pk/Production/customer_tickets.php">Support Tickets</a>
+        <a href="https://apps.eduportal.pk/Production/print_daily_income_exp_report.php">Daily Closing</a>
+        <a href="https://apps.eduportal.pk/Production/print_profitloss_report.php">Monthly Closing</a>
+        <a href="https://apps.eduportal.pk/Production/mark_attend.php">Mark Attendance</a>
+        <a href="https://apps.eduportal.pk/Production/view_challan.php">View Challan</a>
+        <a href="https://apps.eduportal.pk/Production/messages_history.php">View Messages</a>
+        <a href="https://apps.eduportal.pk/Production/manage_expenses.php">Expenses</a>
+        <a href="https://apps.eduportal.pk/Production/user_audit_report.php">Users Activities</a>
+        <a href="https://apps.eduportal.pk/Production/parents_id.php">View Parents IDs</a>
+        <a href="https://apps.eduportal.pk/Production/manage_complaint.php?from_date=2026-09-01&amp;to_date=2026-09-30&amp;status=All&amp;type=All&amp;addaccountAdmin=1">Complaint</a>
+      </div>
+    </div>
+  
+  <!-- Notifications Section -->
+  <div class="message" style="margin-right: 8px;">
+    <!-- Unread badge for notifications (bell) -->
+    <div id="div1" style="position:absolute; top: 0; left: 0;z-index: 2;" onclick="sms_show();">
+          </div>
+
+    <!-- Contact assigned CSR/Agent via WhatsApp -->
+    <div id="csr_whatsapp_wrap" style="position: relative; height: auto; z-index: 9999; margin-right: 6px;">
+            <a href="https://wa.me/923000228123" target="_blank" rel="noopener" class="chip sms-chip" style="width:35px; border: none;" title="Chat with your Support Representative (Mubeen Arshad) on WhatsApp">
+        <i class="fab fa-whatsapp" style="font-size: 19px; color: #25D366;"></i>
+      </a>
+          </div>
+
+    <!-- Envelope (Messages) -->
+    <div id="msg_wrap" style="position: relative; height: auto; z-index: 9999; margin-right: 6px;">
+      <div class="chip sms-chip" onclick="msg_show();" style="width:35px; border: none">
+        <i class="fa fa-envelope" style="font-size: 18px; color: #808080;"></i>
+      </div>
+      <div class="user-dropdown dropdown-card" id="msg_show_hide" style="display: none; z-index: 99999; width: 24em; position: absolute; right: 0; top: 100%; height: auto;">
+        <div class="dropdown-header"><i class="fa fa-signal"></i> SMS Usage</div>
+        <div class="usage-card">
+          <div class="usage-title" style="color:#25D366;"><i class="fab fa-whatsapp"></i> WhatsApp SMS</div>
+          <div class="usage-metrics">
+            <span>Used: 0</span>
+            <span>Limit: 10,000</span>
+          </div>
+          <div class="usage-bar">
+            <div class="usage-bar-fill" style="width: 0%; background:#25D366;"></div>
+          </div>
+        </div>
+        <div class="usage-card">
+          <div class="usage-title" style="color:#007bff;"><i class="fa fa-mobile"></i> SIM SMS</div>
+          <div class="usage-metrics">
+            <span>Used: 0</span>
+            <span>Limit: 0</span>
+          </div>
+          <div class="usage-bar">
+            <div class="usage-bar-fill" style="width: 0%; background:#007bff;"></div>
+          </div>
+        </div>
+        <div class="usage-card">
+          <div class="usage-title"><i class="fa fa-bar-chart"></i> Total SMS Usage (This Month)</div>
+          <div class="usage-metrics">
+            <span>WhatsApp: 0</span>
+            <span>SIM: 0</span>
+          </div>
+          <div class="usage-metrics" style="margin-top:4px;">
+            <span>Total: 0</span>
+            <span>Remaining: 10,000</span>
+          </div>
+        </div>
+        <a class="dropdown-item" href="https://apps.eduportal.pk/Production/messages_history.php">
+          <i class="fa fa-history"></i> View Messages History
+        </a>
+      </div>
+    </div>
+
+    <!-- Bell (Notifications) -->
+    <div id="div2" style="position: relative; height: auto; z-index: 9999;">
+      <div class="chip sms-chip" onclick="sms_show();" style="width:35px; border: none">
+        <i class="fa fa-bell" style="font-size: 18px; color: #808080;"></i>
+      </div>  
+      <div class="user-dropdown dropdown-card" id="sms_show_hide" style="display: none; z-index: 99999; width: 26em; position: absolute; left: -20em; top: 100%; height: auto;">
+        <div class="dropdown-header"><i class="fa fa-bell"></i> Notifications</div>
+        <div class="dropdown-list">
+                  </div>
+      </div>
+    </div>
+
+    <!-- User Profile Section - Now inside message div for mobile alignment -->
+    <div class="chip user-chip mobile-profile" style="background:white; margin-left: 8px;" onclick="show_hide();">
+      <div class="user-dropdown dropdown-card" id="logout_btn_mobile" style="width:100%; display: none;">
+        <div class="dropdown-header"><i class="fa fa-user-circle"></i> Account</div>
+        <div class="dropdown-section-title">Profile</div>
+        <a href="update_profile.php" class="dropdown-item"><i class="fa fa-user"></i> Profile</a>
+        <a href="customer_tickets.php" class="dropdown-item"><i class="fa fa-ticket-alt"></i> Support Tickets</a>
+        <div class="dropdown-section-title">Invoices</div>
+        <a href="monthly_invoices.php" class="dropdown-item"><i class="fa fa-file-alt"></i> Monthly Invoices</a>
+        <div class="dropdown-section-title">Security</div>
+        <a href="update_pswd.php" class="dropdown-item"><i class="fa fa-key"></i> Change Password</a>
+        <div class="dropdown-section-title">Session</div>
+        <a href="logout.php" class="dropdown-item"><i class="fa fa-sign-out-alt"></i> Logout</a>
+      </div>
+      <div class="avtar"></div>
+      <div class="user-info">
+        <span class="user-name" style="color:black;">
+                  </span>
+        <span class="user-designation">Super Admin</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Profile Section - Desktop version (hidden on mobile) -->
+  <div class="chip user-chip desktop-profile" style="background:white;" onclick="show_hide();">
+    <div class="user-dropdown dropdown-card" id="logout_btn_desktop" style="width:100%; display: none;">
+      <div class="dropdown-header"><i class="fa fa-user-circle"></i> Account</div>
+      <div class="dropdown-section-title">Profile</div>
+      <a href="update_profile.php" class="dropdown-item"><i class="fa fa-user"></i> Profile</a>
+      <a href="customer_tickets.php" class="dropdown-item"><i class="fa fa-ticket-alt"></i> Support Tickets</a>
+      <div class="dropdown-section-title">Invoices</div>
+      <a href="monthly_invoices.php" class="dropdown-item"><i class="fa fa-file-alt"></i> Monthly Invoices</a>
+      <div class="dropdown-section-title">Security</div>
+      <a href="update_pswd.php" class="dropdown-item"><i class="fa fa-key"></i> Change Password</a>
+      <div class="dropdown-section-title">Session</div>
+      <a href="logout.php" class="dropdown-item"><i class="fa fa-sign-out-alt"></i> Logout</a>
+    </div>
+    <div class="avtar"></div>
+    <div class="user-info">
+      <span class="user-name" style="color:black;">
+              </span>
+      <span class="user-designation">Super Admin</span>
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+</div>
+
+</div>
+
+<!-- /top navigation -->
+
+
+
+
+
+
+
+<!-- function for live search header --> 
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+
+
+
+// SECURITY: Enhanced showResult function with input validation
+function showResult(str) {
+  if (window.__skipSearch === true) {
+    window.__skipSearch = false;
+    return;
+  }
+  // SECURITY: Input validation and sanitization
+  if (!str || str.length == 0) { 
+    document.getElementById("livesearch").innerHTML="";
+    document.getElementById("livesearch").style.display="none";
+    return;
+  }
+  
+  // SECURITY: Limit input length to prevent abuse
+  if (str.length > 100) {
+    str = str.substring(0, 100);
+  }
+  
+  // SECURITY: Basic XSS prevention - escape special characters
+  str = str.replace(/[<>\"'&]/g, function(match) {
+    switch(match) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      case "'": return '&#x27;';
+      case '&': return '&amp;';
+      default: return match;
+    }
+  });
+  
+  if (window.XMLHttpRequest) {
+    xmlhttp = new XMLHttpRequest();
+  } else {
+    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  
+  xmlhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      // SECURITY: Use textContent instead of innerHTML to prevent XSS
+      document.getElementById("livesearch").innerHTML = this.responseText;
+      document.getElementById("livesearch").style.display = "block";
+      initSearchResults();
+    }
+  }
+  
+  // SECURITY: URL encode the search parameter
+  xmlhttp.open("GET", "livesearch.php?q=" + encodeURIComponent(str), true);
+  xmlhttp.send();
+}
+
+
+// Keyboard-friendly search results
+var searchIndex = -1;
+function getSearchItems() {
+  return Array.prototype.slice.call(document.querySelectorAll('#livesearch .search-item'));
+}
+function updateActiveResult(index) {
+  var items = getSearchItems();
+  items.forEach(function(item, i) {
+    item.classList.toggle('active', i === index);
+  });
+}
+function initSearchResults() {
+  var items = getSearchItems();
+  searchIndex = -1;
+  updateActiveResult(searchIndex);
+  items.forEach(function(item, i) {
+    item.addEventListener('mouseenter', function() {
+      searchIndex = i;
+      updateActiveResult(searchIndex);
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var searchInput = document.getElementById('filter');
+  if (!searchInput) return;
+
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === 'Escape') {
+      window.__skipSearch = true;
+    } else {
+      window.__skipSearch = false;
+    }
+    var items = getSearchItems();
+    if (!items.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      searchIndex = Math.min(searchIndex + 1, items.length - 1);
+      updateActiveResult(searchIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      searchIndex = Math.max(searchIndex - 1, 0);
+      updateActiveResult(searchIndex);
+    } else if (e.key === 'Enter') {
+      if (searchIndex >= 0 && items[searchIndex]) {
+        window.location.href = items[searchIndex].getAttribute('href');
+      }
+    } else if (e.key === 'Escape') {
+      document.getElementById("livesearch").style.display = "none";
+      searchIndex = -1;
+      updateActiveResult(searchIndex);
+    }
+  });
+});
+
+
+// logout btn hide and show script
+
+
+
+var a;
+
+
+
+function show_hide(){
+    if(a==1) {
+        // Show both mobile and desktop profile dropdowns
+        var mobileDropdown = document.getElementById("logout_btn_mobile");
+        var desktopDropdown = document.getElementById("logout_btn_desktop");
+        
+        if(mobileDropdown) mobileDropdown.style.display = "inline";
+        if(desktopDropdown) desktopDropdown.style.display = "inline";
+        
+        return a=0;
+    } else {
+        // Hide both mobile and desktop profile dropdowns
+        var mobileDropdown = document.getElementById("logout_btn_mobile");
+        var desktopDropdown = document.getElementById("logout_btn_desktop");
+        
+        if(mobileDropdown) mobileDropdown.style.display = "none";
+        if(desktopDropdown) desktopDropdown.style.display = "none";
+        
+        return a=1;
+    }
+}
+
+
+
+
+
+
+
+var a;
+
+
+
+function sms_show(){
+
+
+
+if(a==1)
+
+{
+
+
+
+    // hide messages dropdown if open
+    var msg = document.getElementById("msg_show_hide");
+    if(msg){ msg.style.display = "none"; }
+    document.getElementById("sms_show_hide").style.display="inline";
+
+    return a=0;
+
+
+
+}else{
+
+
+
+    document.getElementById("sms_show_hide").style.display="none";
+
+    return a=1;
+
+}
+
+
+
+}
+
+
+
+
+// toggle messages dropdown
+var b;
+function msg_show(){
+if(b==1)
+{
+  // hide notification if open
+  var notif = document.getElementById("sms_show_hide");
+  if(notif){ notif.style.display = "none"; }
+  document.getElementById("msg_show_hide").style.display="inline";
+  return b=0;
+}else{
+  document.getElementById("msg_show_hide").style.display="none";
+  return b=1;
+}
+}
+
+var quickLinkBtn = document.getElementById("quickLinkBtn");
+if (quickLinkBtn) {
+  quickLinkBtn.addEventListener("click", function() {
+    var dropdown = document.getElementById("dropdownContent");
+    if (!dropdown) return;
+
+    if (dropdown.style.display === "block") {
+      dropdown.style.display = "none";
+    } else {
+      dropdown.style.display = "block";
+    }
+  });
+}
+
+
+</script> 
+         <!-- page content -->
+        <div class="right_col" role="main" style="min-height: 733px;">
+        <div class="row">
+
+
+<div>
+
+
+  <a href="dashboard.php">Dashboard </a> &nbsp; <i style="" class="fa fa-angle-double-right"></i>  &nbsp; 
+              
+  <a href="view_challan_new.php"> Fee Collection   </a> &nbsp; <i style="" class="fa fa-angle-double-right"></i>  &nbsp;  View Challan 
+
+  <a href="view_challan_new.php?ss=97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;session=11&amp;month=9&amp;fee=All" class="btn btn-round btn-warning quiklink pull-right"> Class Wise View Challan </a>
+
+  
+  <!-- <div class="btn-group pull-right">
+    <button data-toggle="dropdown" style="border-bottom-right-radius:30px;border-top-right-radius:30px;" class="btn btn-round btn-primary quiklink" type="button" aria-expanded="true"><i class="fa fa-print m-right-xs"></i>&nbsp;Print Vouchers <span class="caret"></span>
+    </button>
+
+      <ul role="menu" class="dropdown-menu">
+
+      <li><a href="javascript:void(0)" onclick="openTopPrintVouchers('a61oe8lqc1oclfi4llgnioo156a61oe8lqc1oclfi4lclfi4llgnioo156a61oe8156', 3, 3, '8lqc1oclfi4llgnioo156a61oe8lqc1oclfi4llgnioo156a61oe8lqc1')">One Page (3 Students)</a></li>
+
+      <li><a href="javascript:void(0)" onclick="openTopPrintVouchers('a61oe8lqc1oclfi4llgnioo156a61oe8lqc1oclfi4lclfi4llgnioo156a61oe8156', 2, null, '8lqc1oclfi4llgnioo156a61oe8lqc1oclfi4llgnioo156a61oe8lqc1')">One Student (2 Copies)</a></li>
+
+     <li><a href="javascript:void(0)" onclick="openTopPrintVouchers('a61oe8i4llgnioo156a61oa61oe8lqc1oclfi4llgnioo156', 3, null, '8lqc1oclfi4llgnioo156a61oe8lqc1oclfi4llgnioo156a61oe8lqc1')">One Student (3 Copies)</a></li>
+
+
+
+      </ul>
+  </div> -->
+
+
+
+  <br> <br>
+
+      <form class="" action="fee_challans.php" enctype="multipart/form-data" method="get">
+        <div class="panel panel-default fee-filter-panel" style="width: 100%;">
+          <div class="panel-heading " id="heading">
+
+
+            <h4>
+              <b>View Fee Challans</b>
+              <span id="fee_challans_count" style="font-size:14px;"></span>
+            </h4>
+              <div id="testing"> </div>
+            <!-- Toast container -->
+            <div id="toast"></div>
+       
+        <div class="clearfix"></div> </div>
+
+
+          <div class="panel-body">
+          
+            <div class="col-md-12 fee-filter-fields-row" id="advanceSearch">
+
+
+              <div class="fee-filter-field">
+                <div class="form-group ">
+                  <label class="required">Session</label>
+                    <select name="session" id="session" class="form-control inputheight">
+     
+                    
+                           <option value="3">2018-2019</option>
+
+                        
+                           <option value="4">2019-2020</option>
+
+                        
+                           <option value="5">2020-2021</option>
+
+                        
+                           <option value="6">2021-2022</option>
+
+                        
+                           <option value="7">2022-2023</option>
+
+                        
+                           <option value="8">2023-2024</option>
+
+                        
+                           <option value="9">2024-2025</option>
+
+                        
+                           <option value="10">2025-2026</option>
+
+                        
+                           <option selected="" value="11">2026-2027</option>
+
+                        
+                           <option value="12">2027-2028</option>
+
+                        
+                           <option value="13">2028-2029</option>
+
+                        
+                           <option value="14">2029-2030</option>
+
+                        
+                           <option value="15">2030-2031</option>
+
+                        
+                    </select>
+                </div>
+              </div>
+
+
+
+             <div class="fee-filter-field">
+                <div class="form-group">
+                                    <label class="required">Class Head</label>
+                  <select name="class_head" id="class_head" class="form-control inputheight" onchange="getClassesByHead(this.value)">
+                    <option value="">All</option>
+                                          <option value="27">
+                        Hajvery Campus                      </option>
+                                          <option value="29">
+                        Main Campus                      </option>
+                                          <option value="94">
+                        Pharm-D                      </option>
+                                          <option value="95">
+                        Pharm-D 2022-27                      </option>
+                                          <option value="96">
+                        Pharm-D 2023-28                      </option>
+                                          <option value="97">
+                        Pharm-D 2024-29                      </option>
+                                          <option value="162">
+                        Modern Edu                      </option>
+                                      </select>
+                </div>
+              </div>
+
+             <div class="fee-filter-field">
+                <div class="form-group ">
+                  <label class="required">Class</label>
+
+                  <select name="class_id" id="class_id" class="form-control inputheight" onchange="getsec(this.value)">
+                    <option value="">All</option>
+
+                    
+                       <option value="15550">KG-2</option>
+
+
+                            
+                       <option value="15551">1ST</option>
+
+
+                            
+                       <option value="15552">2ND</option>
+
+
+                            
+                       <option value="15553">3RD</option>
+
+
+                            
+                       <option value="15554">4TH</option>
+
+
+                            
+                       <option value="15555">5TH</option>
+
+
+                            
+                       <option value="15556">6TH</option>
+
+
+                            
+                       <option value="15557">7TH</option>
+
+
+                            
+                       <option value="15832">8TH</option>
+
+
+                            
+                       <option value="15833">9TH</option>
+
+
+                            
+                       <option value="15834">10TH</option>
+
+
+                            
+                       <option value="15905">BS Computer Science</option>
+
+
+                            
+                       <option value="16136">Bs English</option>
+
+
+                            
+                       <option value="16540">New Fee Head Class</option>
+
+
+                            
+                       <option value="16613">reminder sms class</option>
+
+
+                            
+                       <option value="16766">BSCS</option>
+
+
+                            
+                       <option value="16795">BSIT</option>
+
+
+                            
+                       <option value="16922">Class 7</option>
+
+
+                            
+                       <option value="17073">Pharm-D 2021-26</option>
+
+
+                            
+                       <option value="17184">MIT</option>
+
+
+                            
+                       <option value="17807">14th</option>
+
+
+                            
+                       <option value="17890">DMS Play Group</option>
+
+
+                            
+                </select>
+                </div>
+              </div>
+           
+              <div class="fee-filter-field">
+                <div class="form-group ">
+                  <label class="required">Section</label>
+                    <select name="section" id="txt_section" class="form-control inputheight">
+                      <option value="All">All</option>
+                                                   <option value="481">A</option>
+
+                                                              <option value="484">BOYS</option>
+
+                                                              <option value="487">GIRLS</option>
+
+                                                              <option value="490">B</option>
+
+                                                              <option value="491">A</option>
+
+                                                              <option value="510">Class Eleven &amp; Twelve</option>
+
+                                                              <option value="544">Green</option>
+
+                                                              <option value="809">Boys Section</option>
+
+                                                              <option value="810">Girls Section</option>
+
+                                                              <option value="1106">A</option>
+
+                                                              <option value="1130">A</option>
+
+                                                              <option value="1246">A</option>
+
+                                                              <option value="1248">Pink</option>
+
+                                                              <option value="1467">NURSERY (A)</option>
+
+                                                              <option value="1538">A</option>
+
+                                                              <option value="1624">Blue</option>
+
+                                                              <option value="6315">A</option>
+
+                                                              <option value="7715">A</option>
+
+                                                              <option value="7753">A</option>
+
+                                                              <option value="8025">Violet</option>
+
+                                                              <option value="8088">Beggener</option>
+
+                                                              <option value="8382">Qasim</option>
+
+                                                              <option value="8470">unicorm</option>
+
+                                                              <option value="8635">A</option>
+
+                                                              <option value="8878">TSS MRC</option>
+
+                                                              <option value="8901">1st A</option>
+
+                                                              <option value="8902">1st B</option>
+
+                                                              <option value="9140">GREY</option>
+
+                                                              <option value="9145">A</option>
+
+                                                              <option value="9146">A</option>
+
+                                                              <option value="10250">Primary</option>
+
+                                                              <option value="10544">H</option>
+
+                                                              <option value="10935">Nursary</option>
+
+                                                              <option value="10936">Kg</option>
+
+                                                              <option value="11051">Iqbal section</option>
+
+                                                              <option value="11052">Iqbal Section (1)</option>
+
+                                                              <option value="11502">SunShine</option>
+
+                                                              <option value="11538">A</option>
+
+                                                              <option value="11671">Allama Iqbal</option>
+
+                                                              <option value="12138">ICS C</option>
+
+                                                              <option value="12139">Medical Boys A</option>
+
+                                                              <option value="12190">GHAZNAWI</option>
+
+                                                              <option value="13114">Boys</option>
+
+                                                              <option value="13696">2023</option>
+
+                                                              <option value="14915">A</option>
+
+                                                              <option value="14916">A</option>
+
+                                                              <option value="15332">C</option>
+
+                                                              <option value="15346">FATIMA</option>
+
+                                                              <option value="15605">0</option>
+
+                                                              <option value="15783">KGII</option>
+
+                                                              <option value="15813">A Boys</option>
+
+                                                              <option value="15933">Computer Class</option>
+
+                                                              <option value="16230">HAZRAT TALHA BIN ABAIDUALLAH RAZI ALLAH ANHA</option>
+
+                                                              <option value="16263">old</option>
+
+                                                              <option value="17048">A</option>
+
+                                                              <option value="17292">Sr. Syed</option>
+
+                                                              <option value="17547">A</option>
+
+                                                              <option value="17998">A</option>
+
+                                                              <option value="18279">Platinum</option>
+
+                                                              <option value="18915">Play group</option>
+
+                                                              <option value="19735">A</option>
+
+                                                              <option value="19897">Graphic Designing</option>
+
+                                                              <option value="19898">Computer Applications</option>
+
+                                                              <option value="19899">Digital Marketing</option>
+
+                                                              <option value="19900">Autocad</option>
+
+                                                              <option value="19901">Safety Inspector</option>
+
+                                                              <option value="19902">Civil Surveyor</option>
+
+                                                              <option value="19903">Nebosh</option>
+
+                                                              <option value="19917">S1</option>
+
+                                                              <option value="19924">A</option>
+
+                                                              <option value="20271">Bright Star</option>
+
+                                                              <option value="20384">Accademy</option>
+
+                                                              <option value="20422">10</option>
+
+                                                              <option value="20963">ROSE</option>
+
+                                                              <option value="21045">Global</option>
+
+                                                              <option value="21074">A</option>
+
+                                                              <option value="21526">City</option>
+
+                                                              <option value="21583">IT BOYS</option>
+
+                                                              <option value="22134">PHYSICS</option>
+
+                                                              <option value="22449">White</option>
+
+                                                              <option value="22578">A</option>
+
+                                                              <option value="23515">A</option>
+
+                                                              <option value="23516">1</option>
+
+                                                              <option value="23517">2</option>
+
+                                                              <option value="24034">Purple</option>
+
+                                                              <option value="24103">Section 1</option>
+
+                                                              <option value="24303">A 2024</option>
+
+                                                              <option value="24553">Rayyan Bin Rashad</option>
+
+                                                              <option value="24608">IGCSE Business</option>
+
+                                                              <option value="24743">A</option>
+
+                                                              <option value="24900">Ibrahimi</option>
+
+                                                              <option value="25241">A</option>
+
+                                                              <option value="25334">Faroqi</option>
+
+                                                              
+                          
+                    </select>
+
+                  
+                </div>
+              </div>         
+
+              <div class="fee-filter-field">
+
+                    <div class="form-group ">
+
+                        <label class="required">Challan Month</label>
+                        <input type="text" class="form-control inputheight" id="monthYear" name="monthYear" placeholder="MM/YYYY" value="09/2026">
+                    </div>
+
+                </div>
+
+        <div class="fee-filter-field">
+
+             <div class="form-group ">
+
+
+                <label class="required">Fee Status</label>
+                    <select name="fee" id="feeStatus" onchange="HideDate(this.value);" class="form-control inputheight">
+
+                      <option value="All">All</option>
+
+                      <option value="1">PAID</option>
+                      <option value="0">UNPAID</option>
+                
+
+                        
+                    </select>
+                  </div>
+
+
+          </div>
+
+
+    
+              <div class="fee-filter-btn-col">
+                <div class="form-group ">
+                   <input type="hidden" name="addaccountAdmin" value="1">
+                <button type="button" onclick="load_fee_challans()" class="btn btn-primary inputheight">Filter</button>
+                </div>
+              </div>
+
+
+            </div>
+            <div class="clearfix"></div>
+          </div>
+        </div>
+      </form>
+      <div class="clearfix"></div>
+    </div>
+
+    <div class="fee-stats-row" id="fee_stats_row">
+      <div class="stat-card stat-total">
+        <div class="stat-icon"><i class="fa fa-file-text-o"></i></div>
+        <div>
+          <div class="stat-label">Total Challans</div>
+          <div class="stat-value" id="stat_total">0</div>
+        </div>
+      </div>
+      <div class="stat-card stat-paid">
+        <div class="stat-icon"><i class="fa fa-check-circle"></i></div>
+        <div>
+          <div class="stat-label">Paid Challans</div>
+          <div class="stat-value" id="stat_paid">0</div>
+        </div>
+      </div>
+      <div class="stat-card stat-partial">
+        <div class="stat-icon"><i class="fa fa-clock-o"></i></div>
+        <div>
+          <div class="stat-label">Partial Challans</div>
+          <div class="stat-value" id="stat_partial">0</div>
+        </div>
+      </div>
+      <div class="stat-card stat-unpaid">
+        <div class="stat-icon"><i class="fa fa-times-circle"></i></div>
+        <div>
+          <div class="stat-label">Unpaid Challans</div>
+          <div class="stat-value" id="stat_unpaid">0</div>
+        </div>
+      </div>
+    </div>
+
+  <div id="fee_challans_loader" class="fee-challans-loader">
+    <div class="fee-progress-wrap">
+      <div class="fee-progress-bar">
+        <div id="fee_progress_fill" class="fee-progress-fill"></div>
+            </div>
+      <div class="fee-progress-meta">
+        Loading challans: <span id="fee_progress_value">0%</span>
+        </div>
+    </div>
+  </div>
+  <div id="fee_challans_content">
+    <div class="fee-empty-state" id="fee_challans_empty_state">
+      <i class="fa fa-filter"></i>
+      <p>No challans loaded yet.</p>
+      <span>Select your filters above and click <strong>Filter</strong> to view fee challans.</span>
+    </div>
+  </div>
+
+
+
+      <!-- Modal -->
+        <div class="modal fade" id="payfee" role="dialog">
+
+          <div class="modal-dialog modal-lg" style="width:80%;">
+            <div class="modal-content" style="height:auto;">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4 class="modal-title">Pay Students Fee</h4>
+              </div>
+
+              <form id="popupForm">
+                
+                <div class="modal-body" id="payfee_content">
+              
+                </div>
+
+               <div class="modal-footer">
+                 
+                <button type="submit" class="btn btn-success">Pay Fee</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                
+              </div>
+
+
+              </form>
+          </div>
+        </div>
+      </div>
+
+
+
+
+
+      <!-- Modal -->
+        <div class="modal fade" id="update_fee_challan" role="dialog">
+
+          <div class="modal-dialog modal-lg" style="width:60%;">
+            <div class="modal-content" style="height:auto;">
+            
+              <form id="update_popupForm">
+                
+                <div class="modal-body" id="update_fee_content">
+              
+                </div>
+
+               <div class="modal-footer">
+                 
+                <button type="submit" class="btn btn-success">Update Fee</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                
+              </div>
+
+
+              </form>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Modal: View Fee History -->
+      <div class="modal fade" id="fee_payments" role="dialog">
+        <div class="modal-dialog modal-lg" style="width:95%; max-width: 1200px;">
+          <div class="modal-content" style="height:auto;">
+            <div class="modal-header" style="padding-bottom:14px;">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">×</button>
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:10px; padding-right:20px;">
+                <div>
+                  <h4 class="fee-payments-heading" style="margin:0 0 0 0;">Student Fee History</h4>
+                  <div id="fee_payments_student_info" class="fee-student-info-bar"></div>
+                </div>
+                <a id="fee_payments_profile_link" href="#" target="_blank" style="display:none; align-items:center; gap:6px; background:#f28c00; color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; margin-top:2px; box-shadow:0 2px 6px rgba(0,0,0,0.18); transition:background 0.15s;">
+                  <i class="fa fa-user-circle-o"></i> View Profile
+                </a>
+              </div>
+            </div>
+            <form id="feePaymentsForm">
+              <div class="modal-body" id="fee_payments_content" style="overflow-x: auto;"></div>
+              <div class="modal-footer" style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+
+
+
+
+
+
+
+
+
+
+        </div> 
+        </div>
+
+
+            </div>
+          </div>
+        </div>
+        <!-- /page content -->
+
+    <!-- jQuery -->
+<script src="../vendors/jquery/dist/jqueryfile.js"></script>
+<!-- Bootstrap -->
+<script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+<!-- Custom Theme Scripts -->
+<script src="../build/js/custom.min.js"></script>
+<!-- jQuery Sparklines -->
+<script src="../vendors/jquery-sparkline/dist/jquery.sparkline.min.js"></script>    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+  <script>
+
+// this function is used to load the fee challans listing
+
+ function load_fee_challans() {
+
+    // get the month year from the input field
+    var session = document.getElementById("session").value;
+    var classId = document.getElementById("class_id").value;
+    var sectionId = document.getElementById("txt_section").value;
+    var monthYear = document.getElementById("monthYear").value;
+    var feeStatus = document.getElementById("feeStatus").value;
+    var classHead = document.getElementById("class_head") ? document.getElementById("class_head").value : "";
+
+    if (!monthYear) {
+      showToast("Please select Challan Month first.", "error", 3000);
+      return;
+    }
+
+    var loader = document.getElementById("fee_challans_loader");
+    var content = document.getElementById("fee_challans_content");
+    var progressFill = document.getElementById("fee_progress_fill");
+    var progressValue = document.getElementById("fee_progress_value");
+    var progress = 0;
+    if (loader) loader.style.display = "block";
+    if (content) content.innerHTML = "";
+
+    function setProgress(val) {
+      progress = Math.min(100, Math.max(0, val));
+      if (progressFill) progressFill.style.width = progress + "%";
+      if (progressValue) progressValue.textContent = progress + "%";
+    }
+
+    //alert(session+"="+classId+"="+sectionId+"="+monthYear+"="+feeStatus);
+    // construct the url
+    var url = "fee_challans_listing.php?monthYear=" + monthYear + "&session=" + session + "&class_id=" + classId + "&section=" + sectionId + "&fee=" + feeStatus + "&class_head=" + classHead;
+
+   const xhttp = new XMLHttpRequest();
+   xhttp.onload = function() {
+     document.getElementById("fee_challans_content").innerHTML = this.responseText;
+     var countEl = document.getElementById("fee_challans_total");
+     var countTarget = document.getElementById("fee_challans_count");
+     if (countTarget) {
+       var countVal = countEl ? parseInt(countEl.getAttribute("data-count") || "0", 10) : 0;
+       countTarget.textContent = countVal > 0 ? " (" + countVal + " records)" : "";
+     }
+     updateFeeStats();
+     setProgress(100);
+     if (loader) loader.style.display = "none";
+     setProgress(0);
+
+     if (typeof $ !== "undefined" && $.fn && $.fn.DataTable) {
+       if ($.fn.DataTable.isDataTable('#listofstudents')) {
+         $('#listofstudents').DataTable().destroy();
+       }
+       $('#listofstudents').DataTable();
+     }
+   };
+   xhttp.onreadystatechange = function() {
+     if (xhttp.readyState === 2) {
+       setProgress(30);
+     } else if (xhttp.readyState === 3) {
+       setProgress(70);
+     }
+   };
+   xhttp.onprogress = function(event) {
+     if (event.lengthComputable) {
+       var percent = Math.round((event.loaded / event.total) * 100);
+       setProgress(percent);
+     } else if (progress < 80) {
+       setProgress(80);
+     }
+   };
+   xhttp.onerror = function() {
+     if (loader) loader.style.display = "none";
+   };
+   xhttp.open("GET", url, true);
+   xhttp.send();
+ }
+
+
+// Reads the hidden #fee_challans_stats span (rendered by fee_challans_listing.php from the
+// already-fetched rows — no extra DB query) and updates the summary cards.
+function updateFeeStats() {
+    var statsEl = document.getElementById("fee_challans_stats");
+    var totalEl = document.getElementById("stat_total");
+    var paidEl = document.getElementById("stat_paid");
+    var partialEl = document.getElementById("stat_partial");
+    var unpaidEl = document.getElementById("stat_unpaid");
+    if (!statsEl || !totalEl) return;
+
+    totalEl.textContent = statsEl.getAttribute("data-total") || "0";
+    paidEl.textContent = statsEl.getAttribute("data-paid") || "0";
+    partialEl.textContent = statsEl.getAttribute("data-partial") || "0";
+    unpaidEl.textContent = statsEl.getAttribute("data-unpaid") || "0";
+}
+
+// Function to show toast notification (optional duration in ms; default 3000)
+function showToast(message, type, duration) {
+    var toast = document.getElementById("toast");
+    if (!toast) return;
+    toast.innerHTML = message;
+    duration = duration || 3000;
+    var isLong = duration > 3000;
+    toast.className = type === "error" ? "show error" : "show";
+    if (isLong) toast.classList.add("toast-long"); else toast.classList.remove("toast-long");
+    setTimeout(function() { toast.className = ""; }, duration);
+}
+
+
+
+function calculate_discount(id) {
+
+    var feedis=document.getElementsByName("fee_discount[]");
+    var feerec=document.getElementsByName("fee_recvd[]");
+    var actualAmount=document.getElementsByName("actualAmount[]");
+    var remaining=document.getElementsByName("fee_remain[]");
+    var payable=document.getElementsByName("payable[]");
+
+    var total_net=0;
+    var total_disc=0;
+    var total_recvd=0;
+    var total_remain=0;
+
+    for(i=0; i < feedis.length; i++) {
+
+        var discountValue = feedis[i].value;
+
+        // Handle empty or null as 0 only for calculation
+        var discountForCalc = (discountValue === "" || discountValue === null) ? 0 : parseInt(discountValue);
+
+        actualAmount[i].value = parseInt(payable[i].value) - discountForCalc;
+        feerec[i].value = parseInt(payable[i].value) - discountForCalc;
+        remaining[i].value = parseInt(payable[i].value) - discountForCalc;
+
+        total_disc += discountForCalc;
+
+        // 🔹 Normalize the value shown in input (remove leading zeros)
+        if (discountValue !== "") {
+            feedis[i].value = discountForCalc;
+        }
+    }
+
+    document.getElementById("total_disc").value = total_disc; 
+}
+
+
+
+
+  function total_received(id) {
+
+      
+      var feedis=document.getElementsByName("fee_discount[]");
+      var feerec=document.getElementsByName("fee_recvd[]");
+      var actualAmount=document.getElementsByName("actualAmount[]");
+      var remaining=document.getElementsByName("fee_remain[]");
+      var payable=document.getElementsByName("payable[]");
+      
+
+      var total_net=0;
+      var total_disc=0;
+      var total_recvd=0;
+      var total_remain=0;
+
+
+for(i=0;i<feedis.length;i++){
+   
+      // this code is doing calculation of discount, total & recevd columns    
+
+   if (feerec[i].value !== "" && feerec[i].value !== null) {
+
+      remaining[i].value=parseInt(actualAmount[i].value) - parseInt(feerec[i].value);
+      total_recvd = parseInt(total_recvd) + parseInt(feerec[i].value);
+      total_remain = parseInt(total_remain) + parseInt(remaining[i].value);
+
+      }
+
+  }//ending loop
+
+    document.getElementById("total_receve").value=total_recvd;
+    document.getElementById("total_remaining").value=total_remain;    
+      
+}
+
+/// code to insert the fee of students
+
+/*==========================================*/
+
+
+ function show_pay_fee_students(code,id,row,month,session) {
+    
+    //alert(code+"===="+id+"=="+row);
+    document.getElementById('payfee_content').innerHTML = '';
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = function() {
+        
+        document.getElementById("payfee_content").innerHTML = this.responseText;
+        // Adjust the modal height dynamically after content load
+        const modalDialog = document.querySelector('#payfee' + ' .modal-dialog');
+        modalDialog.style.height = 'auto'; // Set height to auto so it adjusts to the new content
+
+        // Initialize row calculations and Grand Total on first load (same as view_challan_details_new.php)
+        if (typeof initializeAll === 'function') {
+            initializeAll();
+        }
+        if (typeof validatePayFeeAmounts === 'function') {
+            validatePayFeeAmounts();
+        }
+    };
+
+    var url = "fee_challans_payfee.php?action=pay_fee&family_code=" + code + "&id=" + id + "&row=" + row;
+    
+    if (month) url += "&month=" + encodeURIComponent(month);
+    if (session) url += "&session=" + encodeURIComponent(session);
+    xhttp.open("GET", url, true);
+    xhttp.send();
+}
+
+
+function show_fee_payments(student_id) {    // code to fetch content of fee payments popup
+    //alert(student_id);
+    document.getElementById('fee_payments_content').innerHTML = '';
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = function() {
+        document.getElementById("fee_payments_content").innerHTML = this.responseText;
+    };
+    xhttp.open("GET", "student_fee_payments.php?action=fee_payments&student_id=" + student_id, true);
+    xhttp.send();
+}
+
+// Function to show Fee History (like in student_profile_new.php)
+function show_fee_history(student_id, studentName, studentClass, grNo) {
+    // --- Update modal header with student info ---
+    var headingEl = document.querySelector('#fee_payments .fee-payments-heading');
+    if (headingEl) {
+        headingEl.innerHTML = studentName
+            ? 'Fee History &nbsp;<span style="color:#f28c00;font-size:16px;font-weight:500;">' + studentName + '</span>'
+            : 'Student Fee History';
+    }
+
+    // Student info chips (GR No + Class)
+    var infoBar = document.getElementById('fee_payments_student_info');
+    if (infoBar) {
+        var chips = '';
+        if (grNo)         chips += '<span class="fee-info-chip"><i class="fa fa-id-badge"></i> GR# ' + grNo + '</span>';
+        if (studentClass) chips += '<span class="fee-info-chip"><i class="fa fa-graduation-cap"></i> ' + studentClass + '</span>';
+        infoBar.innerHTML = chips;
+        infoBar.style.display = chips ? 'flex' : 'none';
+    }
+
+    // Profile link — header
+    var profileUrl = 'student_profile_new.php?student=' + student_id;
+    var profileLinkEl = document.getElementById('fee_payments_profile_link');
+    if (profileLinkEl) { profileLinkEl.href = profileUrl; profileLinkEl.style.display = 'inline-flex'; }
+
+    // --- Load fee history content ---
+    document.getElementById('fee_payments_content').innerHTML =
+        '<div style="text-align:center;padding:40px 20px;">' +
+        '<i class="fa fa-spinner fa-spin fa-2x" style="color:#f28c00;"></i>' +
+        '<div style="color:#888;margin-top:10px;font-size:13px;">Loading Fee History...</div></div>';
+
+    var sessionId = document.getElementById("session") ? document.getElementById("session").value : '11';
+
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = function() {
+        var contentEl = document.getElementById("fee_payments_content");
+        contentEl.innerHTML = this.responseText;
+        contentEl.scrollTop = 0;
+        const modalDialog = document.querySelector('#fee_payments .modal-dialog');
+        if (modalDialog) modalDialog.style.height = 'auto';
+    };
+    xhttp.onerror = function() {
+        document.getElementById("fee_payments_content").innerHTML = '<div class="alert alert-danger" style="margin:16px;">Error loading fee history. Please try again.</div>';
+    };
+    xhttp.open("GET", "student_fee_ladger_new.php?student_id=" + student_id + "&session_id=" + sessionId, true);
+    xhttp.send();
+}
+
+
+ function update_fee_challan(ch,id,row) {
+
+    document.getElementById('update_fee_content').innerHTML = '';
+    document.getElementById('update_fee_challan').setAttribute('data-current-row', row);
+
+    const xhttp = new XMLHttpRequest();
+    
+    xhttp.onload = function() {
+        document.getElementById("update_fee_content").innerHTML = this.responseText;
+        var modalDialog = document.querySelector('#update_fee_challan .modal-dialog');
+        if (modalDialog) modalDialog.style.height = 'auto';
+
+        var container = document.getElementById('update_fee_content');
+        if (!container) return;
+
+        // Edit Challan: 4 columns — Fee Head, Fee Head Amount (editable), Discount, Net Amount.
+        function initEditChallanCalc() {
+            var feeHeadAmountInputs = container.querySelectorAll('input.edit_fee_head_amount');
+            var discountInputs = container.querySelectorAll('input.edit_discount');
+            if (!discountInputs.length) return;
+
+            function updateEditRowNet(row) {
+                if (!row) return;
+                var amountInput = row.querySelector('input.edit_fee_head_amount');
+                var discountInput = row.querySelector('input.edit_discount');
+                var netInput = row.querySelector('input.edit_net_amount');
+                var base = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
+                var discount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
+                if (discount < 0) discount = 0;
+                // Update data-base on discount input to reflect new fee head amount
+                if (discountInput) discountInput.setAttribute('data-base', base);
+                var net = Math.max(0, base - discount);
+                if (netInput) netInput.value = Math.round(net);
+            }
+
+            function calcEditGrandTotals() {
+                var totalFeeHeadAmount = 0;
+                var totalDiscount = 0;
+                var totalNet = 0;
+                container.querySelectorAll('tr.edit-fee-row').forEach(function(row) {
+                    var amountInp = row.querySelector('input.edit_fee_head_amount');
+                    var discInp = row.querySelector('input.edit_discount');
+                    var netInp = row.querySelector('input.edit_net_amount');
+                    if (amountInp) totalFeeHeadAmount += parseFloat(amountInp.value) || 0;
+                    if (discInp) totalDiscount += parseFloat(discInp.value) || 0;
+                    if (netInp) totalNet += parseFloat(netInp.value) || 0;
+                });
+                var feeHeadEl = container.querySelector('#edit_total_fee_head_amount');
+                var discEl = container.querySelector('#edit_total_discount_display');
+                var totalPayableEl = container.querySelector('#edit_total_payable');
+                if (feeHeadEl) feeHeadEl.textContent = Math.round(totalFeeHeadAmount);
+                if (discEl) discEl.textContent = Math.round(totalDiscount);
+                if (totalPayableEl) totalPayableEl.value = Math.round(totalNet);
+            }
+
+            function bindRowEvents(input) {
+                var row = input.closest('tr');
+                ['input', 'change', 'keyup'].forEach(function(evt) {
+                    input.addEventListener(evt, function() {
+                        updateEditRowNet(row);
+                        calcEditGrandTotals();
+                    });
+                });
+            }
+
+            // Bind events on Fee Head Amount inputs
+            feeHeadAmountInputs.forEach(function(inp) {
+                bindRowEvents(inp);
+            });
+
+            // Bind events on Discount inputs
+            discountInputs.forEach(function(inp) {
+                bindRowEvents(inp);
+            });
+
+            // Initial calculation
+            container.querySelectorAll('tr.edit-fee-row').forEach(function(row) {
+                updateEditRowNet(row);
+            });
+            calcEditGrandTotals();
+        }
+
+        // Defer so DOM is fully updated after innerHTML
+        setTimeout(initEditChallanCalc, 0);
+    };
+
+    xhttp.open("GET", "fee_challans_payfee.php?action=update_fee_challan&id=" + id + "&ch=" + ch + "&row=" + row, true);
+    xhttp.send();
+}
+
+
+
+
+/*================ delete challan action ====================*/
+
+ function delete_challan(cid,sid,row,csrf_token) {
+
+    //var debug=cid+"--"+sid+"--"+row+"--"+csrf_token+"<b>";
+    //alert(debug);
+    //document.getElementById("testing").innerHTML=debug;
+
+   if (confirm("Are you sure you want to delete this row?")) {
+
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = function() {
+        try {
+            var res = JSON.parse(xhttp.responseText);
+            if (res.status === "success") {
+                showToast("Challan deleted successfully.");
+                var trRow = document.getElementById("row" + row);
+                if (trRow) trRow.remove();
+            } else {
+                showToast(res.message || "Could not delete challan.", "error");
+            }
+        } catch (e) {
+            showToast("An error occurred. Please try again.", "error");
+        }
+    };
+    xhttp.onerror = function() { showToast("Network error. Please try again.", "error"); };
+    xhttp.open("GET", "parent/InsertMe.php?action=DeleteFeeChallanNew&cid="+cid+"&sid="+sid+"&row="+row+"&csrf_token="+csrf_token, true);
+    xhttp.send();
+
+  }// ending confirmation if
+}
+
+
+/*=========== Fully Unpaid (available to all branches) ============*/
+function fully_unpay_challan(cid, sid, row) {
+    if (!confirm("Are you sure you want to fully unpay this challan?")) return;
+    var reason = prompt("Reason for fully unpaying (optional):", "") || "";
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+        try {
+            var res = JSON.parse(xhr.responseText);
+            if (res.status === "success") {
+                showToast("Challan fully unpaid successfully.");
+                updateRowToUnpaid(row);
+            } else {
+                showToast(res.message || "Could not fully unpay challan.", "error", 4000);
+            }
+        } catch (e) {
+            showToast("An error occurred. Please try again.", "error");
+        }
+    };
+    xhr.onerror = function() { showToast("Network error. Please try again.", "error"); };
+    xhr.open("GET", "parent/InsertMe.php?action=fully_unpay_challan_new&cid=" + cid + "&sid=" + sid + "&row=" + row + "&reason=" + encodeURIComponent(reason), true);
+    xhr.send();
+}
+
+/*=========== Mark as Unpaid (in-place update - no list reload, no extra DB call) ============*/
+function mark_unpay_challan(cid, sid, row) {
+    if (!confirm("Are you sure you want to mark this challan as unpaid?")) return;
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+        try {
+            var res = JSON.parse(xhr.responseText);
+            if (res.status === "success") {
+                showToast("Challan marked as unpaid successfully.");
+                updateRowToUnpaid(row);
+            } else {
+                var isMultiMonthMsg = (res.message || "").indexOf("contains payments against") !== -1;
+                showToast(res.message || "Could not mark as unpaid.", "error", isMultiMonthMsg ? 4000 : 3000);
+            }
+        } catch (e) {
+            showToast("An error occurred. Please try again.", "error");
+        }
+    };
+    xhr.onerror = function() { showToast("Network error. Please try again.", "error"); };
+    xhr.open("GET", "parent/InsertMe.php?action=mark_unpay_challan_new&cid=" + cid + "&sid=" + sid + "&row=" + row, true);
+    xhr.send();
+}
+
+/** After payment success: update status badge, Pay Fee column, hide/keep Pay button. */
+function updateRowToPaid(rowNum, paidAmt, paidDateRaw, isPartial) {
+    var row = document.getElementById("row" + rowNum);
+    if (!row) return;
+    var studentId = row.getAttribute("data-student-id") || "";
+
+    var amtFormatted = paidAmt > 0 ? Math.round(paidAmt).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '';
+
+    if (isPartial) {
+        // ── PARTIAL PAY ──────────────────────────────────────────────────
+        // Status badge -> "Partial Paid" (btn-info)
+        var statusBadge = document.getElementById('paid_status' + studentId)
+                          || row.querySelector('[id^="paid_status"]')
+                          || row.querySelector('.btn-danger');
+        if (statusBadge) {
+            statusBadge.className = "btn btn-info";
+            statusBadge.innerHTML = 'Partial Paid';
+        }
+
+        // Pay Fee column: keep "Pay Now" button (remaining balance still exists), show amount below
+        var actionTd = row.querySelector(".btn-group") ? row.querySelector(".btn-group").closest("td") : null;
+        var payFeeTd = actionTd ? actionTd.previousElementSibling : null;
+        var payBtn = payFeeTd ? payFeeTd.querySelector('.pay-btn') : null;
+        if (payBtn) {
+            payBtn.className = "btn btn-success pay-btn";
+            payBtn.style.padding = "0px 5px";
+            payBtn.style.fontSize = "14px";
+            payBtn.innerHTML = "Pay Now";
+        }
+        if (payFeeTd && amtFormatted) {
+            var amtSpan = payFeeTd.querySelector('.partial-paid-amt');
+            if (amtSpan) {
+                amtSpan.innerHTML = amtFormatted;
+            } else {
+                var newAmtSpan = document.createElement("span");
+                newAmtSpan.className = "partial-paid-amt";
+                newAmtSpan.innerHTML = '<br>' + amtFormatted;
+                payFeeTd.appendChild(newAmtSpan);
+            }
+        }
+
+    } else {
+        // ── FULLY PAID ───────────────────────────────────────────────────
+        // Status badge -> "Paid" (btn-success)
+        var statusBadge2 = document.getElementById('paid_status' + studentId)
+                           || row.querySelector('[id^="paid_status"]')
+                           || row.querySelector('.btn-danger, .btn-info');
+        if (statusBadge2) {
+            statusBadge2.className = "btn btn-success";
+            statusBadge2.innerHTML = 'Paid <i class="fa fa-check"></i>';
+        }
+
+        // Hide Pay Now / Partialy Pay button
+        var payBtn = row.querySelector('.pay-btn');
+        if (payBtn) payBtn.style.display = "none";
+
+        // Pay Fee column: show amount + "Paid on (date)"
+        if (paidAmt > 0) {
+            var dateDisplay = '';
+            if (paidDateRaw) {
+                var dp = paidDateRaw.split('-');
+                if (dp.length === 3) {
+                    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                    dateDisplay = dp[2] + '-' + (months[parseInt(dp[1], 10) - 1] || dp[1]) + '-' + dp[0];
+                }
+            }
+            var paidHtml = amtFormatted + (dateDisplay ? '<br><i><span style="font-size:10px;color:green;"> Paid on (' + dateDisplay + ') </span></i>' : '');
+
+            var totalpaidSpan = document.getElementById("totalpaid" + rowNum);
+            if (totalpaidSpan) {
+                totalpaidSpan.innerHTML = paidHtml;
+            } else {
+                var actionTd2 = row.querySelector(".btn-group") ? row.querySelector(".btn-group").closest("td") : null;
+                var payFeeTd2 = actionTd2 ? actionTd2.previousElementSibling : null;
+                if (payFeeTd2) {
+                    var newSpan = document.createElement("span");
+                    newSpan.id = "totalpaid" + rowNum;
+                    newSpan.innerHTML = paidHtml;
+                    payFeeTd2.innerHTML = "";
+                    payFeeTd2.appendChild(newSpan);
+                }
+            }
+        }
+    }
+
+    var ul = row.querySelector("ul.dropdown-menu");
+    if (!ul) return;
+
+    var cid2 = row.getAttribute("data-cid") || "";
+    var sid2 = row.getAttribute("data-sid") || "";
+    var allowFullyUnpay = row.getAttribute("data-fully-unpay") === "1";
+    var editEl = row.querySelector("#updatefee" + rowNum);
+    var deleteEl = row.querySelector("#deleteChallan" + rowNum);
+    var existingUnpayEl = row.querySelector("#unpayChallan" + rowNum);
+    var existingFullyUnpayEl = row.querySelector("#fullyUnpayChallan" + rowNum);
+    if (editEl && editEl.closest("li")) editEl.closest("li").remove();
+    if (deleteEl && deleteEl.closest("li")) deleteEl.closest("li").remove();
+    if (existingUnpayEl && existingUnpayEl.closest("li")) existingUnpayEl.closest("li").remove();
+    if (existingFullyUnpayEl && existingFullyUnpayEl.closest("li")) existingFullyUnpayEl.closest("li").remove();
+
+    var esc = function(s) { return (s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'"); };
+    var newHtml;
+    if (allowFullyUnpay) {
+        newHtml = '<li><a id="fullyUnpayChallan' + rowNum + '" href="javascript:void(0)" onclick="fully_unpay_challan(\'' + esc(cid2) + '\',\'' + esc(sid2) + '\',\'' + rowNum + '\'); return false;">Challan Mark as Unpaid</a></li>';
+    } else {
+        newHtml = '<li><a id="unpayChallan' + rowNum + '" href="javascript:void(0)" onclick="mark_unpay_challan(\'' + esc(cid2) + '\',\'' + esc(sid2) + '\',\'' + rowNum + '\'); return false;">Mark as Unpaid</a></li>';
+    }
+    var temp = document.createElement("div");
+    temp.innerHTML = newHtml;
+    var firstLi = ul.querySelector("li");
+    while (temp.firstChild) {
+        if (firstLi) ul.insertBefore(temp.firstChild, firstLi);
+        else ul.appendChild(temp.firstChild);
+    }
+}
+
+function updateRowToUnpaid(rowNum) {
+    var row = document.getElementById("row" + rowNum);
+    if (!row) return;
+    var cid = row.getAttribute("data-cid") || "";
+    var sid = row.getAttribute("data-sid") || "";
+    var familyCode = row.getAttribute("data-family-code") || "";
+    var studentId = row.getAttribute("data-student-id") || "";
+    var csrf = row.getAttribute("data-csrf") || "";
+    var allFeeHeads = row.getAttribute("data-all-fee-heads") || "0";
+    var editAccess = row.getAttribute("data-edit-access") || "";
+    var deleteAccess = row.getAttribute("data-delete-access") || "";
+    var isLatest = row.getAttribute("data-is-latest") === "1";
+
+    // 1. Update Status badge (Paid/Partial -> Unpaid)
+    // Direct getElementById using data-student-id avoids class-based ambiguity with pay-btn
+    var statusBadge = document.getElementById('paid_status' + studentId)
+                      || row.querySelector('[id^="paid_status"]')
+                      || row.querySelector('.btn-success, .btn-info');
+    if (statusBadge) {
+        statusBadge.className = "btn btn-danger";
+        statusBadge.innerHTML = "Unpaid";
+    }
+
+    // 2. Update Dropdown: remove Mark as Unpaid + Fully Unpaid, add Edit Challan + Delete Challan
+    var unpayLi = row.querySelector("#unpayChallan" + rowNum);
+    var fullyUnpayLi = row.querySelector("#fullyUnpayChallan" + rowNum);
+    if (fullyUnpayLi && fullyUnpayLi.closest("li")) fullyUnpayLi.closest("li").remove();
+    if (unpayLi) {
+        var ul = unpayLi.closest("ul.dropdown-menu");
+        if (!ul) ul = row.querySelector("ul.dropdown-menu");
+        if (ul) {
+            unpayLi.remove();
+            var firstPrintLi = ul.querySelector("li");
+            var newLis = [];
+            var esc = function(s) { return (s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'"); };
+            if (isLatest && editAccess === "edit") {
+                newLis.push('<li><a onclick="update_fee_challan(\'' + esc(cid) + '\',\'' + esc(sid) + '\',\'' + rowNum + '\');" data-toggle="modal" id="updatefee' + rowNum + '" data-target="#update_fee_challan">Edit Challan</a></li>');
+            }
+            if (isLatest && deleteAccess === "delete") {
+                newLis.push('<li><a id="deleteChallan' + rowNum + '" onclick="delete_challan(\'' + esc(cid) + '\',\'' + esc(sid) + '\',\'' + rowNum + '\',\'' + esc(csrf) + '\'); return false;">Delete Challan</a></li>');
+            }
+            if (newLis.length) {
+                var temp = document.createElement("div");
+                temp.innerHTML = newLis.join("");
+                while (temp.firstChild) {
+                    ul.insertBefore(temp.firstChild, firstPrintLi);
+                }
+            }
+        }
+    }
+
+    // 3. Update Pay Fee column: replace entire content (handles both fully paid & partially paid)
+    var payFeeTd = row.querySelector("#totalpaid" + rowNum)
+        ? row.querySelector("#totalpaid" + rowNum).closest("td")
+        : (row.querySelector(".btn-group") ? row.querySelector(".btn-group").closest("td").previousElementSibling : null);
+    if (payFeeTd) {
+        payFeeTd.innerHTML = "";
+        var paidDisplaySpan = document.createElement("span");
+        paidDisplaySpan.setAttribute("id", "paidAmountDisplay" + rowNum);
+        paidDisplaySpan.setAttribute("style", "display:none;");
+        payFeeTd.appendChild(paidDisplaySpan);
+        if (isLatest) {
+            var payBtn = document.createElement("a");
+            payBtn.setAttribute("data-toggle", "modal");
+            payBtn.setAttribute("data-target", "#payfee");
+            payBtn.setAttribute("class", "btn btn-success pay-btn");
+            payBtn.setAttribute("style", "padding: 0px 5px; font-size:14px;");
+            payBtn.setAttribute("data-total-fee", allFeeHeads);
+            payBtn.setAttribute("data-paid-amount", "0");
+            payBtn.setAttribute("data-student-id", studentId);
+            payBtn.setAttribute("data-row-number", rowNum);
+            payBtn.setAttribute("id", "paynow" + studentId);
+            payBtn.textContent = "Pay Now";
+            payBtn.onclick = function() { show_pay_fee_students(familyCode, sid, rowNum); };
+            payFeeTd.appendChild(payBtn);
+        } else {
+            var oldChallanBtn = document.createElement("a");
+            oldChallanBtn.setAttribute("href", "javascript:void(0);");
+            oldChallanBtn.setAttribute("class", "btn btn-warning");
+            oldChallanBtn.setAttribute("style", "padding: 0px 5px; font-size:12px; cursor: not-allowed;");
+            oldChallanBtn.setAttribute("title", "Only latest challan can be paid");
+            oldChallanBtn.textContent = "Old Challan";
+            oldChallanBtn.onclick = function() { alert("⚠️ Previous Month Challan\n\nYou can only pay the latest challan.\n\nPlease navigate to the current month and pay that challan first."); };
+            payFeeTd.appendChild(oldChallanBtn);
+        }
+    }
+
+    // 4. Close the dropdown after update
+    var btnGroup = row.querySelector(".btn-group");
+    if (btnGroup) btnGroup.classList.remove("open");
+
+    // 5. Brief highlight feedback
+    row.style.transition = "background-color 0.3s ease";
+    row.style.backgroundColor = "#fff3cd";
+    setTimeout(function() {
+        row.style.backgroundColor = "";
+    }, 800);
+}
+
+
+/*======== Pay Fee Auto Form Submisison via ajax============*/
+
+// Collect data from visible table only (fixes double payment - no duplicate students[]/challanIDs[])
+function collectFullyPaidData() {
+    var formData = new FormData();
+    formData.append("action", "Pay_Students_Fee_new");
+    formData.append("table_type", "fully_paid");
+    var sessionEl = document.querySelector('[name="session_id"]');
+    if (sessionEl) formData.append("session_id", sessionEl.value);
+    var students = document.querySelectorAll('#fullyPaidTable input[name="students[]"]');
+    var challans = document.querySelectorAll('#fullyPaidTable input[name="challanIDs[]"]');
+    var payables = document.querySelectorAll('#fullyPaidTable input[name="fully_payable[]"]');
+    var received = document.querySelectorAll('#fullyPaidTable input[name="fully_fee_recvd[]"]');
+    students.forEach(function(input, i) {
+        if (input && challans[i] && payables[i] && received[i]) {
+            formData.append("students[]", input.value);
+            formData.append("challanIDs[]", challans[i].value);
+            formData.append("fully_payable[]", payables[i].value);
+            formData.append("fully_fee_recvd[]", received[i].value);
+        }
+    });
+    var totalPayable = document.getElementById("total_fully_payable");
+    if (totalPayable) formData.append("msg_total_fee", totalPayable.value);
+    var totalReceiving = document.getElementById("total_fully_receving");
+    if (totalReceiving) formData.append("msg_amount_paid", totalReceiving.value);
+    return formData;
+}
+function collectPartiallyPaidData() {
+    var formData = new FormData();
+    formData.append("action", "Pay_Students_Fee_new");
+    formData.append("table_type", "partially_paid");
+    var sessionEl = document.querySelector('[name="session_id"]');
+    if (sessionEl) formData.append("session_id", sessionEl.value);
+    var table = document.getElementById("partialyPaidTable");
+    if (!table) return formData;
+    var rows = table.querySelectorAll("tbody tr:not(:last-child)");
+    rows.forEach(function(row) {
+        try {
+            var studentId = row.querySelector('input[name="students[]"]');
+            var challanId = row.querySelector('input[name="challanIDs[]"]');
+            studentId = studentId ? studentId.value : null;
+            challanId = challanId ? challanId.value : null;
+            if (!studentId || !challanId) return;
+            formData.append("students[]", studentId);
+            formData.append("challanIDs[]", challanId);
+            ["names","cell_no","gr_no","class_names","paid_status","month"].forEach(function(name) {
+                var field = row.querySelector('input[name="' + name + '[]"]');
+                if (field) formData.append(name + "[]", field.value);
+            });
+            function appendFeeFields(input, prefix, id1, id2) {
+                formData.append(prefix + "[" + id1 + "][" + id2 + "]", input.value);
+                ["discount","receiving","remaining"].forEach(function(type) {
+                    var n = prefix.replace("partial_fees", "partial_" + type);
+                    var el = row.querySelector('input[name="' + n + '[' + id1 + '][' + id2 + ']"]');
+                    formData.append(n + "[" + id1 + "][" + id2 + "]", el ? el.value : "0");
+                });
+            }
+            row.querySelectorAll('input[name^="partial_fees["]').forEach(function(input) {
+                var m = input.name.match(/\[(\d+)\]$/);
+                if (m) appendFeeFields(input, "partial_fees", challanId, m[1]);
+            });
+            row.querySelectorAll('input[name^="partial_fees_fine["]').forEach(function(input) {
+                var m = input.name.match(/\[(\d+)\]$/);
+                if (m) appendFeeFields(input, "partial_fees_fine", challanId, m[1]);
+            });
+            row.querySelectorAll('input[name^="partial_fees_remaining["]').forEach(function(input) {
+                var m = input.name.match(/\[(\d+)\]\[(\d+)\]/);
+                if (m) appendFeeFields(input, "partial_fees_remaining", m[1], m[2]);
+            });
+        } catch (e) { console.error("Row error:", e); }
+    });
+    ["partial_total_payable","partial_total_disc","partial_total_recev","partial_total_remaining"].forEach(function(id) {
+        var el = document.getElementById(id);
+        formData.append(id, el ? el.value : "0");
+    });
+    var msgPayable = document.getElementById("partial_total_payable");
+    if (msgPayable) formData.append("msg_total_fee", msgPayable.value);
+    var msgRecev = document.getElementById("partial_total_recev");
+    if (msgRecev) formData.append("msg_amount_paid", msgRecev.value);
+    return formData;
+}
+function appendCommonFields(formData) {
+    formData.append("fee_remarks", document.querySelector('input[name="fee_remarks"]') ? document.querySelector('input[name="fee_remarks"]').value : "");
+    formData.append("payment_mode", document.querySelector('select[name="paid_by"]') ? document.querySelector('select[name="paid_by"]').value : "Cash");
+    formData.append("sendMsg", document.querySelector('select[name="sendMsg"]') ? document.querySelector('select[name="sendMsg"]').value : "YES");
+    formData.append("PaidDate", document.querySelector('input[name="PaidDate"]') ? document.querySelector('input[name="PaidDate"]').value : "");
+    formData.append("rowID", document.querySelector('input[name="rowID"]') ? document.querySelector('input[name="rowID"]').value : "");
+    var tf = document.querySelector('input[name="total_fully_payable_current_month"]');
+    if (tf) formData.append("total_fully_payable_current_month", tf.value);
+    ["msg_family_name", "msg_cell_no", "msg_fee_month"].forEach(function(name) {
+        var el = document.querySelector('input[name="' + name + '"]');
+        if (el) formData.append(name, el.value);
+    });
+}
+
+    function closePayFeeModal() {
+        var modal = document.getElementById('payfee');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('in');
+        }
+        document.body.classList.remove('modal-open');
+        document.body.style.paddingRight = '';
+        var backdrops = document.querySelectorAll('.modal-backdrop');
+        for (var i = 0; i < backdrops.length; i++) {
+            if (backdrops[i].parentNode) backdrops[i].parentNode.removeChild(backdrops[i]);
+        }
+    }
+
+    // Handle form submission with AJAX (single listener, prevent double submit)
+    var payFeeSubmitting = false;
+    var waMessageSentTimer = null; // prevent duplicate WA messages
+    document.getElementById("popupForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        if (typeof validatePayFeeAmounts === 'function' && !validatePayFeeAmounts()) {
+            alert("Received amount cannot be greater than payable amount.");
+            return;
+        }
+        if (payFeeSubmitting) return;
+        payFeeSubmitting = true;
+        var submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        var fullyPaidTable = document.getElementById("fullyPaidTable");
+        var partiallyPaidTable = document.getElementById("partialyPaidTable");
+        var formData;
+        var waTableType = '';
+        if (fullyPaidTable && fullyPaidTable.style.display !== "none") {
+            formData = collectFullyPaidData();
+            waTableType = 'fully_paid';
+        } else if (partiallyPaidTable && partiallyPaidTable.style.display !== "none") {
+            formData = collectPartiallyPaidData();
+            waTableType = 'partially_paid';
+        } else {
+            payFeeSubmitting = false;
+            if (submitBtn) submitBtn.disabled = false;
+            alert("Please select students to pay fees for");
+            return;
+        }
+        appendCommonFields(formData);
+
+        // Capture form values before AJAX (modal closes after success)
+        var waStudentName   = (document.querySelector('#payfee_content input[name="msg_family_name"]') || {}).value || '';
+        var waPhone         = (document.querySelector('#payfee_content input[name="msg_cell_no"]') || {}).value || '';
+        var waMonth         = (document.querySelector('#payfee_content input[name="msg_fee_month"]') || {}).value || '';
+        var waSendMsg       = (document.querySelector('select[name="sendMsg"]') || {}).value || 'NO';
+        // Grand total amounts — read from the grand total row directly (same values collectFullyPaidData uses)
+        var waPayable       = Math.abs(parseFloat((document.querySelector('#payfee_content #total_fully_payable') || {}).value) || 0);
+        var waReceiving     = Math.abs(parseFloat((document.querySelector('#payfee_content #total_fully_receving') || {}).value) || 0);
+        var waPartPayable   = Math.abs(parseFloat((document.querySelector('#payfee_content #partial_total_payable') || {}).value) || 0);
+        var waPartDiscount  = Math.abs(parseFloat((document.querySelector('#payfee_content #partial_total_disc') || {}).value) || 0);
+        var waPartReceiving = Math.abs(parseFloat((document.querySelector('#payfee_content #partial_total_recev') || {}).value) || 0);
+        var waPartRemaining = Math.abs(parseFloat((document.querySelector('#payfee_content #partial_total_remaining') || {}).value) || 0);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "parent/InsertMe.php", true);
+        xhr.onload = function() {
+            payFeeSubmitting = false;
+            if (submitBtn) submitBtn.disabled = false;
+            if (xhr.status === 200) {
+                var response;
+                try {
+                    response = JSON.parse(xhr.responseText);
+                } catch (parseErr) {
+                    closePayFeeModal();
+                    showToast('<i class="fa fa-check-circle" style="font-size:18px;margin-right:8px;"></i><strong>Fee Paid Successfully</strong><br><small style="opacity:0.88;">Please refresh the page to see the updated status.</small>', "success", 4000);
+                    return;
+                }
+                var row = response.sid || (document.querySelector('#payfee_content input[name="rowID"]') && document.querySelector('#payfee_content input[name="rowID"]').value);
+                var sids = response.sids || (response.sid ? [response.sid] : []);
+
+                // Capture paid date + per-student amounts BEFORE modal closes
+                var capturedPaidDate = (document.querySelector('input[name="PaidDate"]') || {}).value || '';
+                var capturedAmountList = [];
+                if (waTableType === 'fully_paid') {
+                    var _amtInputs = document.querySelectorAll('#fullyPaidTable input[name="fully_fee_recvd[]"]');
+                    capturedAmountList = Array.from(_amtInputs).map(function(el) { return parseFloat(el.value) || 0; });
+                } else {
+                    // Partial pay is always single student; use the pre-computed total input
+                    var totalPartialRecev = Math.abs(parseFloat((document.querySelector('#payfee_content #partial_total_recev') || {}).value) || 0);
+                    capturedAmountList = [totalPartialRecev];
+                }
+
+                closePayFeeModal();
+                var receiptNote = response.receipt_no ? ' Receipt No: <strong>' + response.receipt_no + '</strong>' : '';
+                showToast('<i class="fa fa-check-circle" style="font-size:18px;margin-right:8px;"></i><strong>Fee Paid Successfully</strong><br><small style="opacity:0.88;">Challan has been updated.' + receiptNote + '</small>', "success", 4000);
+
+                // ── WA Extension: send message if api_status = 0 ──────────────
+                // Format PK phone number to international format (92XXXXXXXXX)
+                function formatPKPhone(num) {
+                    num = String(num).replace(/\s+/g, '');
+                    if (num.charAt(0) === '0') return '92' + num.substring(1);
+                    if (num.substring(0, 2) === '92') return num;
+                    if (num.charAt(0) === '3') return '92' + num;
+                    return num;
+                }
+                waPhone = formatPKPhone(waPhone);
+
+                if (apiStatus == 0 && waSendMsg === 'YES' && waPhone) {
+                    var waMessage, waFeeInfo;
+                    if (waTableType === 'fully_paid') {
+                        waFeeInfo = 'Rs. ' + waReceiving;
+                        waMessage =
+                            '✨ *PAYMENT RECEIPT CONFIRMATION* ✨\n\n' +
+                            '👨‍👩‍👧 *Family:* ' + waStudentName + '\n' +
+                            '🗓️ *Fee Month:* ' + waMonth + '\n\n' +
+                            '━━━━━━━━━━━━━━\n' +
+                            '💲 *Total Fee:* Rs. ' + waPayable + '\n' +
+                            '💳 *Amount Paid:* Rs. ' + waReceiving + '\n' +
+                            '⚖️ *Balance Due:* Rs. 0\n' +
+                            '━━━━━━━━━━━━━━\n\n' +
+                            '✅ *Status:* Payment Verified Successfully\n\n' +
+                            'Thank you for your payment!\n\n' +
+                            '🏫 *' + branchName + '*\n' +
+                            '📧 Contact us for any queries';
+                    } else {
+                        waFeeInfo = 'Rs. ' + waPartReceiving;
+                        waMessage =
+                            '✨ *PAYMENT RECEIPT CONFIRMATION* ✨\n\n' +
+                            '👨‍👩‍👧 *Family:* ' + waStudentName + '\n' +
+                            '🗓️ *Fee Month:* ' + waMonth + '\n\n' +
+                            '━━━━━━━━━━━━━━\n' +
+                            '💲 *Total Payable:* Rs. ' + waPartPayable + '\n' +
+                            (parseFloat(waPartDiscount) > 0 ? '🏷️ *Discount:* Rs. ' + waPartDiscount + '\n' : '') +
+                            '💳 *Amount Paid:* Rs. ' + waPartReceiving + '\n' +
+                            '⚖️ *Balance Due:* Rs. ' + waPartRemaining + '\n' +
+                            '━━━━━━━━━━━━━━\n\n' +
+                            '✅ *Status:* Payment Verified Successfully\n\n' +
+                            'Thank you for your payment!\n\n' +
+                            '🏫 *' + branchName + '*\n' +
+                            '📧 Contact us for any queries';
+                    }
+
+                    var waPayload = {
+                        type    : 'WA_LOAD_STUDENTS',
+                        students: [{ name: waStudentName, phone: waPhone, class: '', fee: waFeeInfo }],
+                        template: waMessage,
+                        autoSend: true
+                    };
+                    // Cancel any pending message from a previous rapid payment, then send once
+                    if (waMessageSentTimer) clearTimeout(waMessageSentTimer);
+                    waMessageSentTimer = setTimeout(function() {
+                        waMessageSentTimer = null;
+                        window.postMessage(waPayload, '*');
+                    }, 800);
+                }
+                // ─────────────────────────────────────────────────────────────
+
+                var mainList = document.getElementById("fee_challans_content");
+                // If partial popup used but full remaining amount was paid → treat as fully paid
+                var isPartialPay = (waTableType !== 'fully_paid') &&
+                                   (waPartRemaining > 0 || capturedAmountList[0] < waPartPayable);
+                sids.forEach(function(sid, _idx) {
+                    var tr = null;
+                    var linkElement = mainList ? mainList.querySelector('[id="paid_status' + sid + '"]') : document.getElementById("paid_status" + sid);
+                    var payBtn = mainList ? mainList.querySelector('.pay-btn[data-student-id="' + sid + '"]') : document.querySelector('.pay-btn[data-student-id="' + sid + '"]');
+                    if (!payBtn && document.getElementById("paynow" + sid)) payBtn = document.getElementById("paynow" + sid);
+                    tr = (linkElement || payBtn) ? (linkElement || payBtn).closest("tr") : null;
+                    if (tr && tr.id && String(tr.id).indexOf("row") === 0) {
+                        var rowNum = String(tr.id).replace("row", "");
+                        if (rowNum) updateRowToPaid(rowNum, capturedAmountList[_idx] || 0, capturedPaidDate, isPartialPay);
+                    }
+                });
+                // Reliable fallback using row (rowNum from response)
+                if (row) {
+                    updateRowToPaid(row, capturedAmountList[0] || 0, capturedPaidDate, isPartialPay);
+                }
+
+                if (row) {
+                    ["one_studentLink", "two_studentLink", "three_studentLink"].forEach(function(prefix) {
+                        var targetLink = document.getElementById(prefix + row);
+                        if (targetLink && targetLink.href) {
+                            try {
+                                var currentUrl = new URL(targetLink.href);
+                                currentUrl.searchParams.set("fee", "All");
+                                targetLink.href = currentUrl.toString();
+                            } catch (e) {}
+                        }
+                    });
+                }
+            } else {
+                alert("Error saving data!");
+            }
+        };
+        xhr.onerror = function() {
+            payFeeSubmitting = false;
+            if (submitBtn) submitBtn.disabled = false;
+            alert("Error saving data!");
+        };
+        xhr.send(formData);
+    });
+
+
+
+
+/*======== Update Fee Challan Form Submisison via ajax============*/
+
+
+    // Handle form submission with AJAX
+    document.getElementById("update_popupForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        var formData = new FormData(this);
+        var container = document.getElementById('update_fee_content');
+        var modalEl   = document.getElementById('update_fee_challan');
+        var rowNum    = modalEl ? modalEl.getAttribute('data-current-row') : '';
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "parent/InsertMe.php", true);
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // Update Monthly Fee and Total columns immediately without page refresh
+                if (rowNum && container) {
+                    var trRow = document.getElementById("row" + rowNum);
+
+                    // New Monthly Fee = gross Tuition Fee amount (feehead_id=12)
+                    var tuitionInput = container.querySelector('input.edit_fee_head_amount[name$="][12]"]');
+                    var newMonthlyFee = tuitionInput ? (parseFloat(tuitionInput.value) || 0) : null;
+
+                    // New Total = sum of all net amounts + existing arrears
+                    var totalPayableEl = container.querySelector('#edit_total_payable');
+                    var newNetTotal = totalPayableEl ? (parseFloat(totalPayableEl.value) || 0) : null;
+
+                    if (trRow && newNetTotal !== null) {
+                        // Compute arrears = current displayed total - current data-all-fee-heads
+                        var currentAllFeeHeads = parseFloat(trRow.getAttribute('data-all-fee-heads') || '0') || 0;
+                        var totalCell = document.getElementById('total_col_' + rowNum);
+                        var currentDisplayedTotal = totalCell ? (parseFloat(totalCell.textContent) || 0) : currentAllFeeHeads;
+                        var arrearsTotal = Math.max(0, currentDisplayedTotal - currentAllFeeHeads);
+                        var newDisplayTotal = newNetTotal + arrearsTotal;
+
+                        // Update Monthly Fee cell
+                        var monthlyFeeCell = document.getElementById('monthly_fee_col_' + rowNum);
+                        if (monthlyFeeCell && newMonthlyFee !== null) {
+                            monthlyFeeCell.textContent = newMonthlyFee;
+                        }
+
+                        // Update Total cell
+                        if (totalCell) {
+                            totalCell.textContent = newDisplayTotal;
+                        }
+
+                        // Update data-all-fee-heads so Pay Fee amounts stay correct
+                        trRow.setAttribute('data-all-fee-heads', Math.round(newNetTotal));
+
+                        // Brief green highlight on the row
+                        trRow.style.transition = "background-color 0.4s ease";
+                        trRow.style.backgroundColor = "#d4edda";
+                        setTimeout(function() { trRow.style.backgroundColor = ""; }, 900);
+                    }
+                }
+
+                $('#update_fee_challan').modal('hide');
+                showToast("Challan updated successfully.");
+            } else {
+                alert("Error saving data!");
+            }
+        };
+        xhr.send(formData);
+    });
+
+// ------------ Code for the paid or partial paid buttons ------------
+
+
+function toggleFeeTables() {
+    
+    var fullyPaidTable = document.getElementById('fullyPaidTable');
+    var partialyPaidTable = document.getElementById('partialyPaidTable');
+    var toggleBtn = document.getElementById('toggleFeeViewBtn');
+
+    // Check which table is currently visible
+    if (fullyPaidTable.style.display !== 'none') {
+    // Show partial table, hide full
+        fullyPaidTable.style.display = 'none';
+        partialyPaidTable.style.display = 'table';
+        toggleBtn.innerHTML = '<span class="glyphicon glyphicon-edit"></span> Fully Paid';
+    } else {
+    // Show full table, hide partial
+        fullyPaidTable.style.display = 'table';
+        partialyPaidTable.style.display = 'none';
+        toggleBtn.innerHTML = '<span class="glyphicon glyphicon-edit"></span> Partially Paid';
+    }
+}
+
+// Set default view on page load
+window.onload = function() {
+    const fullyTable = document.getElementById('fullyPaidTable');
+    const partialTable = document.getElementById('partialyPaidTable');
+    if (fullyTable) fullyTable.style.display = 'table'; // Show Full by default
+    if (partialTable) partialTable.style.display = 'none'; // Hide Partial by default
+};
+
+function getClassesByHead(headId) {
+  var url = "get_classes_by_head.php?head_id=";
+  if (headId !== "" && headId !== null && headId !== "All") {
+    url += encodeURIComponent(headId);
+  }
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState == 4 && xhr.status == 200) {
+      var classEl = document.getElementById("class_id");
+      if (classEl) classEl.innerHTML = xhr.responseText;
+      var secEl = document.getElementById("txt_section");
+      if (secEl) secEl.innerHTML = '<option value="All">All</option>';
+    }
+  };
+  xhr.open("GET", url, true);
+  xhr.send();
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  var headSel = document.getElementById("class_head");
+  if (headSel && headSel.value !== "") {
+    getClassesByHead(headSel.value);
+  }
+
+  });
+
+
+// code for the calculation of the fee challans
+
+
+// Function to handle calculations for a specific row
+function calculateRow(row) {
+    const payableInputs = row.querySelectorAll('.payable_amount, .payable_amount_remaining, .payable_amount_fine');
+    const discountInputs = row.querySelectorAll('.discount_amount, .discount_amount_remaining, .discount_amount_fine');
+    const receivingInputs = row.querySelectorAll('.received_amount, .received_amount_remaining, .received_amount_fine');
+    const remainingInputs = row.querySelectorAll('.remaining_amount, .remaining_amount_remaining, .remaining_amount_fine');
+
+    for (let i = 0; i < payableInputs.length; i++) {
+        const payable = parseFloat(payableInputs[i].value) || 0;
+        const discount = parseFloat(discountInputs[i].value) || 0;
+        const receiving = parseFloat(receivingInputs[i].value) || 0;
+
+        const remaining = payable - discount - receiving;
+        if (remainingInputs[i]) {
+            remainingInputs[i].value = remaining.toFixed(2);
+        }
+    }
+}
+
+
+// Function to calculate all grand totals
+function calculateGrandTotals() {
+    let totalPayable = 0;
+    let totalDiscount = 0;
+    let totalReceived = 0;
+    let totalRemaining = 0;
+
+    document.querySelectorAll('tr').forEach(row => {
+        if (!row.querySelector('th[colspan="2"]')) {
+            const payableInputs = row.querySelectorAll('.payable_amount, .payable_amount_remaining, .payable_amount_fine');
+            const discountInputs = row.querySelectorAll('.discount_amount, .discount_amount_remaining, .discount_amount_fine');
+            const receivingInputs = row.querySelectorAll('.received_amount, .received_amount_remaining, .received_amount_fine');
+            const remainingInputs = row.querySelectorAll('.remaining_amount, .remaining_amount_remaining, .remaining_amount_fine');
+
+            for (let i = 0; i < payableInputs.length; i++) {
+                totalPayable += parseFloat(payableInputs[i].value) || 0;
+                totalDiscount += parseFloat(discountInputs[i].value) || 0;
+                totalReceived += parseFloat(receivingInputs[i].value) || 0;
+                totalRemaining += parseFloat(remainingInputs[i].value) || 0;
+            }
+        }
+    });
+
+    const partialPayableEl = document.getElementById('partial_total_payable');
+    const partialDiscEl = document.getElementById('partial_total_disc');
+    const partialRecevEl = document.getElementById('partial_total_recev');
+    const partialRemainingEl = document.getElementById('partial_total_remaining');
+
+    if (partialPayableEl) partialPayableEl.value = totalPayable.toFixed(0);
+    if (partialDiscEl) partialDiscEl.value = totalDiscount.toFixed(0);
+    if (partialRecevEl) partialRecevEl.value = totalReceived.toFixed(0);
+    if (partialRemainingEl) partialRemainingEl.value = totalRemaining.toFixed(0);
+}
+
+// Validate that receiving is never greater than effective payable (payable - discount).
+function validatePayFeeAmounts() {
+    var partiallyPaidTable = document.getElementById('partialyPaidTable');
+    var isPartialVisible = partiallyPaidTable && partiallyPaidTable.style.display !== 'none';
+    var invalidFound = false;
+    var totalReceiving = 0;
+    var totalPayable = 0;
+    var totalDiscount = 0;
+
+    // Clear previous highlighting
+    document.querySelectorAll('#payfee_content .received_amount, #payfee_content .received_amount_remaining, #payfee_content .received_amount_fine').forEach(function(inp) {
+        inp.style.borderColor = '';
+        inp.style.backgroundColor = '';
+    });
+
+    if (isPartialVisible) {
+        document.querySelectorAll('#partialyPaidTable tbody tr').forEach(function(row) {
+            if (row.querySelector('th[colspan="2"]')) return;
+            var payableInputs = row.querySelectorAll('.payable_amount, .payable_amount_remaining, .payable_amount_fine');
+            var discountInputs = row.querySelectorAll('.discount_amount, .discount_amount_remaining, .discount_amount_fine');
+            var receivingInputs = row.querySelectorAll('.received_amount, .received_amount_remaining, .received_amount_fine');
+
+            for (var i = 0; i < receivingInputs.length; i++) {
+                var payable = parseFloat((payableInputs[i] && payableInputs[i].value) || 0) || 0;
+                var discount = parseFloat((discountInputs[i] && discountInputs[i].value) || 0) || 0;
+                var receiving = parseFloat(receivingInputs[i].value || 0) || 0;
+                var maxReceivable = payable - discount;
+
+                totalReceiving += receiving;
+                totalPayable += payable;
+                totalDiscount += discount;
+
+                if (receiving > maxReceivable) {
+                    invalidFound = true;
+                    receivingInputs[i].style.borderColor = '#d9534f';
+                    receivingInputs[i].style.backgroundColor = '#fff5f5';
+                }
+            }
+        });
+    }
+
+    // Partial payment must have some amount entered — block accidental 0-amount submits.
+    // Exception: if discount fully covers the payable amount, receiving is legitimately 0.
+    var fullyCoveredByDiscount = totalPayable > 0 && totalDiscount >= totalPayable;
+    var zeroReceivingFound = isPartialVisible && totalReceiving <= 0 && !fullyCoveredByDiscount;
+
+    var warningBox = document.getElementById('payFeeValidationAlert');
+    if (warningBox) {
+        if (zeroReceivingFound) {
+            warningBox.textContent = 'Please enter the amount being received for partial payment.';
+            warningBox.style.display = 'block';
+        } else if (invalidFound) {
+            warningBox.textContent = 'Received amount cannot be greater than payable amount.';
+            warningBox.style.display = 'block';
+        } else {
+            warningBox.style.display = 'none';
+        }
+    }
+
+    var paySubmitBtn = document.querySelector('#popupForm .modal-footer button[type="submit"]');
+    if (paySubmitBtn) {
+        paySubmitBtn.disabled = invalidFound || zeroReceivingFound;
+        paySubmitBtn.title = invalidFound ? 'Received amount cannot be greater than payable amount' :
+            (zeroReceivingFound ? 'Please enter the amount being received' : '');
+    }
+    return !invalidFound && !zeroReceivingFound;
+}
+
+
+// Initialize all calculations
+function initializeAll() {
+    // Calculate all rows first
+    document.querySelectorAll('tr').forEach(row => {
+        if (!row.querySelector('th[colspan="2"]')) {
+            calculateRow(row);
+        }
+    });
+
+    // Then calculate grand totals
+    calculateGrandTotals();
+    validatePayFeeAmounts();
+}
+
+// Event delegation for dynamic content
+document.addEventListener('input', function(e) {
+    if (
+        e.target.classList.contains('discount_amount') ||
+        e.target.classList.contains('received_amount') ||
+        e.target.classList.contains('discount_amount_remaining') ||
+        e.target.classList.contains('received_amount_remaining') ||
+        e.target.classList.contains('discount_amount_fine') ||
+        e.target.classList.contains('received_amount_fine')
+    ) {
+        const row = e.target.closest('tr');
+
+        // Auto-adjust receiving when discount is changed
+        if (
+            e.target.classList.contains('discount_amount') ||
+            e.target.classList.contains('discount_amount_remaining') ||
+            e.target.classList.contains('discount_amount_fine')
+        ) {
+            // Get the input name to match corresponding fields
+            const discountName = e.target.name;
+            let payableInput, receivingInput;
+
+            // Extract the identifier from name (e.g., partial_discount[123][45] -> 123][45)
+            if (discountName) {
+                const match = discountName.match(/\[(\d+)\]\[(\d+)\]/);
+                if (match) {
+                    const challanId = match[1];
+                    const feeId = match[2];
+
+                    // Find corresponding payable and receiving based on name pattern
+                    if (e.target.classList.contains('discount_amount')) {
+                        payableInput = row.querySelector(`input[name="partial_fees[${challanId}][${feeId}]"]`);
+                        receivingInput = row.querySelector(`input[name="partial_receiving[${challanId}][${feeId}]"]`);
+                    } else if (e.target.classList.contains('discount_amount_remaining')) {
+                        payableInput = row.querySelector(`input[name="partial_fees_remaining[${challanId}][${feeId}]"]`);
+                        receivingInput = row.querySelector(`input[name="partial_receiving_remaining[${challanId}][${feeId}]"]`);
+                    } else if (e.target.classList.contains('discount_amount_fine')) {
+                        payableInput = row.querySelector(`input[name="partial_fees_fine[${challanId}][${feeId}]"]`);
+                        receivingInput = row.querySelector(`input[name="partial_receiving_fine[${challanId}][${feeId}]"]`);
+                    }
+
+                    if (payableInput && receivingInput) {
+                        const payable = parseFloat(payableInput.value) || 0;
+                        const discount = parseFloat(e.target.value) || 0;
+
+                        // Auto-calculate receiving: payable - discount
+                        const autoReceiving = payable - discount;
+                        receivingInput.value = autoReceiving >= 0 ? autoReceiving.toFixed(0) : 0;
+                    }
+                }
+            }
+        }
+
+        // Restrict receiving amount so it can never exceed payable - discount
+        if (
+            e.target.classList.contains('received_amount') ||
+            e.target.classList.contains('received_amount_remaining') ||
+            e.target.classList.contains('received_amount_fine')
+        ) {
+            const receivingName = e.target.name;
+            let payableInput, discountInput;
+
+            const match = receivingName && receivingName.match(/\[(\d+)\]\[(\d+)\]/);
+            if (match) {
+                const challanId = match[1];
+                const feeId = match[2];
+
+                if (e.target.classList.contains('received_amount')) {
+                    payableInput = row.querySelector(`input[name="partial_fees[${challanId}][${feeId}]"]`);
+                    discountInput = row.querySelector(`input[name="partial_discount[${challanId}][${feeId}]"]`);
+                } else if (e.target.classList.contains('received_amount_remaining')) {
+                    payableInput = row.querySelector(`input[name="partial_fees_remaining[${challanId}][${feeId}]"]`);
+                    discountInput = row.querySelector(`input[name="partial_discount_remaining[${challanId}][${feeId}]"]`);
+                } else if (e.target.classList.contains('received_amount_fine')) {
+                    payableInput = row.querySelector(`input[name="partial_fees_fine[${challanId}][${feeId}]"]`);
+                    discountInput = row.querySelector(`input[name="partial_discount_fine[${challanId}][${feeId}]"]`);
+                }
+
+                if (payableInput) {
+                    const payable = parseFloat(payableInput.value) || 0;
+                    const discount = parseFloat((discountInput && discountInput.value) || 0) || 0;
+                    const maxReceivable = payable - discount;
+                    const receiving = parseFloat(e.target.value) || 0;
+
+                    if (receiving > maxReceivable) {
+                        e.target.value = maxReceivable >= 0 ? maxReceivable.toFixed(0) : 0;
+                    }
+                }
+            }
+        }
+
+        calculateRow(row);
+        calculateGrandTotals();
+        validatePayFeeAmounts();
+    }
+});
+
+
+
+
+// ending the calculation functions
+
+
+function openTopPrintVouchers(startToken, copy, format, endToken) {
+    var classId   = document.getElementById("class_id").value;
+    var sectionId = document.getElementById("txt_section").value;
+    var monthYear = document.getElementById("monthYear").value;
+    var session   = document.getElementById("session").value;
+    var fee       = document.getElementById("feeStatus").value;
+    var url = "students_voucher_printing_new.php?" + startToken +
+              "&class_id="  + encodeURIComponent(classId) +
+              "&section="   + encodeURIComponent(sectionId) +
+              "&monthYear=" + encodeURIComponent(monthYear) +
+              "&session="   + encodeURIComponent(session) +
+              "&fee="       + encodeURIComponent(fee) +
+              "&copy="      + copy;
+    if (format)   url += "&format=" + format;
+    if (endToken) url += "&" + endToken;
+    window.open(url, '_blank');
+}
+
+  $(document).ready(function() {
+    // Challan Month datepicker (month selection popup)
+    $('#monthYear').datepicker({
+        format: "mm/yyyy",
+        startView: "months",
+        minViewMode: "months",
+        autoclose: true
+    });
+    $('#listofstudents').DataTable();
+    $("th").removeClass("sorting");
+    });
+
+
+// Hide the alert automatically after 8 seconds
+setTimeout(() => {
+    const msgDiv = document.getElementById("msg");
+    if (msgDiv) {
+        msgDiv.classList.remove("show");
+        msgDiv.classList.add("hide");
+        
+        // Completely remove it from DOM after the fade-out effect
+        setTimeout(() => {
+            msgDiv.remove();
+        }, 500); // Adjust if needed for a smoother fade
+    }
+}, 6000); // 8 seconds
+
+
+
+
+
+</script>
+
+
+
+
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;3650377dd59a42ccbb65668736c3a93b&quot;,&quot;r&quot;:1}" crossorigin="anonymous"></script>
+
+</body></html>

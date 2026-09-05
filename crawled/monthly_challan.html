@@ -1,0 +1,1066 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+  <!-- Meta, title, CSS, favicons, etc. -->
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create Fee Challan | EduPortal</title>
+
+  
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/customizedStyling.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min1.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/style11.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/font-awesome-5.min.css" rel="stylesheet">
+
+    <style>
+    /* Global: neutralize legacy wrapper <div class="col-md-3 left_col"> present on 600+ pages */
+    .col-md-3.left_col { display: contents !important; width: auto !important; padding: 0 !important; margin: 0 !important; float: none !important; }
+    </style>
+<style>
+  
+.nav-container {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #eaecef;
+  /* padding: 10px 20px; */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  margin-top:15px;
+}
+
+.nav-bar {
+  display: flex;
+  gap: 1px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: center;   /* ✅ Items center mai */
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 15px;  
+  text-decoration: none;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  border: 1px solid #eaecef;
+}
+
+.nav-item:hover {
+  background: #fff4e6;
+  border-color: #ffd8b3;
+  color: #e67e22;
+}
+
+.nav-item.active {
+  background: #ff7800;
+  color: white;
+  border-color: #ff7800;
+  box-shadow: 0 3px 8px rgba(230, 126, 34, 0.3);
+}
+
+.nav-item.active i {
+  color: white;
+}
+
+.nav-item i {
+  font-size: 14px;
+  margin-right: 6px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.nav-item:hover i {
+  color: #e67e22;
+}
+
+.nav-bar::-webkit-scrollbar {
+  display: none;
+}
+.nav-bar {
+  -ms-overflow-style: none;  
+  scrollbar-width: none; 
+}
+
+</style>  <!-- jQuery -->
+  <script src="js/ajax_functions.js"></script>
+
+  <!-- jQuery -->
+<script src="../vendors/jquery/dist/jqueryfile.js"></script>
+<!-- Bootstrap -->
+<script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+<!-- Custom Theme Scripts -->
+<script src="../build/js/custom.min.js"></script>
+<!-- jQuery Sparklines -->
+<script src="../vendors/jquery-sparkline/dist/jquery.sparkline.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+
+
+
+<script type="text/javascript">
+  function getSectionAll(str) {
+
+
+    if (str == "")
+      alert("Please select any Class");
+    else
+      var ajx; // The variable that makes Ajax possible!
+
+    if (window.XMLHttpRequest)
+      ajx = new XMLHttpRequest();
+    ajx.onreadystatechange = function() {
+
+      if (ajx.readyState == 4) {
+        //alert(ajx.responseText); 
+        document.getElementById("txt_section").innerHTML = ajx.responseText;
+      }
+    }
+    ajx.open("GET", "get_section_all.php?class_id=" + str);
+    ajx.send();
+
+  }
+
+
+
+  function calculate_totalAmount(stdID) {
+    var baseEl = document.getElementById("base_amount_" + stdID);
+    var base = baseEl ? (parseFloat(baseEl.value) || 0) : 0;
+
+    var otherInputs = document.querySelectorAll('input[name^="otherFee[' + stdID + ']"]');
+    var Othernet = 0;
+    for (var i = 0; i < otherInputs.length; i++) {
+      Othernet += parseFloat(otherInputs[i].value) || 0;
+    }
+
+    var totalEl = document.getElementById("total" + stdID);
+    if (totalEl) totalEl.value = base + Othernet;
+  }
+
+  function ShowFeeParameters() {
+
+
+    var display = document.getElementById("others_fee").style.display;
+
+    var btn = document.getElementById("other_btn");
+
+    if (display == "block") {
+      document.getElementById("others_fee").style.display = "none";
+      btn.value = "+ Fee";
+      btn.classList.remove("btn-danger");
+      btn.classList.add("btn-success");
+    } else {
+      document.getElementById("others_fee").style.display = "block";
+      btn.value = "- Fee";
+      btn.classList.remove("btn-success");
+      btn.classList.add("btn-danger");
+
+    }
+
+  }
+
+  function getClassesByHead(headId) {
+    var url = "get_classes_by_head.php?head_id=";
+    if (headId !== "" && headId !== null && headId !== "All") {
+      url += headId;
+    }
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        var classEl = document.getElementById("class_id");
+        if (classEl) classEl.innerHTML = xhr.responseText;
+        var secEl = document.getElementById("txt_section");
+        if (secEl) secEl.innerHTML = '<option value="All">All</option>';
+      }
+    };
+    xhr.open("GET", url, true);
+    xhr.send();
+  }
+
+  window.addEventListener('DOMContentLoaded', function() {
+    var headSel = document.getElementById("class_head");
+    if (headSel && headSel.value !== "") {
+      getClassesByHead(headSel.value);
+    }
+  });
+</script><style type="text/css">
+  :root {
+    --cfc-primary: #ff7800;
+    --cfc-primary-dark: #e56700;
+    --cfc-dark: #2c3e50;
+    --cfc-dark-2: #34495e;
+    --cfc-border: #e5e9f0;
+    --cfc-muted: #8592a6;
+    --cfc-bg: #f4f6f9;
+  }
+
+  body { background: var(--cfc-bg) !important; }
+
+  .col-md-2 { width: 11%; }
+
+  .centertable { margin-left: auto; margin-right: auto; }
+
+  /* ---- Breadcrumb ---- */
+  .cfc-breadcrumb {
+    font-size: 13px;
+    color: var(--cfc-muted);
+    margin-bottom: 14px;
+  }
+  .cfc-breadcrumb a { color: var(--cfc-dark); font-weight: 500; text-decoration: none; }
+  .cfc-breadcrumb a:hover { color: var(--cfc-primary); }
+  .cfc-breadcrumb i { font-size: 10px; margin: 0 6px; color: #c3cad6; }
+
+  /* ---- Alerts ---- */
+  .alert {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    font-size: 14px;
+    padding: 12px 18px;
+  }
+  .alert-success { background: #1fab5b; color: #fff !important; }
+  .alert-danger { background: #e0463f; color: #fff !important; }
+  .alert .close { color: #fff; opacity: 0.85; text-shadow: none; }
+  .alert .close:hover { opacity: 1; }
+
+  /* ---- Card / Panel ---- */
+  .panel.panel-default {
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 4px 22px rgba(44, 62, 80, 0.08);
+    margin-bottom: 20px;
+    background: #fff;
+    min-width: 100%;
+  }
+
+  .panel-heading#heading {
+    background: linear-gradient(120deg, var(--cfc-dark) 0%, var(--cfc-dark-2) 100%);
+    padding: 16px 22px;
+    border: none;
+    border-radius: 14px 14px 0 0;
+  }
+  .panel-heading#heading h4 {
+    margin: 0;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: .2px;
+  }
+  .panel-heading#heading h4 span {
+    color: rgba(255,255,255,0.65);
+    font-weight: 400;
+  }
+  .panel-heading#heading .btn-info {
+    background: var(--cfc-primary);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 16px;
+    box-shadow: 0 2px 8px rgba(255,120,0,0.35);
+    transition: all .2s ease;
+  }
+  .panel-heading#heading .btn-info:hover { background: var(--cfc-primary-dark); transform: translateY(-1px); }
+
+  .panel-body { padding: 20px 22px 8px; }
+
+  /* ---- Filter Form ---- */
+  #table_sub_agent .form-group { margin-bottom: 14px; }
+  #table_sub_agent label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    color: var(--cfc-muted);
+    margin-bottom: 5px;
+  }
+  #table_sub_agent .form-control {
+    border: 1px solid var(--cfc-border);
+    border-radius: 8px;
+    height: 38px;
+    font-size: 13px;
+    box-shadow: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  #table_sub_agent .form-control:focus {
+    border-color: var(--cfc-primary);
+    box-shadow: 0 0 0 3px rgba(255,120,0,0.12);
+  }
+
+  .cfc-filter-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 38px;
+    margin-bottom: 14px;
+  }
+  .cfc-filter-actions .btn {
+    height: 38px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    min-width: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cfc-filter-actions #other_btn { flex: 0 0 auto; padding-left: 10px; padding-right: 10px; }
+  .cfc-filter-actions button[type="submit"] { flex: 1 1 auto; }
+  .cfc-filter-actions .btn-success {
+    background: #1fab5b;
+    box-shadow: 0 2px 8px rgba(31,171,91,0.3);
+  }
+  .cfc-filter-actions .btn-success:hover { background: #17914c; }
+  .cfc-filter-actions .btn-danger {
+    background: #e0463f;
+    box-shadow: 0 2px 8px rgba(224,70,63,0.35);
+  }
+  .cfc-filter-actions .btn-danger:hover { background: #c93b35; }
+  .cfc-filter-actions .btn-primary {
+    background: var(--cfc-primary);
+    box-shadow: 0 2px 8px rgba(255,120,0,0.35);
+  }
+  .cfc-filter-actions .btn-primary:hover { background: var(--cfc-primary-dark); }
+
+  /* ---- Create Challan button ---- */
+  #createChallanForm .btn-primary {
+    background: var(--cfc-primary);
+    border: none;
+    border-radius: 9px;
+    padding: 10px 26px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    box-shadow: 0 3px 12px rgba(255,120,0,0.35);
+    transition: all .2s ease;
+  }
+  #createChallanForm .btn-primary:hover { background: var(--cfc-primary-dark); transform: translateY(-1px); }
+
+  /* ---- Table ---- */
+  #listofstudents {
+    border-radius: 10px;
+    font-size: 12.5px !important;
+    box-shadow: 0 2px 14px rgba(44,62,80,0.06);
+    min-width: 100%;
+  }
+  #listofstudents thead tr:first-child th:first-child { border-top-left-radius: 10px; }
+  #listofstudents thead tr:first-child th:last-child { border-top-right-radius: 10px; }
+  #listofstudents thead th {
+    background: var(--cfc-dark);
+    color: #fff !important;
+    border: none !important;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: .3px;
+    padding: 10px 8px;
+  }
+  #listofstudents tbody td {
+    vertical-align: middle;
+    border-color: var(--cfc-border) !important;
+  }
+  #listofstudents tbody tr:hover { background: #fff6ee; }
+  #listofstudents .form-control { border-radius: 6px; height: 32px; font-size: 12px; }
+  #listofstudents td:first-child, #listofstudents th:first-child { text-align: center; }
+
+  /* ---- Checkboxes (native control, brand-tinted) ---- */
+  .student-select, #selectAllStudents {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--cfc-primary);
+    vertical-align: middle;
+  }
+
+  .cfc-selected-count {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--cfc-muted);
+    margin-right: 14px;
+    vertical-align: middle;
+  }
+
+  /* ---- Action bar (above table) ---- */
+  .cfc-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 14px rgba(44,62,80,0.06);
+    padding: 14px 20px;
+    margin-bottom: 16px;
+  }
+  .cfc-action-bar .cfc-action-info {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cfc-dark);
+  }
+  .cfc-action-bar .cfc-action-info i { color: var(--cfc-primary); margin-right: 6px; }
+  .cfc-action-bar .cfc-action-right { display: flex; align-items: center; }
+  .cfc-action-bar .cfc-selected-count { margin-right: 16px; margin-bottom: 0; }
+</style><style type="text/css">.jqstooltip { position: absolute;left: 0px;top: 0px;visibility: hidden;background: rgb(0, 0, 0) transparent;background-color: rgba(0,0,0,0.6);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";color: white;font: 10px arial, san serif;text-align: left;white-space: nowrap;padding: 5px;border: 1px solid white;box-sizing: content-box;z-index: 10000;}.jqsfield { color: white;font: 10px arial, san serif;text-align: left;}</style></head>
+
+
+
+
+
+
+<body class="nav-md" style="padding:2.5%;">
+  <div class="container body">
+    <div class="main_container">
+
+
+      <!-- page content -->
+      <div class="l" role="main">
+        <div class="row" style="background-color: white;">
+
+          <section class="add_sub_agent" id="table_sub_agent">
+            <div class="container">
+
+              <div class="" style="margin-top:10px;">
+
+                <div class="cfc-breadcrumb">
+                  <a href="dashboard.php">Dashboard</a>
+                  <i class="fa fa-angle-right"></i>
+                  <a href="view_challan.php">Fee Collection</a>
+                  <i class="fa fa-angle-right"></i>
+                  <span>Create Challan</span>
+                </div>
+
+                
+                <div class="panel panel-default">
+                  <div class="panel-heading " id="heading">
+                    <h4> <b>Create Fee Challans</b>
+                      <span style="font-size:14px;">
+                        (0 records)
+                      </span>
+                      <a href="view_challan_details_new.php" class="btn btn-info pull-right" style="margin-top:-6px;">
+                        <i class="fa fa-eye"></i> View Challan
+                      </a>
+                    </h4>
+                    <div class="clearfix"></div>
+                  </div>
+
+                  <form class="" action="monthly_challan_new.php" enctype="multipart/form-data" method="get">
+
+
+                    <input type="hidden" value="97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1" name="session">
+
+
+
+                    <div class="panel-body">
+
+                      <div class="col-md-12">
+
+
+
+
+                        <div class="col-md-2 col-xs-6" style="padding: 8px;">
+                          <div class="form-group ">
+                            <label class="required">Session</label>
+                            <select name="session" class="form-control">
+
+
+
+                              
+                                <option value="3">2018-2019</option>
+
+
+                              
+                                <option value="4">2019-2020</option>
+
+
+                              
+                                <option value="5">2020-2021</option>
+
+
+                              
+                                <option value="6">2021-2022</option>
+
+
+                              
+                                <option value="7">2022-2023</option>
+
+
+                              
+                                <option value="8">2023-2024</option>
+
+
+                              
+                                <option value="9">2024-2025</option>
+
+
+                              
+                                <option value="10">2025-2026</option>
+
+
+                              
+                                <option selected="" value="11">2026-2027</option>
+
+
+                              
+                                <option value="12">2027-2028</option>
+
+
+                              
+                                <option value="13">2028-2029</option>
+
+
+                              
+                                <option value="14">2029-2030</option>
+
+
+                              
+                                <option value="15">2030-2031</option>
+
+
+                              
+                            </select>
+                          </div>
+                        </div>
+
+
+
+
+
+
+                        <div class="col-md-2 col-xs-6" style="padding: 8px;">
+                          <div class="form-group">
+                                                        <label class="required">Class Head</label>
+                            <select name="class_head" id="class_head" class="form-control" onchange="getClassesByHead(this.value)">
+                              <option value="">All</option>
+                                                              <option value="27">
+                                  Hajvery Campus                                </option>
+                                                              <option value="29">
+                                  Main Campus                                </option>
+                                                              <option value="94">
+                                  Pharm-D                                </option>
+                                                              <option value="95">
+                                  Pharm-D 2022-27                                </option>
+                                                              <option value="96">
+                                  Pharm-D 2023-28                                </option>
+                                                              <option value="97">
+                                  Pharm-D 2024-29                                </option>
+                                                              <option value="162">
+                                  Modern Edu                                </option>
+                                                          </select>
+                          </div>
+                        </div>
+
+                        <div class="col-md-2 col-xs-6" style="padding: 8px;">
+                          <div class="form-group ">
+                            <label class="required">Class</label>
+
+                            <select name="class_id" id="class_id" class="form-control" onchange="getSectionAll(this.value)" required="">
+                              <option value="">Select Class</option>
+
+                                                              <option value="15550">KG-2</option>
+
+
+                                                                <option value="15551">1ST</option>
+
+
+                                                                <option value="15552">2ND</option>
+
+
+                                                                <option value="15553">3RD</option>
+
+
+                                                                <option value="15554">4TH</option>
+
+
+                                                                <option value="15555">5TH</option>
+
+
+                                                                <option value="15556">6TH</option>
+
+
+                                                                <option value="15557">7TH</option>
+
+
+                                                                <option value="15832">8TH</option>
+
+
+                                                                <option value="15833">9TH</option>
+
+
+                                                                <option value="15834">10TH</option>
+
+
+                                                                <option value="15905">BS Computer Science</option>
+
+
+                                                                <option value="16136">Bs English</option>
+
+
+                                                                <option value="16540">New Fee Head Class</option>
+
+
+                                                                <option value="16613">reminder sms class</option>
+
+
+                                                                <option value="16766">BSCS</option>
+
+
+                                                                <option value="16795">BSIT</option>
+
+
+                                                                <option value="16922">Class 7</option>
+
+
+                                                                <option value="17073">Pharm-D 2021-26</option>
+
+
+                                                                <option value="17184">MIT</option>
+
+
+                                                                <option value="17807">14th</option>
+
+
+                                                                <option value="17890">DMS Play Group</option>
+
+
+                                
+
+                            </select>
+                          </div>
+                        </div>
+
+
+                        <div class="col-md-2" style="padding: 8px;">
+                          <div class="form-group ">
+                            <label class="required">Section</label>
+                            <select name="section" id="txt_section" class="form-control">
+                              <option value="All">All</option>
+                              
+                            </select>
+
+                          </div>
+                        </div>
+
+
+                        <div class="col-md-2 col-xs-6" style="padding: 8px;">
+                          <div class="form-group">
+                            <label class="required">Challan Month</label>
+                            <input type="text" class="form-control" required="" id="monthYear" name="monthYear" placeholder="MM/YYYY" value="">
+                          </div>
+                        </div>
+
+
+
+
+
+                        <div class="col-md-2 col-xs-6" style="padding: 8px;">
+                          <div class="form-group ">
+
+                            <label class="required"> Due Date</label>
+                            <input name="duedate" id="duedate" value="" type="date" class="form-control" required="">
+                          </div>
+                        </div>
+
+
+
+
+                        <div class="col-md-2 col-xs-6" style="padding: 8px;">
+
+                          <div class="form-group ">
+
+                            <label class="required">Fee Type</label>
+                            <select name="fee_type" id="fee_type" class="form-control">
+
+                              <option value="Monthly">Monthly</option>
+
+                              <option value="Installment">Installment</option>
+                            </select>
+                          </div>
+
+                        </div>
+
+                        <div class="col-md-2 col-xs-6" style="padding: 8px;">
+                          <div class="form-group">
+                            <label class="required">Transport</label>
+                            <select name="transport" class="form-control">
+                              <option value="Yes" selected="">Yes</option>
+                              <option value="No">No</option>
+                            </select>
+                          </div>
+                        </div>
+
+
+
+
+
+                        <div id="others_fee" style="display:none; ">
+                                                      <div class="col-md-2" style="padding: 8px;">
+                              <div class="form-group ">
+                                <label class="required">Admission Fee</label>
+                                <input name="number1" value="" type="number" placeholder="Enter Fee" class="form-control">
+                              </div>
+                            </div>
+
+                                                      <div class="col-md-2" style="padding: 8px;">
+                              <div class="form-group ">
+                                <label class="required">Other Charges</label>
+                                <input name="number2" value="" type="number" placeholder="Enter Fee" class="form-control">
+                              </div>
+                            </div>
+
+                                                      <div class="col-md-2" style="padding: 8px;">
+                              <div class="form-group ">
+                                <label class="required">Annual Fee</label>
+                                <input name="number3" value="" type="number" placeholder="Enter Fee" class="form-control">
+                              </div>
+                            </div>
+
+                                                      <div class="col-md-2" style="padding: 8px;">
+                              <div class="form-group ">
+                                <label class="required">Exam Fee</label>
+                                <input name="number5" value="" type="number" placeholder="Enter Fee" class="form-control">
+                              </div>
+                            </div>
+
+                                                      <div class="col-md-2" style="padding: 8px;">
+                              <div class="form-group ">
+                                <label class="required">Reg. Fee</label>
+                                <input name="number6" value="" type="number" placeholder="Enter Fee" class="form-control">
+                              </div>
+                            </div>
+
+                                                      <div class="col-md-2" style="padding: 8px;">
+                              <div class="form-group ">
+                                <label class="required">BookPack</label>
+                                <input name="number9" value="" type="number" placeholder="Enter Fee" class="form-control">
+                              </div>
+                            </div>
+
+                          
+                        </div>
+
+                        <div class="col-md-2" style="padding: 8px;">
+                          <label style="display:block;">&nbsp;</label>
+                          <div class="cfc-filter-actions">
+                            <input type="hidden" name="addaccountAdmin" value="1">
+                                                        <input name="addmore" value="+ Fee" title="Add More Fee" id="other_btn" onclick="ShowFeeParameters();" type="button" class="btn btn-success">
+                            <button type="submit" class="btn btn-primary" title="Apply Filter">Filter</button>
+                          </div>
+                        </div>
+
+
+                      </div>
+                      <div class="clearfix"></div>
+                    </div>
+                </form></div>
+                
+                <div class="clearfix"></div>
+              </div>
+              <br>
+
+
+              <script>
+                function student_check() {
+
+
+                  var hello = document.getElementById("class_id").value;
+                  var hello1 = document.getElementById("month").value;
+
+                  /*alert(hello1);*/
+
+                  if (hello == "" || hello == null || hello1 == null || hello1 == null) {
+
+
+                    // $("#check_std_msg").slideDown('slow').delay(4000).slideUp('slow');
+                    document.getElementById("check_std_msg").style.display = "block";
+                    $("#check_std_msg").slideDown('slow').delay(5000).slideUp('slow');
+
+                    return false;
+                  } else {
+                    document.getElementById("check_std_msg").style.display = "none";
+                    return true;
+                  }
+
+
+
+
+                }
+
+                function toggleAllStudents(source) {
+                  document.querySelectorAll('.student-select').forEach(function(cb) {
+                    cb.checked = source.checked;
+                  });
+                  updateSelectedCount();
+                }
+
+                function syncSelectAllState() {
+                  var boxes = document.querySelectorAll('.student-select');
+                  var allChecked = boxes.length > 0 && Array.prototype.every.call(boxes, function(cb) { return cb.checked; });
+                  var selectAll = document.getElementById('selectAllStudents');
+                  if (selectAll) selectAll.checked = allChecked;
+                  updateSelectedCount();
+                }
+
+                function updateSelectedCount() {
+                  var el = document.getElementById('selectedCount');
+                  if (!el) return;
+                  var checkedCount = document.querySelectorAll('.student-select:checked').length;
+                  var total = document.querySelectorAll('.student-select').length;
+                  el.textContent = checkedCount + ' of ' + total + ' selected';
+                }
+
+                function validateChallanSelection() {
+                  var checkedCount = document.querySelectorAll('.student-select:checked').length;
+                  if (checkedCount === 0) {
+                    alert('Please select at least one student to create a challan.');
+                    return false;
+                  }
+                  return true;
+                }
+
+                document.addEventListener('DOMContentLoaded', updateSelectedCount);
+              </script>
+
+              <form id="createChallanForm" action="https://apps.eduportal.pk/Production/parent/InsertMe.php" method="post">
+
+                <input type="hidden" name="action" value="Create_Monthly_Challan_new">
+                <input type="hidden" name="csrf_token" value="fc42af01baa952face66163813c2d852dfa8fef25e0a789f54cbab861c5f8075">
+                <input type="hidden" id="class_id" name="class_id" value="">
+                <input type="hidden" name="section_id" value="">
+                <input type="hidden" name="fee_type" value="">
+                <input type="hidden" id="session_id" name="session_id" value="">
+                <input type="hidden" id="month" name="month" value="">
+                <input type="hidden" id="duedate" name="duedate" value="">
+                <input type="hidden" name="transport" value="Yes">
+                <input type="hidden" name="data_fetching" value="">
+                <input type="hidden" name="has_student_selection" value="1">
+
+                                  <div class="col-md-12">
+                    <div id="check_std_msg" style="color:white;font-size:18px;" class="alert alert-danger alert-dismissible">
+                      <a href="#" class="close" data-dismiss="alert" aria-label="close">×</a>
+                      <strong>Warning!</strong> Please select class &amp; session from advance search to create challan !!!
+                    </div>
+                  </div>
+                
+                
+              <div id="listofstudents_wrapper" class="dataTables_wrapper no-footer"><div class="dataTables_length" id="listofstudents_length"><label>Show <select name="listofstudents_length" aria-controls="listofstudents" class=""><option value="10">10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option></select> entries</label></div><div id="listofstudents_filter" class="dataTables_filter"><label>Search:<input type="search" class="" placeholder="" aria-controls="listofstudents"></label></div><table id="listofstudents" data-page-length="500" class="table table-striped table-bordered centertable dataTable no-footer" style="font-size:12px;" role="grid" aria-describedby="listofstudents_info">
+                <thead>
+                  <tr role="row"><th width="2%" class="sorting_asc" rowspan="1" colspan="1" aria-label="" style="width: 40px;"><input type="checkbox" id="selectAllStudents" checked="" onclick="toggleAllStudents(this)"></th><th width="2%" class="sorting" tabindex="0" aria-controls="listofstudents" rowspan="1" colspan="1" aria-label="S.No: activate to sort column ascending" style="width: 50px;">S.No</th><th width="15%" class="sorting" tabindex="0" aria-controls="listofstudents" rowspan="1" colspan="1" aria-label="Student / Father Name: activate to sort column ascending" style="width: 344px;">Student / Father Name</th><th width="6%" class="sorting" tabindex="0" aria-controls="listofstudents" rowspan="1" colspan="1" aria-label="GR.No: activate to sort column ascending" style="width: 128px;">GR.No</th><th width="6%" style="text-align: center; width: 128px;" class="sorting" tabindex="0" aria-controls="listofstudents" rowspan="1" colspan="1" aria-label="Misc.: activate to sort column ascending">Misc.</th><th width="6%" style="text-align: center; width: 138px;" class="sorting" tabindex="0" aria-controls="listofstudents" rowspan="1" colspan="1" aria-label="Transport: activate to sort column ascending">Transport</th><th width="6%" class="sorting" tabindex="0" aria-controls="listofstudents" rowspan="1" colspan="1" aria-label="Monthly Fee: activate to sort column ascending" style="width: 128px;">Monthly Fee</th><th width="7%" class="sorting" tabindex="0" aria-controls="listofstudents" rowspan="1" colspan="1" aria-label="Total: activate to sort column ascending" style="width: 152px;">Total</th></tr>
+                </thead>
+                <tbody>
+                                  <tr class="odd"><td valign="top" colspan="8" class="dataTables_empty">No data available in table</td></tr></tbody>
+              </table><div class="dataTables_info" id="listofstudents_info" role="status" aria-live="polite">Showing 0 to 0 of 0 entries</div><div class="dataTables_paginate paging_simple_numbers" id="listofstudents_paginate"><a class="paginate_button previous disabled" aria-controls="listofstudents" data-dt-idx="0" tabindex="0" id="listofstudents_previous">Previous</a><span></span><a class="paginate_button next disabled" aria-controls="listofstudents" data-dt-idx="1" tabindex="0" id="listofstudents_next">Next</a></div></div>
+
+              
+              </form>
+
+
+              <br><br>
+
+
+            </div>
+
+          </section>
+
+
+
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- /page content -->
+
+  <script>
+    function total_deductions(id) {
+
+      var std_tution_fee = document.getElementById("std_tution_fee" + id).value;
+      var std_misc_fee = document.getElementById("std_misc_fee" + id).value;
+      var std_transport_fee = document.getElementById("std_transport_fee" + id).value;
+      var student_balance = document.getElementById("student_balance" + id).value;
+      var disc_amount = document.getElementById("disc_amount" + id).value;
+      var feerec = document.getElementsByName("otherFee" + id + "[]");
+
+      var Othernet = 0;
+
+      for (i = 0; i < feerec.length; i++) {
+
+
+        Othernet = parseInt(Othernet) + parseInt(feerec[i].value);
+
+        //alert(Othernet);
+      }
+
+
+      var total_ded = (Number(std_tution_fee) + Number(std_misc_fee) + Number(std_transport_fee) + Number(student_balance) + Number(Othernet)) - Number(disc_amount);
+
+      document.getElementById("total" + id).value = total_ded;
+
+
+    }
+
+
+    function net_totals(id) {
+
+
+      var total_ded;
+
+
+      document.getElementById("total" + id).value = total_ded;
+
+    }
+  </script>
+  <script>
+    // Function to update the date picker to 10th of the selected month
+    function updateDatePicker() {
+      // Get the selected month from the dropdown
+      const month = document.getElementById('monthYear').value;
+
+      // Get the current year
+      const year = new Date().getFullYear();
+
+      // Format the date as yyyy-mm-dd (10th of the selected month)
+      const selectedDate = `${year}-${month}-10`;
+
+      // Set the value in the date picker
+      document.getElementById('duedate').value = selectedDate;
+    }
+  </script>
+
+  <script src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+  <script>
+    $(document).ready(function() {
+
+      $(document).ready(function() {
+        $('#listofstudents').DataTable({
+          "pageLength": 500,
+          "columnDefs": [
+            { "targets": 0, "orderable": false, "searchable": false }
+          ]
+        });
+      });
+
+      $("th").removeClass("sorting");
+    });
+
+
+    $('#monthYear').datepicker({
+      format: "mm/yyyy",
+      startView: "months",
+      minViewMode: "months",
+      autoclose: true
+    });
+  </script>
+
+
+  <script>
+    $(document).ready(function() {
+      $('#monthYear').datepicker({
+        format: "mm/yyyy",
+        startView: "months",
+        minViewMode: "months",
+        autoclose: true
+      });
+
+      // ✅ Set default only if not already set from PHP
+      if (!$('#monthYear').val()) {
+        const now = new Date();
+        const currentMonthYear = ('0' + (now.getMonth() + 1)).slice(-2) + '/' + now.getFullYear();
+        $('#monthYear').val(currentMonthYear);
+      }
+
+      // Auto-set duedate on page load if not already set
+      if (!$('#duedate').val()) {
+        let val = $.trim($('#monthYear').val());
+        if (val) {
+          let parts = val.split(/[-\/]/);
+          let mm = parts[0] || '';
+          let yyyy = parts[1] || '';
+          if (mm && yyyy && yyyy.length === 4 && parseInt(mm) >= 1 && parseInt(mm) <= 12) {
+            document.getElementById('duedate').value = yyyy + '-' + mm + '-10';
+          }
+        }
+      }
+
+      // Auto-set Due Date to 10th of selected month when monthYear changes
+      $('#monthYear').on('changeDate change', function() {
+        let val = $.trim($(this).val());
+        if (!val) return;
+        let parts = val.split(/[-\/]/);
+        let mm = parts[0] || '';
+        let yyyy = parts[1] || '';
+        if (mm && yyyy && yyyy.length === 4 && parseInt(mm) >= 1 && parseInt(mm) <= 12) {
+          document.getElementById('duedate').value = yyyy + '-' + mm + '-10';
+        }
+      });
+
+      // Create Challan form: validate visible monthYear field before submit
+      $('#createChallanForm').on('submit', function(e) {
+        let monthVal = $.trim($('#monthYear').val());
+        if (!monthVal) {
+          alert('Challan Month is not selected. Please select a month and click Apply Filter first.');
+          e.preventDefault();
+          return false;
+        }
+        let parts = monthVal.split(/[-\/]/);
+        let mm = parts[0] || '';
+        let yyyy = parts[1] || '';
+        if (!mm || !yyyy || yyyy.length !== 4 || parseInt(mm) < 1 || parseInt(mm) > 12) {
+          alert('Invalid Challan Month. Please enter a valid month in MM/YYYY format.');
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      // Filter form: validate monthYear before submit
+      $('#monthYear').closest('form').on('submit', function(e) {
+        let val = $.trim($('#monthYear').val());
+        if (!val) {
+          alert('Please select a Challan Month before applying filter.');
+          $('#monthYear').focus();
+          e.preventDefault();
+          return false;
+        }
+        if (!/^\d{2}[\/\-]\d{4}$/.test(val)) {
+          alert('Please enter Challan Month in MM/YYYY format (e.g. 06/2026).');
+          $('#monthYear').focus();
+          e.preventDefault();
+          return false;
+        }
+        if (val.includes('/')) {
+          $('#monthYear').val(val.replace('/', '-'));
+        }
+      });
+    });
+  </script>
+
+
+
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;3650377dd59a42ccbb65668736c3a93b&quot;,&quot;r&quot;:1}" crossorigin="anonymous"></script>
+
+
+</body></html>

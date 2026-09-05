@@ -1,7 +1,0 @@
-node_modules
-dist
-.vite
-*.local
-Evee.rar
-dev-server.log
-api/mail_secrets.php

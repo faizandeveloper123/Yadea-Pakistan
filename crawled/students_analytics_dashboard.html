@@ -1,0 +1,3715 @@
+<!DOCTYPE html><html lang="en"><head>
+    <title>Students Analytics Dashboard | EduPortal</title>
+    
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/customizedStyling.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min1.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/style11.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/font-awesome-5.min.css" rel="stylesheet">
+
+    <style>
+    /* Global: neutralize legacy wrapper <div class="col-md-3 left_col"> present on 600+ pages */
+    .col-md-3.left_col { display: contents !important; width: auto !important; padding: 0 !important; margin: 0 !important; float: none !important; }
+    </style>
+<style>
+  
+.nav-container {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #eaecef;
+  /* padding: 10px 20px; */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  margin-top:15px;
+}
+
+.nav-bar {
+  display: flex;
+  gap: 1px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: center;   /* ✅ Items center mai */
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 15px;  
+  text-decoration: none;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  border: 1px solid #eaecef;
+}
+
+.nav-item:hover {
+  background: #fff4e6;
+  border-color: #ffd8b3;
+  color: #e67e22;
+}
+
+.nav-item.active {
+  background: #ff7800;
+  color: white;
+  border-color: #ff7800;
+  box-shadow: 0 3px 8px rgba(230, 126, 34, 0.3);
+}
+
+.nav-item.active i {
+  color: white;
+}
+
+.nav-item i {
+  font-size: 14px;
+  margin-right: 6px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.nav-item:hover i {
+  color: #e67e22;
+}
+
+.nav-bar::-webkit-scrollbar {
+  display: none;
+}
+.nav-bar {
+  -ms-overflow-style: none;  
+  scrollbar-width: none; 
+}
+
+</style>
+    <style>
+        :root {
+            --ink: #1f2937;
+            --muted: #8a93a3;
+            --accent: #FF7C1B;
+            --card-shadow: 0 2px 10px rgba(20,30,60,0.06);
+        }
+
+        * { box-sizing: border-box; }
+
+        body { background: #f6f7fb; overflow-x: hidden; }
+
+        .right_col { padding: 20px !important; max-width: 100%; overflow-x: hidden; }
+
+        .row { margin-left: 0 !important; margin-right: 0 !important; max-width: 100%; }
+
+        /* ===== Top bar ===== */
+        .analytics-topbar {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        .analytics-topbar h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .analytics-topbar h2 i { color: var(--accent); }
+        .analytics-breadcrumb { font-size: 12px; color: var(--muted); margin-top: 5px; }
+        .analytics-breadcrumb a { color: var(--muted); text-decoration: none; }
+        .analytics-breadcrumb a:hover { color: var(--accent); }
+        .analytics-topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .session-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #fff; border: 1px solid #e5e8ee; border-radius: 8px;
+            padding: 9px 14px; font-size: 12px; font-weight: 600; color: var(--ink);
+        }
+        .session-pill i { color: var(--muted); font-size: 11px; }
+        .btn-export {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #FF9142, #FF7C1B); color: #fff; border: none;
+            padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 13px;
+            text-decoration: none; box-shadow: 0 4px 10px rgba(255,124,27,.35);
+        }
+        .btn-export:hover { color: #fff; text-decoration: none; box-shadow: 0 6px 14px rgba(255,124,27,.45); }
+
+        /* ===== Data issues banner ===== */
+        .issues-banner {
+            display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            background: #FDEEEF; border: 1px solid #F8C9CC; border-radius: 12px;
+            padding: 14px 18px; margin-bottom: 18px; flex-wrap: wrap;
+        }
+        .issues-banner-left { display: flex; align-items: center; gap: 12px; }
+        .issues-icon-badge {
+            width: 38px; height: 38px; border-radius: 50%; background: #E74C3C; color: #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 16px; flex: none;
+        }
+        .issues-banner-title { font-weight: 700; color: #C0392B; font-size: 14px; }
+        .issues-banner-sub { font-size: 12px; color: #a15558; margin-top: 2px; }
+        .btn-view-details {
+            background: #fff; border: 1px solid #E74C3C; color: #E74C3C;
+            padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 12px;
+            cursor: pointer; white-space: nowrap;
+        }
+        .btn-view-details:hover { background: #E74C3C; color: #fff; }
+        .issues-detail-panel {
+            background: #fff; border-radius: 12px; box-shadow: var(--card-shadow);
+            padding: 16px 18px; margin-bottom: 18px;
+        }
+
+        /* ===== Stat cards ===== */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+
+        .stat-card2 {
+            background: #fff; border-radius: 12px; padding: 13px 15px; box-shadow: var(--card-shadow);
+            border: 1px solid #eef0f4; transition: all .2s;
+        }
+        .stat-card2:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20,30,60,.10); }
+        .stat-card-top { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+        .stat-icon-badge {
+            width: 32px; height: 32px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 13px; flex: none;
+        }
+        .stat-card2 .stat-label {
+            font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px;
+            font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .stat-card2 .stat-value { font-size: 22px; font-weight: 800; color: var(--ink); line-height: 1.15; margin-bottom: 3px; }
+        .stat-card2 .stat-info { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .stat-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: none; }
+
+        .theme-green .stat-icon-badge { background: #E6F8EE; color: #27ae60; }
+        .theme-green .stat-info { color: #27ae60; }
+        .theme-blue .stat-icon-badge { background: #EAF2FF; color: #3498db; }
+        .theme-blue .stat-info { color: #3498db; }
+        .theme-pink .stat-icon-badge { background: #FDEAF1; color: #e91e63; }
+        .theme-pink .stat-info { color: #e91e63; }
+        .theme-amber .stat-icon-badge { background: #FFF3E0; color: #f39c12; }
+        .theme-amber .stat-info { color: #f39c12; }
+        .theme-red .stat-icon-badge { background: #FDECEA; color: #e74c3c; }
+        .theme-red .stat-info { color: #e74c3c; }
+        .theme-teal .stat-icon-badge { background: #E6F7F5; color: #16a085; }
+        .theme-teal .stat-info { color: #16a085; }
+        .theme-indigo .stat-icon-badge { background: #EFEAFB; color: #7d5fd6; }
+        .theme-indigo .stat-info { color: #7d5fd6; }
+        .theme-purple .stat-icon-badge { background: #F4E9FB; color: #9b59b6; }
+        .theme-purple .stat-info { color: #9b59b6; }
+
+        /* ===== Section / chart cards ===== */
+        .section-container {
+            background: #fff; padding: 14px 16px; border-radius: 12px;
+            box-shadow: var(--card-shadow); border: 1px solid #eef0f4; margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 12px;
+            padding-bottom: 9px; border-bottom: 1px solid #eef0f4;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-title i { color: var(--accent); font-size: 15px; }
+
+        .chart-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+        .chart-card {
+            background: #fff; padding: 14px 16px; border-radius: 12px;
+            box-shadow: var(--card-shadow); border: 1px solid #eef0f4;
+        }
+        .chart-title {
+            font-size: 12.5px; font-weight: 700; color: var(--ink); margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
+        }
+        .chart-title .badge-soft {
+            font-size: 10px; font-weight: 600; color: var(--muted); background: #f4f6f9;
+            padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+        }
+
+        .bar-chart { display: flex; flex-direction: column; gap: 7px; }
+        .bar-item { display: flex; align-items: center; gap: 8px; }
+        .bar-label { min-width: 34px; font-size: 11px; font-weight: 600; color: #5a6c7d; }
+        .bar-track { flex: 1; height: 14px; background: #f1f3f7; border-radius: 10px; overflow: hidden; position: relative; }
+        .bar-fill {
+            height: 100%; border-radius: 10px; transition: width .5s ease;
+            display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+            color: #fff; font-size: 10px; font-weight: 700; min-width: 22px;
+        }
+        .bar-fill.green  { background: linear-gradient(90deg, #3fc57c, #27ae60); }
+        .bar-fill.red    { background: linear-gradient(90deg, #ff7b7b, #e74c3c); }
+        .bar-fill.orange { background: linear-gradient(90deg, #ffb25e, #f39c12); }
+        .bar-fill.purple { background: linear-gradient(90deg, #b183e8, #9b59b6); }
+
+        /* donut charts */
+        .donut-wrap { position: relative; width: 140px; height: 140px; margin: 0 auto 16px; }
+        .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .donut-center .num { font-size: 20px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+        .donut-center .lbl { font-size: 9px; color: var(--muted); text-align: center; max-width: 90px; margin-top: 2px; }
+
+        .legend-list { display: flex; flex-direction: column; gap: 8px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+        .legend-name { flex: 1; color: #5a6c7d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .legend-count { font-weight: 700; color: var(--ink); margin-right: 6px; }
+        .legend-pct { color: var(--muted); font-size: 11px; width: 40px; text-align: right; }
+
+        /* ===== Quick links sidebar ===== */
+        .quick-links.sidebar { display: flex; flex-direction: column; gap: 8px; }
+        .quick-link2 {
+            display: flex; align-items: center; gap: 10px; background: #fff;
+            border: 1px solid #eef0f4; border-radius: 10px; padding: 9px 12px;
+            text-decoration: none; color: var(--ink); font-weight: 600; font-size: 12.5px;
+            transition: all .2s;
+        }
+        .quick-link2:hover {
+            border-color: var(--accent); box-shadow: 0 4px 10px rgba(20,30,60,.08);
+            text-decoration: none; color: var(--ink); transform: translateY(-1px);
+        }
+        .quick-link2 .ql-icon {
+            width: 32px; height: 32px; border-radius: 9px; background: #FFF4EB; color: var(--accent);
+            display: flex; align-items: center; justify-content: center; font-size: 14px; flex: none;
+        }
+        .quick-link2 .ql-chevron { margin-left: auto; color: #c7cdd6; font-size: 12px; }
+        .quick-link2.danger { border-color: #F8C9CC; color: #c0392b; }
+        .quick-link2.danger .ql-icon { background: #FDECEA; color: #e74c3c; }
+
+        /* ===== Layout ===== */
+        .analytics-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; }
+        .sidebar-panel { position: sticky; top: 10px; height: fit-content; }
+
+        /* ===== Gender pie strip ===== */
+        .gender-pie { display: flex; height: 24px; border-radius: 12px; overflow: hidden; margin: 8px 0; }
+        .gender-pie .boys-segment, .gender-pie .girls-segment {
+            display: flex; align-items: center; justify-content: center; color: #fff;
+            font-size: 11px; font-weight: 700;
+        }
+        .gender-pie .boys-segment { background: #3498db; }
+        .gender-pie .girls-segment { background: #e91e63; }
+
+        /* ===== Withdrawal trend grid ===== */
+        .trend-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; margin-top: 8px; }
+        .trend-bar { text-align: center; font-size: 9px; }
+        .trend-value {
+            height: 80px; background: #f1f3f7; border-radius: 4px; margin-bottom: 4px;
+            position: relative; display: flex; align-items: flex-end; justify-content: center;
+        }
+        .trend-fill { width: 100%; background: linear-gradient(180deg, #ff7b7b, #e74c3c); border-radius: 4px 4px 0 0; transition: height .5s ease; }
+
+        .breadcrumb { margin-bottom: 15px; font-size: 13px; }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+
+        @media print { .quick-links, .breadcrumb, .analytics-topbar-actions { display: none; } }
+
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .chart-container { grid-template-columns: repeat(2, 1fr); }
+            .analytics-layout { grid-template-columns: 1fr; }
+            .sidebar-panel { position: static; }
+        }
+        @media (max-width: 992px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .chart-container { grid-template-columns: 1fr; }
+            .analytics-layout { grid-template-columns: 1fr; }
+            .sidebar-panel { position: static; }
+        }
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .stat-card2 { padding: 14px; }
+            .stat-card2 .stat-value { font-size: 21px; }
+            .chart-container { grid-template-columns: 1fr; gap: 12px; }
+            .analytics-topbar { flex-direction: column; }
+        }
+        @media (max-width: 576px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body class="nav-md sidebar-collapsed">
+    <div class="container body">
+        <div class="main_container">
+            <div class="col-md-3 left_col">
+                <style>
+  :root {
+    --sb-collapsed: 90px;
+    --sb-expanded: 240px;
+    --sb-bg: #2B2B36;
+    --sb-fly: #3A3A4D;
+    --text: #fff;
+  }
+
+  /* Sidebar main */
+  .left_col {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: var(--sb-bg);
+    z-index: 1000;
+    transition: width .25s ease;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+    /* scroll always */
+  }
+
+  body.sidebar-collapsed .left_col {
+    width: var(--sb-collapsed);
+  }
+
+  body.sidebar-expanded .left_col {
+    width: var(--sb-expanded);
+  }
+
+  /* Fix content positioning - ensure it's to the right of sidebar, not underneath */
+  body.sidebar-collapsed .right_col {
+    margin-left: var(--sb-collapsed) !important;
+    transition: margin-left .25s ease;
+    width: calc(100% - var(--sb-collapsed));
+  }
+
+  body.sidebar-expanded .right_col {
+    margin-left: var(--sb-expanded) !important;
+    transition: margin-left .25s ease;
+    width: calc(100% - var(--sb-expanded));
+  }
+
+  /* Ensure main content container is properly positioned */
+  .right_col {
+    position: relative;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  /* Additional fix for any content that might be going underneath */
+  .main_content,
+  .content-wrapper,
+  .dashboard-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Sidebar header toggle */
+  .ds-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    height: 60px;
+    box-sizing: border-box;
+  }
+
+  .ds-brand .ds-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #fff;
+  }
+
+  .ds-brand .ds-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Branch info */
+  .ds-branch {
+    color: #fff;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 12px;
+    opacity: .9;
+  }
+
+  body.sidebar-collapsed .ds-branch {
+    display: none;
+  }
+
+  /* Menu styling */
+  #sidebar-menu {
+    padding: 6px 0 16px;
+  }
+
+  #sidebar-menu .side-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #sidebar-menu .side-menu>li {
+    position: relative;
+  }
+
+  #sidebar-menu .side-menu>li>a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 10px;
+    margin: 4px 8px;
+    white-space: nowrap;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.2px;
+    transition: all 0.2s ease;
+  }
+
+  #sidebar-menu .side-menu>li>a:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(2px);
+  }
+
+  #sidebar-menu .side-menu>li>a i {
+    min-width: 20px;
+    text-align: center;
+    font-size: 18px;
+    opacity: 0.9;
+  }
+
+  #sidebar-menu .side-menu>li>a .chev {
+    margin-left: auto;
+    opacity: .6;
+    transition: transform 0.2s ease;
+  }
+
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>a {
+    justify-content: center;
+    font-size: 0;
+    padding: 8px 6px;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>a i {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  /* Show label under icon in collapsed mode */
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>a .label {
+    display: block;
+    font-size: 10px;
+    margin-top: 2px;
+    line-height: 1.05;
+    max-width: 64px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>a .chev {
+    display: none;
+  }
+
+  /* Child menu expanded */
+  .child_menu {
+    display: none;
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    background: var(--sb-fly);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .child_menu li a {
+    display: block;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #fff;
+    text-decoration: none;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.1px;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    margin: 2px 6px;
+  }
+
+  .child_menu li a:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(3px);
+    color: #fff;
+  }
+
+  body.sidebar-expanded #sidebar-menu .side-menu>li.active>.child_menu {
+    display: block;
+    position: static;
+    margin: 2px 8px 8px 44px;
+    border-radius: 8px;
+    animation: slideIn 0.2s ease;
+  }
+
+  /* Child menu collapsed flyout */
+  body.sidebar-collapsed #sidebar-menu .side-menu>li>.child_menu {
+    position: fixed;
+    left: var(--sb-collapsed);
+    min-width: 220px;
+    max-height: 80vh;
+    overflow: auto;
+    display: none;
+    z-index: 2001;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    .left_col {
+      width: var(--sb-collapsed) !important;
+    }
+
+    body.sidebar-collapsed .right_col {
+      margin-left: var(--sb-collapsed) !important;
+      width: calc(100% - var(--sb-collapsed)) !important;
+    }
+
+    /* Larger touch targets for mobile */
+    #sidebar-menu .side-menu>li>a {
+      min-height: 44px;
+      /* iOS recommended touch target size */
+      padding: 12px 8px;
+    }
+
+    /* Better mobile submenu positioning */
+    body.sidebar-collapsed #sidebar-menu .side-menu>li>.child_menu {
+      left: var(--sb-collapsed);
+      min-width: 200px;
+      max-width: calc(100vw - var(--sb-collapsed) - 20px);
+    }
+
+    /* Mobile-friendly tooltip positioning */
+    .child_menu {
+      font-size: 14px;
+    }
+
+    .child_menu li a {
+      padding: 12px 16px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  /* Professional typography improvements */
+  body.sidebar-expanded #sidebar-menu .side-menu>li>a .label {
+    font-weight: 500;
+    font-size: 14px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  body.sidebar-expanded #sidebar-menu .side-menu>li>a .chev {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+  }
+
+  body.sidebar-expanded #sidebar-menu .side-menu>li:hover>a .chev {
+    transform: rotate(90deg);
+  }
+
+  /* Branch info professional styling */
+  .ds-branch {
+    color: #fff;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-weight: 500;
+    opacity: .9;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 8px;
+  }
+
+  /* Animations */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Logout button */
+  .ds-logout {
+    margin: 12px;
+  }
+
+  .ds-logout a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: #fff;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    transition: all .2s ease;
+  }
+
+  .ds-logout a:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+
+  /* === Sidebar Scrollbar Styling === */
+  .left_col::-webkit-scrollbar {
+    width: 2px;
+    /* ultra-thin scrollbar */
+  }
+
+  /* Track (background) */
+  .left_col::-webkit-scrollbar-track {
+    background: transparent;
+    /* transparent rakha for clean look */
+  }
+
+  /* Thumb (scroll handle) */
+  .left_col::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgb(67, 67, 68), rgb(241, 243, 245));
+    /* purple → blue gradient */
+    border-radius: 10px;
+  }
+
+  /* Hover effect */
+  .left_col::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgb(86, 85, 87), rgb(237, 232, 247));
+    /* stylish darker gradient */
+  }
+
+  /* Firefox ke liye */
+  .left_col {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(100, 98, 101) transparent;
+    /* thumb color, track transparent */
+    border-top-right-radius: 1%;
+    border-bottom-right-radius: 1%;
+
+  }
+
+
+
+  /* === Sidebar Logo Styling === */
+  .sidebar-logo {
+    text-align: center;
+    /* center me rakhega */
+    padding: 8px 0;
+    /* upar niche thoda gap */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* halka separator line */
+  }
+
+  .sidebar-logo img {
+    height: 55px;
+    /* aap adjust kar sakte ho */
+    width: 55px;
+    border-radius: 50%;
+    /* thoda rounded look */
+    object-fit: cover;
+    /* image ko fit karega */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    /* stylish shadow */
+  }
+</style>
+
+<style>
+  /* === iOS-only overlay sidebar mode === */
+  body.ios-device .left_col {
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    width: 260px !important;
+    /* fixed width for iOS */
+    z-index: 2003;
+    /* above backdrop and close to toggle */
+  }
+
+  body.ios-device.ios-sidebar-open .left_col {
+    transform: translateX(0);
+  }
+
+  /* On iOS overlay mode, don't shift content area */
+  body.ios-device .right_col {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Floating toggle button (iOS only) */
+  #ios_toggle_btn {
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    z-index: 2002;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 0;
+    background: #2B2B36;
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  }
+
+  body.ios-device #ios_toggle_btn {
+    display: inline-flex;
+  }
+
+  /* Backdrop behind sidebar when open (iOS only) */
+  #ios_sidebar_backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 2000;
+    display: none;
+  }
+
+  body.ios-device.ios-sidebar-open #ios_sidebar_backdrop {
+    display: block;
+  }
+
+  /* === iOS simple menu (requested structure) === */
+  #menu-ios {
+    display: none;
+    padding: 8px 10px 16px;
+  }
+
+  body.ios-device #menu-web {
+    display: none;
+  }
+
+  body.ios-device #menu-ios {
+    display: block;
+  }
+
+  .ios-nav .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    text-decoration: none;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 2px 6px;
+    background: transparent;
+  }
+
+  .ios-nav .nav-item:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .ios-nav .nav-item .nav-icon {
+    display: none;
+  }
+
+  .ios-nav .nav-item .nav-text {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: .2px;
+  }
+
+  .ios-nav .submenu {
+    display: none;
+    background: var(--sb-fly);
+    border: 1px solid rgba(255, 255, 255, .05);
+    border-radius: 10px;
+    margin: 4px 8px 8px 12px;
+    padding: 6px 0;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+  }
+
+  .ios-nav .submenu-item {
+    display: block;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    margin: 2px 6px;
+  }
+
+  .ios-nav .submenu-item:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+</style>
+
+<!-- iOS toggle button mounted near top-left of the page -->
+<button id="ios_toggle_btn" aria-label="Toggle sidebar"><i class="fa fa-bars"></i></button>
+
+<div class="left_col scroll-view" id="dsLeftCol">
+  <!-- Toggle Only -->
+  <!-- iOS toggle button (hidden by default, shown via JS/CSS on iOS) -->
+  <!-- Moved OUTSIDE sidebar so it's visible when sidebar is off-canvas -->
+
+  <!-- Logo Section -->
+  <div class="sidebar-logo">
+    <img src="https://apps.eduportal.pk/Production/img/355497hassan.jpeg" onerror="this.onerror=null; this.src='https://efsvolume-backup.s3.amazonaws.com/apps.eduportal-pk.com/img/355497hassan.jpeg';" alt="Logo">
+  </div>
+
+  <div class="ds-branch">
+    <div style="font-weight:700; font-size:12px;">Test Portal</div>
+    <div style="font-size:12px;">(2026-2027)</div>
+  </div>
+
+  <div id="sidebar-menu" class="main_menu_side hidden-print main_menu active">
+    <!-- Web/Android original menu -->
+    <ul class="side-menu" id="menu-web" style="">
+      <li><a href="software_demo_videos.php"><i class="fa fa-play"></i><span class="label" style="font-weight: normal !important;">Guidline Videos</span></a></li>
+
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-phone"></i>
+              <span class="label" style="font-weight: normal !important;">Front Office</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="front_desk_analytics.php">
+                      Front Desk Overview                    </a>
+                  </li>
+                                <li>
+                    <a href="student_inquiry.php">
+                      Admission Inquiries                    </a>
+                  </li>
+                                <li>
+                    <a href="manage_complaint.php">
+                      Complaint Hub                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-dashboard"></i>
+              <span class="label" style="font-weight: normal !important;">Dashboard</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="dashboard.php">
+                      Executive Dashboard                    </a>
+                  </li>
+                                <li>
+                    <a href="basic_dashboard.php">
+                      Staff Dashboard                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-users"></i>
+              <span class="label" style="font-weight: normal !important;">Students</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="add_student.php">
+                      Add New Student                    </a>
+                  </li>
+                                <li class="current-page">
+                    <a href="students_analytics_dashboard.php">
+                      Student Analytics                    </a>
+                  </li>
+                                <li>
+                    <a href="class_promotion.php">
+                      Class Promotion                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-microphone"></i>
+              <span class="label" style="font-weight: normal !important;">Attendance</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="mark_attend.php">
+                      Mark Attendance                    </a>
+                  </li>
+                                <li>
+                    <a href="mark_attendanceReport_list.php">
+                      Attendance Analytics                    </a>
+                  </li>
+                                <li>
+                    <a href="send_msgs.php?attendance=A">
+                      Send SMS Report                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-envelope"></i>
+              <span class="label" style="font-weight: normal !important;">Messages</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="new_message.php">
+                      New Message                    </a>
+                  </li>
+                                <li>
+                    <a href="messages_history.php">
+                      View Messages                    </a>
+                  </li>
+                                <li>
+                    <a href="view_templates.php">
+                      View Templates                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-money"></i>
+              <span class="label" style="font-weight: normal !important;">Fee Collection</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="monthly_challan.php">
+                      Create Challan                    </a>
+                  </li>
+                                <li>
+                    <a href="view_challan_details.php">
+                      View Challan                    </a>
+                  </li>
+                                <li>
+                    <a href="multi_fee_reports.php">
+                      Fee Reporting                    </a>
+                  </li>
+                                <li>
+                    <a href="update_fee_settings.php">
+                      Fee Settings                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-graduation-cap"></i>
+              <span class="label" style="font-weight: normal !important;">Examination</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="view_marksheet.php">
+                      Add Marks Sheet                    </a>
+                  </li>
+                                <li>
+                    <a href="reportcards.php">
+                      View Marks Sheet                    </a>
+                  </li>
+                                <li>
+                    <a href="manage_exams.php">
+                      Academic Setting                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-clock-o"></i>
+              <span class="label" style="font-weight: normal !important;">Timetable</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="period_categories.php">
+                      Periods Category                    </a>
+                  </li>
+                                <li>
+                    <a href="create_period_details.php">
+                      Create/Manage Periods                    </a>
+                  </li>
+                                <li>
+                    <a href="class_period.php">
+                      Assign Periods to Classes                    </a>
+                  </li>
+                                <li>
+                    <a href="class_period_selection.php">
+                      Create Timetable                    </a>
+                  </li>
+                                <li>
+                    <a href="view_class_period_selection.php">
+                      View Timetable                    </a>
+                  </li>
+                                <li>
+                    <a href="view_teachers_timetable.php">
+                      Teachers Timetable                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-user"></i>
+              <span class="label" style="font-weight: normal !important;">Employees/HRM</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="add_emp.php">
+                      Add Employee                    </a>
+                  </li>
+                                <li>
+                    <a href="view_emp.php">
+                      View Employees                    </a>
+                  </li>
+                                <li>
+                    <a href="view_emp_attendance.php">
+                      Staff Attendance                    </a>
+                  </li>
+                                <li>
+                    <a href="monthly_attendance.php">
+                      Attendance Report                    </a>
+                  </li>
+                                <li>
+                    <a href="old_employee.php">
+                      Old Employees                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-clock-o"></i>
+              <span class="label" style="font-weight: normal !important;">Datesheet</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="create_datesheet.php">
+                      Create Datesheet                    </a>
+                  </li>
+                                <li>
+                    <a href="view_datesheet.php">
+                      View Datesheet                    </a>
+                  </li>
+                                <li>
+                    <a href="generate_rollnoSlips.php">
+                      Generate Roll No Slips                    </a>
+                  </li>
+                                <li>
+                    <a href="syllabus_management.php">
+                      Syllabus Management                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-truck"></i>
+              <span class="label" style="font-weight: normal !important;">Transport</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="vehicles.php">
+                      Vehicles                    </a>
+                  </li>
+                                <li>
+                    <a href="route.php">
+                      Routes                    </a>
+                  </li>
+                                <li>
+                    <a href="vehicle_route.php">
+                      Assign Vehicles                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-book"></i>
+              <span class="label" style="font-weight: normal !important;">Library</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="list_books.php">
+                      Book List                    </a>
+                  </li>
+                                <li>
+                    <a href="issue_return.php">
+                      Issue Return                    </a>
+                  </li>
+                                <li>
+                    <a href="issue_return_employee.php">
+                      Employee Issue&amp;Return                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-paypal"></i>
+              <span class="label" style="font-weight: normal !important;">PayRoll</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="creat_payroll.php">
+                      Create PayRoll                    </a>
+                  </li>
+                                <li>
+                    <a href="view_payroll.php">
+                      View PayRoll                     </a>
+                  </li>
+                                <li>
+                    <a href="staff_security.php">
+                      Staff Security Fee                    </a>
+                  </li>
+                                <li>
+                    <a href="payroll_setting.php">
+                      PayRoll Setting                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-home"></i>
+              <span class="label" style="font-weight: normal !important;">Parents Portal</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="parents_portal_dashboard.php">
+                      Parents Overview                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-money"></i>
+              <span class="label" style="font-weight: normal !important;">Expenses</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="manage_expenses.php">
+                      Add/View Expenses                    </a>
+                  </li>
+                                <li>
+                    <a href="monthly_expenses_report.php">
+                      Expenses Report                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-file"></i>
+              <span class="label" style="font-weight: normal !important;">Cards Generator</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="cards.php">
+                      Staff Cards                    </a>
+                  </li>
+                                <li>
+                    <a href="students_card.php">
+                      Students Cards                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-search"></i>
+              <span class="label" style="font-weight: normal !important;">Point of Sale</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="canteen_dashboard.php">
+                      POS Dashboard                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-dollar"></i>
+              <span class="label" style="font-weight: normal !important;">Academic Setup</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="academic_setup.php">
+                      Manage Academics                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-gear"></i>
+              <span class="label" style="font-weight: normal !important;">System Settings</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="settings.php">
+                      Update Settings                    </a>
+                  </li>
+                                <li>
+                    <a href="manage_localities.php">
+                      Manage Localities                    </a>
+                  </li>
+                          </ul>
+          </li>
+                <li class="has-children">
+            <a href="javascript:void(0)">
+              <i class="fa fa-calculator"></i>
+              <span class="label" style="font-weight: normal !important;">Accounts</span>
+              <span class="fa fa-chevron-right chev"></span>
+            </a>
+            <ul class="child_menu" style="display: none;">
+                                <li>
+                    <a href="add_revenue.php">
+                      Add Revenue                    </a>
+                  </li>
+                                <li>
+                    <a href="revenue_list.php">
+                      List of Revenues                    </a>
+                  </li>
+                                <li>
+                    <a href="revenue_heads.php">
+                      Revenue Heads                    </a>
+                  </li>
+                          </ul>
+          </li>
+      
+      <li class="ds-logout">
+        <a href="#" onclick="localStorage.clear(); window.location.href='logout.php'; return false;">
+          <span>LOGOUT</span> <i class="fa fa-sign-out" aria-hidden="true"></i>
+        </a>
+      </li>
+    </ul>
+
+    <!-- iOS simple menu with requested structure -->
+    <div id="menu-ios" class="ios-nav">
+      <a href="software_demo_videos.php" class="nav-item">
+        <div class="nav-icon"><i class="fa fa-play"></i></div>
+        <div class="nav-text">Guidline Videos</div>
+      </a>
+      <a href="front_desk_analytics.php" class="nav-item">
+        <div class="nav-icon"><i class="fa fa-line-chart"></i></div>
+        <div class="nav-text">Front Desk Analytics</div>
+      </a>
+
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-phone"></i></div>
+            <div class="nav-text">Front Office</div>
+          </a>
+          <div class="submenu">
+                            <a href="front_desk_analytics.php" class="submenu-item">Front Desk Overview</a>
+                            <a href="student_inquiry.php" class="submenu-item">Admission Inquiries</a>
+                            <a href="manage_complaint.php" class="submenu-item">Complaint Hub</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-dashboard"></i></div>
+            <div class="nav-text">Dashboard</div>
+          </a>
+          <div class="submenu">
+                            <a href="dashboard.php" class="submenu-item">Executive Dashboard</a>
+                            <a href="basic_dashboard.php" class="submenu-item">Staff Dashboard</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-users"></i></div>
+            <div class="nav-text">Students</div>
+          </a>
+          <div class="submenu">
+                            <a href="add_student.php" class="submenu-item">Add New Student</a>
+                            <a href="students_analytics_dashboard.php" class="submenu-item">Student Analytics</a>
+                            <a href="class_promotion.php" class="submenu-item">Class Promotion</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-microphone"></i></div>
+            <div class="nav-text">Attendance</div>
+          </a>
+          <div class="submenu">
+                            <a href="mark_attend.php" class="submenu-item">Mark Attendance</a>
+                            <a href="mark_attendanceReport_list.php" class="submenu-item">Attendance Analytics</a>
+                            <a href="send_msgs.php?attendance=A" class="submenu-item">Send SMS Report</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-envelope"></i></div>
+            <div class="nav-text">Messages</div>
+          </a>
+          <div class="submenu">
+                            <a href="new_message.php" class="submenu-item">New Message</a>
+                            <a href="messages_history.php" class="submenu-item">View Messages</a>
+                            <a href="view_templates.php" class="submenu-item">View Templates</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-money"></i></div>
+            <div class="nav-text">Fee Collection</div>
+          </a>
+          <div class="submenu">
+                            <a href="monthly_challan.php" class="submenu-item">Create Challan</a>
+                            <a href="view_challan_details.php" class="submenu-item">View Challan</a>
+                            <a href="multi_fee_reports.php" class="submenu-item">Fee Reporting</a>
+                            <a href="update_fee_settings.php" class="submenu-item">Fee Settings</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-graduation-cap"></i></div>
+            <div class="nav-text">Examination</div>
+          </a>
+          <div class="submenu">
+                            <a href="view_marksheet.php" class="submenu-item">Add Marks Sheet</a>
+                            <a href="reportcards.php" class="submenu-item">View Marks Sheet</a>
+                            <a href="manage_exams.php" class="submenu-item">Academic Setting</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-clock-o"></i></div>
+            <div class="nav-text">Timetable</div>
+          </a>
+          <div class="submenu">
+                            <a href="period_categories.php" class="submenu-item">Periods Category</a>
+                            <a href="create_period_details.php" class="submenu-item">Create/Manage Periods</a>
+                            <a href="class_period.php" class="submenu-item">Assign Periods to Classes</a>
+                            <a href="class_period_selection.php" class="submenu-item">Create Timetable</a>
+                            <a href="view_class_period_selection.php" class="submenu-item">View Timetable</a>
+                            <a href="view_teachers_timetable.php" class="submenu-item">Teachers Timetable</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-user"></i></div>
+            <div class="nav-text">Employees/HRM</div>
+          </a>
+          <div class="submenu">
+                            <a href="add_emp.php" class="submenu-item">Add Employee</a>
+                            <a href="view_emp.php" class="submenu-item">View Employees</a>
+                            <a href="view_emp_attendance.php" class="submenu-item">Staff Attendance</a>
+                            <a href="monthly_attendance.php" class="submenu-item">Attendance Report</a>
+                            <a href="old_employee.php" class="submenu-item">Old Employees</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-clock-o"></i></div>
+            <div class="nav-text">Datesheet</div>
+          </a>
+          <div class="submenu">
+                            <a href="create_datesheet.php" class="submenu-item">Create Datesheet</a>
+                            <a href="view_datesheet.php" class="submenu-item">View Datesheet</a>
+                            <a href="generate_rollnoSlips.php" class="submenu-item">Generate Roll No Slips</a>
+                            <a href="syllabus_management.php" class="submenu-item">Syllabus Management</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-truck"></i></div>
+            <div class="nav-text">Transport</div>
+          </a>
+          <div class="submenu">
+                            <a href="vehicles.php" class="submenu-item">Vehicles</a>
+                            <a href="route.php" class="submenu-item">Routes</a>
+                            <a href="vehicle_route.php" class="submenu-item">Assign Vehicles</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-book"></i></div>
+            <div class="nav-text">Library</div>
+          </a>
+          <div class="submenu">
+                            <a href="list_books.php" class="submenu-item">Book List</a>
+                            <a href="issue_return.php" class="submenu-item">Issue Return</a>
+                            <a href="issue_return_employee.php" class="submenu-item">Employee Issue&amp;Return</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-paypal"></i></div>
+            <div class="nav-text">PayRoll</div>
+          </a>
+          <div class="submenu">
+                            <a href="creat_payroll.php" class="submenu-item">Create PayRoll</a>
+                            <a href="view_payroll.php" class="submenu-item">View PayRoll </a>
+                            <a href="staff_security.php" class="submenu-item">Staff Security Fee</a>
+                            <a href="payroll_setting.php" class="submenu-item">PayRoll Setting</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-home"></i></div>
+            <div class="nav-text">Parents Portal</div>
+          </a>
+          <div class="submenu">
+                            <a href="parents_portal_dashboard.php" class="submenu-item">Parents Overview</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-money"></i></div>
+            <div class="nav-text">Expenses</div>
+          </a>
+          <div class="submenu">
+                            <a href="manage_expenses.php" class="submenu-item">Add/View Expenses</a>
+                            <a href="monthly_expenses_report.php" class="submenu-item">Expenses Report</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-file"></i></div>
+            <div class="nav-text">Cards Generator</div>
+          </a>
+          <div class="submenu">
+                            <a href="cards.php" class="submenu-item">Staff Cards</a>
+                            <a href="students_card.php" class="submenu-item">Students Cards</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-search"></i></div>
+            <div class="nav-text">Point of Sale</div>
+          </a>
+          <div class="submenu">
+                            <a href="canteen_dashboard.php" class="submenu-item">POS Dashboard</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-dollar"></i></div>
+            <div class="nav-text">Academic Setup</div>
+          </a>
+          <div class="submenu">
+                            <a href="academic_setup.php" class="submenu-item">Manage Academics</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-gear"></i></div>
+            <div class="nav-text">System Settings</div>
+          </a>
+          <div class="submenu">
+                            <a href="settings.php" class="submenu-item">Update Settings</a>
+                            <a href="manage_localities.php" class="submenu-item">Manage Localities</a>
+                      </div>
+                <a href="#" class="nav-item has-submenu">
+            <div class="nav-icon"><i class="fa fa-calculator"></i></div>
+            <div class="nav-text">Accounts</div>
+          </a>
+          <div class="submenu">
+                            <a href="add_revenue.php" class="submenu-item">Add Revenue</a>
+                            <a href="revenue_list.php" class="submenu-item">List of Revenues</a>
+                            <a href="revenue_heads.php" class="submenu-item">Revenue Heads</a>
+                      </div>
+      
+      <a href="#" class="nav-item" onclick="localStorage.clear(); window.location.href='logout.php'; return false;">
+        <div class="nav-icon"><i class="fa fa-sign-out"></i></div>
+        <div class="nav-text">Logout</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- iOS backdrop -->
+<div id="ios_sidebar_backdrop"></div>
+
+<script>
+  (function() {
+    if (!document.body.classList.contains('sidebar-expanded') &&
+      !document.body.classList.contains('sidebar-collapsed')) {
+      document.body.classList.add('sidebar-collapsed');
+    }
+  })();
+
+  // Detect iOS / iPadOS / Mac with touch and enable overlay mode
+  (function() {
+    var ua = navigator.userAgent || navigator.vendor || window.opera;
+    var isiOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isiOS) {
+      document.body.classList.add('ios-device');
+      var btn = document.getElementById('ios_toggle_btn');
+      var backdrop = document.getElementById('ios_sidebar_backdrop');
+      if (btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          document.body.classList.toggle('ios-sidebar-open');
+        }, {
+          passive: false
+        });
+      }
+      if (backdrop) {
+        backdrop.addEventListener('click', function() {
+          document.body.classList.remove('ios-sidebar-open');
+        });
+      }
+      // Close on escape
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          document.body.classList.remove('ios-sidebar-open');
+        }
+      });
+    }
+  })();
+
+  var dsToggle = document.getElementById('ds_toggle_btn');
+  if (dsToggle) {
+    dsToggle.addEventListener('click', function() {
+      document.body.classList.toggle('sidebar-expanded');
+      document.body.classList.toggle('sidebar-collapsed');
+    });
+  }
+
+  // Make state accessible to other handlers
+  var activeFlyout = null;
+  var hoverTimeout = null;
+
+  // Mobile detection
+  var isMobile = function() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      ('ontouchstart' in window) ||
+      (navigator.maxTouchPoints > 0);
+  };
+
+  function bindFlyouts() {
+    var isCollapsed = function() {
+      return document.body.classList.contains('sidebar-collapsed');
+    };
+
+
+
+    // Handle items with submenus
+    document.querySelectorAll('#sidebar-menu .has-children').forEach(function(li) {
+      var fly = li.querySelector('.child_menu');
+      if (!fly) return;
+
+      // Function to show submenu
+      function showSubmenu() {
+        if (!isCollapsed()) return;
+
+        // Clear any existing timeout
+        if (hoverTimeout) {
+          clearTimeout(hoverTimeout);
+          hoverTimeout = null;
+        }
+
+        // Hide any other active flyout first
+        if (activeFlyout && activeFlyout !== fly) {
+          activeFlyout.style.display = 'none';
+        }
+
+        var r = li.getBoundingClientRect();
+        fly.style.display = 'block';
+        fly.style.position = 'fixed';
+        fly.style.left = getComputedStyle(document.documentElement).getPropertyValue('--sb-collapsed').trim() || '60px';
+        // First render to measure height, then adjust to keep within viewport and align near item
+        fly.style.top = r.top + 'px';
+        fly.style.maxHeight = (window.innerHeight - 16) + 'px';
+        // After layout, adjust top so flyout fits in viewport
+        var fh = fly.offsetHeight || 0;
+        var desiredTop = Math.max(8, Math.min(window.innerHeight - fh - 8, r.top - 6));
+        fly.style.top = desiredTop + 'px';
+        fly.style.overflowY = 'auto';
+        fly.style.zIndex = 2001;
+
+        activeFlyout = fly;
+      }
+
+      // Function to hide submenu
+      function hideSubmenu() {
+        if (!isCollapsed()) return;
+
+        // Don't hide immediately, give user time to move to submenu
+        hoverTimeout = setTimeout(function() {
+          if (activeFlyout === fly) {
+            fly.style.display = 'none';
+            activeFlyout = null;
+          }
+        }, 150);
+      }
+
+      // Click events for both desktop and mobile
+      li.addEventListener('click', function(e) {
+        // Only prevent default if clicking on the parent link, not submenu links
+        var clickedLink = e.target.closest('a');
+        if (clickedLink && clickedLink.parentElement === li) {
+          e.preventDefault();
+          e.stopPropagation();
+        } else {
+          // Submenu link clicked — close flyout/dropdown before navigating
+          if (isCollapsed()) {
+            fly.style.display = 'none';
+            activeFlyout = null;
+          } else {
+            li.classList.remove('active');
+          }
+          return;
+        }
+
+        if (isCollapsed()) {
+          // Collapsed sidebar behavior
+          if (fly.style.display === 'block') {
+            fly.style.display = 'none';
+            activeFlyout = null;
+          } else {
+            // Hide any other active flyout first
+            if (activeFlyout && activeFlyout !== fly) {
+              activeFlyout.style.display = 'none';
+            }
+            showSubmenu();
+          }
+        } else {
+          // Expanded sidebar behavior
+          var isActive = li.classList.contains('active');
+
+          // Remove active class from all menu items
+          document.querySelectorAll('#sidebar-menu .has-children').forEach(function(item) {
+            item.classList.remove('active');
+          });
+
+          // Toggle active class on current item
+          if (!isActive) {
+            li.classList.add('active');
+          } else {
+            li.classList.remove('active');
+          }
+        }
+      });
+
+      // Hide submenu when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!li.contains(e.target) && !fly.contains(e.target)) {
+          if (isCollapsed()) {
+            fly.style.display = 'none';
+            activeFlyout = null;
+          } else {
+            li.classList.remove('active');
+          }
+        }
+      });
+    });
+
+    // Handle items without submenus - show tooltip on hover/touch
+    document.querySelectorAll('#sidebar-menu li:not(.has-children)').forEach(function(li) {
+      var link = li.querySelector('a');
+      if (!link) return;
+
+      var label = link.querySelector('.label');
+      if (!label) return;
+
+      // Function to show tooltip
+      function showTooltip() {
+        if (!isCollapsed()) return;
+
+        // Create tooltip with EXACT same structure as submenu
+        var tooltip = document.createElement('ul');
+        tooltip.className = 'child_menu';
+        tooltip.style.cssText = `
+        position: fixed;
+        left: var(--sb-collapsed);
+        top: ${li.getBoundingClientRect().top + 10}px;
+        min-width: 220px;
+        max-height: 80vh;
+        overflow: auto;
+        display: block;
+        z-index: 2001;
+        background: var(--sb-fly);
+        box-shadow: 0 8px 24px rgba(0,0,0,.25);
+        border-radius: 10px;
+        list-style: none;
+        margin: 0;
+        padding: 6px 0;
+      `;
+
+        // Add content with EXACT same structure as submenu items
+        tooltip.innerHTML = '<li>\
+          <a href="' + link.href + '" style="display: block; padding: 8px 14px; font-size: 13px; color: #fff; text-decoration: none;">\
+            ' + (label.textContent || '') + '\
+          </a>\
+        </li>';
+
+        // Add hover effect like submenu
+        var tooltipLink = tooltip.querySelector('a');
+        tooltipLink.addEventListener('mouseenter', function() {
+          this.style.background = 'rgba(255,255,255,0.08)';
+        });
+        tooltipLink.addEventListener('mouseleave', function() {
+          this.style.background = 'transparent';
+        });
+
+        document.body.appendChild(tooltip);
+        li._tooltip = tooltip;
+      }
+
+      // Function to hide tooltip
+      function hideTooltip() {
+        if (!isCollapsed()) return;
+
+        if (li._tooltip) {
+          li._tooltip.remove();
+          li._tooltip = null;
+        }
+      }
+
+      // Desktop hover events
+      if (!isMobile()) {
+        li.addEventListener('mouseenter', showTooltip);
+        li.addEventListener('mouseleave', hideTooltip);
+      } else {
+        // Mobile touch events - show tooltip on long press or tap
+        var touchStartTime = 0;
+        var touchTimeout = null;
+
+        li.addEventListener('touchstart', function(e) {
+          touchStartTime = Date.now();
+          touchTimeout = setTimeout(function() {
+            showTooltip();
+          }, 500); // Show after 500ms long press
+        });
+
+        li.addEventListener('touchend', function(e) {
+          if (touchTimeout) {
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+          }
+
+          // If it was a quick tap (not long press), hide tooltip
+          if (Date.now() - touchStartTime < 500) {
+            hideTooltip();
+          }
+        });
+
+        li.addEventListener('touchmove', function(e) {
+          if (touchTimeout) {
+            clearTimeout(touchTimeout);
+            touchTimeout = null;
+          }
+        });
+
+        // Hide tooltip when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!li.contains(e.target)) {
+            hideTooltip();
+          }
+        });
+      }
+    });
+  }
+  bindFlyouts();
+
+  // iOS simple menu interactions
+  (function() {
+    // Only bind on iOS devices
+    if (!document.body.classList.contains('ios-device')) return;
+
+    // Toggle submenu on tap
+    document.querySelectorAll('#menu-ios .has-submenu').forEach(function(item) {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // keep sidebar open while interacting
+        document.body.classList.add('ios-sidebar-open');
+        var submenu = this.nextElementSibling;
+        // Close others
+        document.querySelectorAll('#menu-ios .submenu').forEach(function(sm) {
+          if (sm !== submenu) {
+            sm.style.display = 'none';
+          }
+        });
+        // Toggle current
+        if (submenu) {
+          submenu.style.display = (submenu.style.display === 'block') ? 'none' : 'block';
+        }
+      }, {
+        passive: false
+      });
+    });
+
+    // Close submenus on outside click
+    document.addEventListener('click', function(e) {
+      var iosMenu = document.getElementById('menu-ios');
+      if (iosMenu && !iosMenu.contains(e.target)) {
+        document.querySelectorAll('#menu-ios .submenu').forEach(function(sm) {
+          sm.style.display = 'none';
+        });
+      }
+    });
+  })();
+
+  // Close all flyouts on every page show (handles bfcache and normal loads)
+  function closeAllFlyouts() {
+    document.querySelectorAll('#sidebar-menu .child_menu').forEach(function(flyout) {
+      flyout.style.display = 'none';
+    });
+    activeFlyout = null;
+    document.querySelectorAll('#sidebar-menu .has-children').forEach(function(item) {
+      item.classList.remove('active');
+    });
+  }
+  window.addEventListener('pageshow', closeAllFlyouts);
+
+  // Direct listeners on all child menu links — failsafe close before navigation
+  document.querySelectorAll('#sidebar-menu .child_menu a').forEach(function(link) {
+    link.addEventListener('click', closeAllFlyouts);
+  });
+
+  // Better scroll handling - don't hide immediately
+  var scrollTimeout;
+  window.addEventListener('scroll', function() {
+    if (!document.body.classList.contains('sidebar-collapsed')) return;
+
+    // Clear previous timeout
+    if (scrollTimeout) clearTimeout(scrollTimeout);
+
+    // Only hide after scrolling stops for a while
+    scrollTimeout = setTimeout(function() {
+      if (activeFlyout) {
+        activeFlyout.style.display = 'none';
+        activeFlyout = null;
+      }
+    }, 500); // Increased to 500ms
+  });
+
+  // Hide flyouts when clicking outside
+  document.addEventListener('click', function(e) {
+    var sidebar = document.getElementById('dsLeftCol');
+    var flyouts = document.querySelectorAll('#sidebar-menu .child_menu');
+
+    if (!sidebar.contains(e.target)) {
+      if (document.body.classList.contains('sidebar-collapsed')) {
+        flyouts.forEach(function(flyout) {
+          flyout.style.display = 'none';
+        });
+        activeFlyout = null;
+      } else {
+        // For expanded sidebar, remove active class from all menu items
+        document.querySelectorAll('#sidebar-menu .has-children').forEach(function(item) {
+          item.classList.remove('active');
+        });
+      }
+    }
+  });
+
+  // Additional fix: Prevent submenu from disappearing when hovering over scrollbar
+  document.addEventListener('mouseover', function(e) {
+    if (!document.body.classList.contains('sidebar-collapsed')) return;
+
+    // If hovering over a submenu, keep it open
+    if (e.target.closest('.child_menu')) {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+        hoverTimeout = null;
+      }
+    }
+  });
+
+  // Mobile-specific: Hide flyouts on orientation change
+  window.addEventListener('orientationchange', function() {
+    setTimeout(function() {
+      if (activeFlyout) {
+        activeFlyout.style.display = 'none';
+        activeFlyout = null;
+      }
+    }, 100);
+  });
+
+  // Mobile-specific: Hide flyouts on window resize
+  window.addEventListener('resize', function() {
+    if (activeFlyout) {
+      activeFlyout.style.display = 'none';
+      activeFlyout = null;
+    }
+  });
+</script>                
+
+
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Only animate notification badges if they exist
+    const notificationIcons = document.querySelectorAll('.notificationIcon');
+    if (notificationIcons.length) {
+      setInterval(function toggleNotification() {
+        notificationIcons.forEach(function(icon) {
+          icon.classList.toggle('hidden');
+        });
+      }, 3000);
+    }
+  });
+
+  document.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+  });
+</script>
+
+
+<style>
+  .user-dropdown {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+  }
+  .dropdown-card {
+    min-width: 280px;
+  }
+  .dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    font-weight: 600;
+    color: #111827;
+    border-bottom: 1px solid #eef2f7;
+    background: #f9fafb;
+  }
+  .dropdown-section-title {
+    padding: 8px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #6b7280;
+    background: #fafafa;
+    border-top: 1px solid #f1f5f9;
+  }
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: #111827;
+  }
+  .dropdown-item i {
+    width: 18px;
+    text-align: center;
+    color: #64748b;
+  }
+  .dropdown-item:hover {
+    background: #f3f4f6;
+  }
+  .dropdown-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .usage-card {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .usage-title {
+    font-weight: 600;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .usage-metrics {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #6b7280;
+  }
+  .usage-bar {
+    width: 100%;
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    margin-top: 6px;
+  }
+  .usage-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .notif-item {
+    display: block;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    text-decoration: none;
+    color: #111827;
+  }
+  .notif-item.unread {
+    background: #f8fafc;
+  }
+  .notif-title {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .notif-meta {
+    font-size: 11px;
+    color: #6b7280;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Header layout - all in one div */
+  .header{ display:flex; align-items:center; justify-content: space-between; gap: 0; padding: 0 24px; height: 80px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+  .header > * { display: flex; }
+  /* Right side layout polish */
+  .right-nav a{ text-decoration:none; display:flex; align-items:center; }
+  .quick-link-btn{ position:relative; margin:0; flex-shrink:0; }
+  .quick-link-btn .btn{ display:flex; align-items:center; height:36px; padding:6px 12px; border-radius:18px; }
+  .message{ position:relative; display:flex; align-items:center; height:36px; flex-shrink:0; }
+  .chip{ display:flex; align-items:center; justify-content:center; height:36px; border-radius:18px; padding:0 10px; cursor:pointer; }
+  .sms-chip{ width:36px; padding:0; }
+  .user-chip{ gap:8px; }
+  .avtar{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#3949ab; color:#fff; font-weight:600; }
+  .chip.user-chip{ position: relative; }
+  #logout_btn_mobile, #logout_btn_desktop{ position: absolute; right: 0; top: 100%; z-index: 99999; width: 230px !important; box-sizing: border-box; border-radius: 14px; }
+  @media (min-width: 769px){
+    #logout_btn_desktop{ position: fixed !important; left: auto !important; right: 20px !important; top: 84px !important; width: 230px !important; }
+  }
+  #logout_btn_mobile .dropdown-header, #logout_btn_desktop .dropdown-header{
+    padding: 9px 12px;
+    font-size: 12.5px;
+    gap: 6px;
+  }
+  #logout_btn_mobile .dropdown-header i, #logout_btn_desktop .dropdown-header i{
+    font-size: 13px;
+    color: #3949ab;
+  }
+  #logout_btn_mobile .dropdown-section-title, #logout_btn_desktop .dropdown-section-title{
+    padding: 5px 12px 2px;
+    font-size: 9.5px;
+    font-weight: 700;
+  }
+  #logout_btn_mobile .dropdown-item, #logout_btn_desktop .dropdown-item{
+    padding: 6px 12px;
+    font-size: 12.5px;
+    gap: 8px;
+    transition: background .15s ease, padding-left .15s ease;
+  }
+  #logout_btn_mobile .dropdown-item:hover, #logout_btn_desktop .dropdown-item:hover{
+    background: #f4f6ff;
+    padding-left: 15px;
+  }
+  #logout_btn_mobile .dropdown-item i, #logout_btn_desktop .dropdown-item i{
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #f1f3f9;
+    color: #475569;
+    font-size: 10.5px;
+  }
+  #logout_btn_mobile .dropdown-item:hover i, #logout_btn_desktop .dropdown-item:hover i{
+    background: #3949ab;
+    color: #fff;
+  }
+  #logout_btn_mobile a[href*="logout"], #logout_btn_desktop a[href*="logout"]{
+    color: #dc2626;
+  }
+  #logout_btn_mobile a[href*="logout"] i, #logout_btn_desktop a[href*="logout"] i{
+    color: #dc2626;
+    background: #fef2f2;
+  }
+  #logout_btn_mobile a[href*="logout"]:hover i, #logout_btn_desktop a[href*="logout"]:hover i{
+    background: #dc2626;
+    color: #fff;
+  }
+  .user-info{ display:flex; flex-direction:column; line-height:1; }
+  .user-name{ font-size:13px; font-weight:600; }
+  .user-designation{ font-size:11px; opacity:.7; }
+  @media (max-width: 1200px){ .user-info{ display:none; } }
+  
+  /* Desktop: Show desktop profile, hide mobile profile */
+  .mobile-profile {
+    display: none !important;
+  }
+  .desktop-profile {
+    display: flex !important;
+  }
+  .menu-btn{
+    display:flex; align-items:center; justify-content:center;
+    width:36px; height:36px; border-radius:10px;
+    color:#637381; text-decoration:none;
+    border:1px solid rgba(99,115,129,0.2);
+    background: transparent;
+    transition: all .2s ease;
+  }
+  .menu-btn:hover{ background: rgba(145,158,171,0.12); border-color: rgba(99,115,129,0.35); }
+  .menu-btn i{ font-size:18px; line-height:1; }
+
+  /* Ensure header/search aligns with sidebar width */
+  .top_nav{ position: sticky; top: 0; z-index: 900; background:#fff; box-sizing: border-box; padding-bottom: 6px;}
+  /* Neutralize theme's left offset on header */
+  .main_container .top_nav{ margin-left: 0 !important; }
+  .top_nav .nav_menu{ transition: padding-left .25s ease; box-sizing: border-box; padding-right:16px; }
+  body.sidebar-collapsed .top_nav .nav_menu{ padding-left: var(--sb-collapsed); }
+  body.sidebar-expanded  .top_nav .nav_menu{ padding-left: var(--sb-expanded); }
+
+  /* Brand block (left side) */
+  .brand-info{ display:flex; flex-direction:column; justify-content:center; min-width:260px; padding:6px 10px; }
+  .brand-title{ font-weight:700; font-size:16px; color:#212B36; }
+  .brand-subtitle{ font-style:italic; color:#919EAB; font-size:13px; margin-top:2px; }
+  @media (max-width: 992px){ .brand-info{ display:none; } }
+
+  /* Search bar pill */
+  .searchbar-container{ width: 20%; display:flex; align-items:center; justify-content:flex-start; margin-left:0; }
+  .search-bar{ display:flex; align-items:center; gap:10px; width:100%; height:44px; padding:0 14px; border-radius:28px; background:#fff; border:1px solid rgba(145,158,171,0.20); box-shadow: 0 6px 16px rgba(145,158,171,0.15); }
+  .search-bar i{ color:#637381; font-size:18px; }
+  .search-bar input{ border:0; outline:0; width:100%; font-size:14px; color:#212B36; }
+
+
+
+
+  
+#filter {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 28px;
+  background: #fff;
+  border: 1px solid rgba(145, 158, 171, 0.20);
+  box-shadow: 0 6px 16px rgba(145, 158, 171, 0.15);
+}
+
+#livesearch {
+  position: absolute;    /* input ke niche fix karne ke liye */
+  top: 100%;             /* input field ke just neeche */
+  left: 0;
+  width: 100%;           /* input ke width ke barabar */
+  background-color: white;
+  z-index: 902;
+  padding: 10px;
+  border: 1px solid rgba(145,158,171,0.20);
+  box-shadow: 0 6px 16px rgba(145,158,171,0.15);
+  display: none; /* default me hide, search ke result me show karo */
+}
+.search-item {
+  display: block;
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #111;
+  text-decoration: none;
+  font-size: 13px;
+}
+.search-item:last-child {
+  border-bottom: none;
+}
+.search-item:hover,
+.search-item.active {
+  background: #f4f6f8;
+}
+.search-item .student-name {
+  font-weight: 600;
+}
+@media (max-width: 768px){
+  .header{ 
+    flex-wrap: wrap; 
+    height: auto; 
+    padding: 8px 12px; 
+    gap: 8px; 
+    width: 100vw !important;
+    max-width: 100vw !important;
+    position: relative !important;
+    top: auto !important;
+    z-index: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+  }
+  .brand-info{
+    display: block !important;
+    width: 100% !important;
+    min-width: auto !important;
+    max-width: none !important;
+    flex: 1 1 100% !important;
+    padding: 0;
+    text-align: left !important;
+    margin-right: 0 !important;
+  }
+  .brand-title{ 
+    font-size: 18px !important; 
+    text-align: left !important;
+    width: 100% !important;
+  }
+  .brand-subtitle{ 
+    font-size: 12px !important; 
+    text-align: left !important;
+    width: 100% !important;
+  }
+  .searchbar-container{
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: 1 1 100% !important;
+    margin: 0 !important;
+    padding-bottom: 0 !important;
+    text-align: left !important;
+    margin-left: 0 !important;
+  }
+  #filter{ 
+    width: 100% !important; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important; 
+    text-align: left !important;
+  }
+  .quick-link-btn{ 
+    width: 100% !important; 
+    margin-left: 0 !important; 
+    text-align: left !important;
+    margin-right: 0 !important;
+  }
+  .quick-link-btn .btn{ 
+    width: 100% !important; 
+    justify-content: space-between; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important; 
+    text-align: left !important;
+  }
+  .message{ 
+    margin-left: 0 !important; 
+    width: 100% !important;
+    margin-right: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    order: 4 !important;
+    flex-wrap: nowrap !important;
+  }
+  .chip.user-chip{ 
+    margin-left: 0 !important; 
+    width: auto !important;
+    order: 5 !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+  .chip, .sms-chip{ 
+    height: 34px !important; 
+    width: auto !important;
+    flex-shrink: 0 !important;
+  }
+  /* Ensure notification icons stay in one row */
+  .message > div {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+  /* Make sure all notification elements are inline */
+  #msg_wrap, #div2, .user-chip {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+  /* Show user info on mobile */
+  .user-info {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+  }
+  .user-name, .user-designation {
+    display: block !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+  .avtar {
+    width: 32px !important;
+    height: 32px !important;
+    flex-shrink: 0 !important;
+  }
+  /* Force all notification elements to stay in one line */
+  .message, .message > *, .user-chip, #msg_wrap, #div2 {
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  /* Show mobile profile, hide desktop profile on mobile */
+  .mobile-profile {
+    display: flex !important;
+  }
+  .desktop-profile {
+    display: none !important;
+  }
+  /* Hide the duplicate profile that appears below header on mobile */
+  .top_nav .nav_menu nav ul {
+    display: none !important;
+  }
+  #sms_show_hide{ 
+    left: auto !important; 
+    right: 0 !important; 
+    width: 90vw !important;
+  }
+  #msg_show_hide{ 
+    right: 0 !important; 
+    left: auto !important; 
+    width: 90vw !important; 
+  }
+}
+</style>
+
+
+
+
+<!-- top navigation -->
+
+
+
+
+
+<div class="top_nav">
+
+<div class="nav_menu">
+
+<nav>
+
+
+
+    <div class="flex header" style="padding:0px;">
+
+
+
+  <!-- Branch Name Section - Left Side -->
+  <div class="brand-info" style="width: 260px; min-width: 180px; max-width: 400px; flex: 1 1 260px; margin-right: 0;">
+    <div class="brand-title" style="font-size: 15px; font-weight: 700; color: #212B36; line-height: 1.2;">Test Portal</div>
+    <div class="brand-subtitle" style="font-size: 14px; color: #637381; font-style: normal; margin-top: 4px;">2026-2027</div>
+  </div>
+
+  <!-- Search Section -->
+  <div class="searchbar-container" style="width: 260px; min-width: 180px; max-width: 400px; flex: 1 1 260px; margin: 0 0px; padding-bottom: 11px; margin-left:25px; position: relative;">
+    
+  
+              <input type="text" id="filter" class="" style="width: 100%; height: 44px; padding: 0 14px; border-radius: 28px; background:#fff; border:1px solid rgba(145,158,171,0.20); box-shadow: 0 6px 16px rgba(145,158,171,0.15);" placeholder="Search Student with | Name | GR No | Family Code | Cell No" onkeyup="showResult(this.value)" name="">
+              
+
+    
+  <div id="livesearch" role="listbox" aria-label="Student search results" style="background-color:white; z-index:902; padding:10px;">
+  </div>
+
+     
+  </div>
+
+  <!-- Quick Links Section -->
+      <div class="quick-link-btn" style="margin-left: auto; margin-right: 10px;">
+      <button id="quickLinkBtn" class="btn" style="width: 214px; height: 44px; border: 1px solid #e0e0e0; color: #637381; background: white; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-radius: 22px; font-size: 14px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.background='#FFA500'; this.style.color='white'; this.style.borderColor='#FFA500'; this.style.boxShadow='0 4px 12px rgba(255,165,0,0.3)';" onmouseout="this.style.background='white'; this.style.color='#637381'; this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)';">
+        <span>Quick Links</span>
+        <i class="fa fa-chevron-down" style="font-size: 12px; margin-left: 8px;"></i>
+      </button>
+      <div id="dropdownContent" class="dropdown-content" style="z-index: 99999; position: absolute; top: 100%; left: 0; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 200px; display: none;">
+        <a href="https://apps.eduportal.pk/Production/graph_analytics.php">Analytics Dashboard</a>
+        <a href="https://apps.eduportal.pk/Production/data_health_checker.php">Data Health Checker</a>  
+        <a href="https://apps.eduportal.pk/Production/students_reports.php">Students Reports</a>
+        <a href="https://apps.eduportal.pk/Production/customer_tickets.php">Support Tickets</a>
+        <a href="https://apps.eduportal.pk/Production/print_daily_income_exp_report.php">Daily Closing</a>
+        <a href="https://apps.eduportal.pk/Production/print_profitloss_report.php">Monthly Closing</a>
+        <a href="https://apps.eduportal.pk/Production/mark_attend.php">Mark Attendance</a>
+        <a href="https://apps.eduportal.pk/Production/view_challan.php">View Challan</a>
+        <a href="https://apps.eduportal.pk/Production/messages_history.php">View Messages</a>
+        <a href="https://apps.eduportal.pk/Production/manage_expenses.php">Expenses</a>
+        <a href="https://apps.eduportal.pk/Production/user_audit_report.php">Users Activities</a>
+        <a href="https://apps.eduportal.pk/Production/parents_id.php">View Parents IDs</a>
+        <a href="https://apps.eduportal.pk/Production/manage_complaint.php?from_date=2026-09-01&amp;to_date=2026-09-30&amp;status=All&amp;type=All&amp;addaccountAdmin=1">Complaint</a>
+      </div>
+    </div>
+  
+  <!-- Notifications Section -->
+  <div class="message" style="margin-right: 8px;">
+    <!-- Unread badge for notifications (bell) -->
+    <div id="div1" style="position:absolute; top: 0; left: 0;z-index: 2;" onclick="sms_show();">
+          </div>
+
+    <!-- Contact assigned CSR/Agent via WhatsApp -->
+    <div id="csr_whatsapp_wrap" style="position: relative; height: auto; z-index: 9999; margin-right: 6px;">
+            <a href="https://wa.me/923000228123" target="_blank" rel="noopener" class="chip sms-chip" style="width:35px; border: none;" title="Chat with your Support Representative (Mubeen Arshad) on WhatsApp">
+        <i class="fab fa-whatsapp" style="font-size: 19px; color: #25D366;"></i>
+      </a>
+          </div>
+
+    <!-- Envelope (Messages) -->
+    <div id="msg_wrap" style="position: relative; height: auto; z-index: 9999; margin-right: 6px;">
+      <div class="chip sms-chip" onclick="msg_show();" style="width:35px; border: none">
+        <i class="fa fa-envelope" style="font-size: 18px; color: #808080;"></i>
+      </div>
+      <div class="user-dropdown dropdown-card" id="msg_show_hide" style="display: none; z-index: 99999; width: 24em; position: absolute; right: 0; top: 100%; height: auto;">
+        <div class="dropdown-header"><i class="fa fa-signal"></i> SMS Usage</div>
+        <div class="usage-card">
+          <div class="usage-title" style="color:#25D366;"><i class="fab fa-whatsapp"></i> WhatsApp SMS</div>
+          <div class="usage-metrics">
+            <span>Used: 0</span>
+            <span>Limit: 10,000</span>
+          </div>
+          <div class="usage-bar">
+            <div class="usage-bar-fill" style="width: 0%; background:#25D366;"></div>
+          </div>
+        </div>
+        <div class="usage-card">
+          <div class="usage-title" style="color:#007bff;"><i class="fa fa-mobile"></i> SIM SMS</div>
+          <div class="usage-metrics">
+            <span>Used: 0</span>
+            <span>Limit: 0</span>
+          </div>
+          <div class="usage-bar">
+            <div class="usage-bar-fill" style="width: 0%; background:#007bff;"></div>
+          </div>
+        </div>
+        <div class="usage-card">
+          <div class="usage-title"><i class="fa fa-bar-chart"></i> Total SMS Usage (This Month)</div>
+          <div class="usage-metrics">
+            <span>WhatsApp: 0</span>
+            <span>SIM: 0</span>
+          </div>
+          <div class="usage-metrics" style="margin-top:4px;">
+            <span>Total: 0</span>
+            <span>Remaining: 10,000</span>
+          </div>
+        </div>
+        <a class="dropdown-item" href="https://apps.eduportal.pk/Production/messages_history.php">
+          <i class="fa fa-history"></i> View Messages History
+        </a>
+      </div>
+    </div>
+
+    <!-- Bell (Notifications) -->
+    <div id="div2" style="position: relative; height: auto; z-index: 9999;">
+      <div class="chip sms-chip" onclick="sms_show();" style="width:35px; border: none">
+        <i class="fa fa-bell" style="font-size: 18px; color: #808080;"></i>
+      </div>  
+      <div class="user-dropdown dropdown-card" id="sms_show_hide" style="display: none; z-index: 99999; width: 26em; position: absolute; left: -20em; top: 100%; height: auto;">
+        <div class="dropdown-header"><i class="fa fa-bell"></i> Notifications</div>
+        <div class="dropdown-list">
+                  </div>
+      </div>
+    </div>
+
+    <!-- User Profile Section - Now inside message div for mobile alignment -->
+    <div class="chip user-chip mobile-profile" style="background:white; margin-left: 8px;" onclick="show_hide();">
+      <div class="user-dropdown dropdown-card" id="logout_btn_mobile" style="width:100%; display: none;">
+        <div class="dropdown-header"><i class="fa fa-user-circle"></i> Account</div>
+        <div class="dropdown-section-title">Profile</div>
+        <a href="update_profile.php" class="dropdown-item"><i class="fa fa-user"></i> Profile</a>
+        <a href="customer_tickets.php" class="dropdown-item"><i class="fa fa-ticket-alt"></i> Support Tickets</a>
+        <div class="dropdown-section-title">Invoices</div>
+        <a href="monthly_invoices.php" class="dropdown-item"><i class="fa fa-file-alt"></i> Monthly Invoices</a>
+        <div class="dropdown-section-title">Security</div>
+        <a href="update_pswd.php" class="dropdown-item"><i class="fa fa-key"></i> Change Password</a>
+        <div class="dropdown-section-title">Session</div>
+        <a href="logout.php" class="dropdown-item"><i class="fa fa-sign-out-alt"></i> Logout</a>
+      </div>
+      <div class="avtar"></div>
+      <div class="user-info">
+        <span class="user-name" style="color:black;">
+                  </span>
+        <span class="user-designation">Super Admin</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Profile Section - Desktop version (hidden on mobile) -->
+  <div class="chip user-chip desktop-profile" style="background:white;" onclick="show_hide();">
+    <div class="user-dropdown dropdown-card" id="logout_btn_desktop" style="width:100%; display: none;">
+      <div class="dropdown-header"><i class="fa fa-user-circle"></i> Account</div>
+      <div class="dropdown-section-title">Profile</div>
+      <a href="update_profile.php" class="dropdown-item"><i class="fa fa-user"></i> Profile</a>
+      <a href="customer_tickets.php" class="dropdown-item"><i class="fa fa-ticket-alt"></i> Support Tickets</a>
+      <div class="dropdown-section-title">Invoices</div>
+      <a href="monthly_invoices.php" class="dropdown-item"><i class="fa fa-file-alt"></i> Monthly Invoices</a>
+      <div class="dropdown-section-title">Security</div>
+      <a href="update_pswd.php" class="dropdown-item"><i class="fa fa-key"></i> Change Password</a>
+      <div class="dropdown-section-title">Session</div>
+      <a href="logout.php" class="dropdown-item"><i class="fa fa-sign-out-alt"></i> Logout</a>
+    </div>
+    <div class="avtar"></div>
+    <div class="user-info">
+      <span class="user-name" style="color:black;">
+              </span>
+      <span class="user-designation">Super Admin</span>
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+</div>
+
+</div>
+
+<!-- /top navigation -->
+
+
+
+
+
+
+
+<!-- function for live search header --> 
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script type="text/javascript">
+
+
+
+// SECURITY: Enhanced showResult function with input validation
+function showResult(str) {
+  if (window.__skipSearch === true) {
+    window.__skipSearch = false;
+    return;
+  }
+  // SECURITY: Input validation and sanitization
+  if (!str || str.length == 0) { 
+    document.getElementById("livesearch").innerHTML="";
+    document.getElementById("livesearch").style.display="none";
+    return;
+  }
+  
+  // SECURITY: Limit input length to prevent abuse
+  if (str.length > 100) {
+    str = str.substring(0, 100);
+  }
+  
+  // SECURITY: Basic XSS prevention - escape special characters
+  str = str.replace(/[<>\"'&]/g, function(match) {
+    switch(match) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '"': return '&quot;';
+      case "'": return '&#x27;';
+      case '&': return '&amp;';
+      default: return match;
+    }
+  });
+  
+  if (window.XMLHttpRequest) {
+    xmlhttp = new XMLHttpRequest();
+  } else {
+    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  
+  xmlhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      // SECURITY: Use textContent instead of innerHTML to prevent XSS
+      document.getElementById("livesearch").innerHTML = this.responseText;
+      document.getElementById("livesearch").style.display = "block";
+      initSearchResults();
+    }
+  }
+  
+  // SECURITY: URL encode the search parameter
+  xmlhttp.open("GET", "livesearch.php?q=" + encodeURIComponent(str), true);
+  xmlhttp.send();
+}
+
+
+// Keyboard-friendly search results
+var searchIndex = -1;
+function getSearchItems() {
+  return Array.prototype.slice.call(document.querySelectorAll('#livesearch .search-item'));
+}
+function updateActiveResult(index) {
+  var items = getSearchItems();
+  items.forEach(function(item, i) {
+    item.classList.toggle('active', i === index);
+  });
+}
+function initSearchResults() {
+  var items = getSearchItems();
+  searchIndex = -1;
+  updateActiveResult(searchIndex);
+  items.forEach(function(item, i) {
+    item.addEventListener('mouseenter', function() {
+      searchIndex = i;
+      updateActiveResult(searchIndex);
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var searchInput = document.getElementById('filter');
+  if (!searchInput) return;
+
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === 'Escape') {
+      window.__skipSearch = true;
+    } else {
+      window.__skipSearch = false;
+    }
+    var items = getSearchItems();
+    if (!items.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      searchIndex = Math.min(searchIndex + 1, items.length - 1);
+      updateActiveResult(searchIndex);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      searchIndex = Math.max(searchIndex - 1, 0);
+      updateActiveResult(searchIndex);
+    } else if (e.key === 'Enter') {
+      if (searchIndex >= 0 && items[searchIndex]) {
+        window.location.href = items[searchIndex].getAttribute('href');
+      }
+    } else if (e.key === 'Escape') {
+      document.getElementById("livesearch").style.display = "none";
+      searchIndex = -1;
+      updateActiveResult(searchIndex);
+    }
+  });
+});
+
+
+// logout btn hide and show script
+
+
+
+var a;
+
+
+
+function show_hide(){
+    if(a==1) {
+        // Show both mobile and desktop profile dropdowns
+        var mobileDropdown = document.getElementById("logout_btn_mobile");
+        var desktopDropdown = document.getElementById("logout_btn_desktop");
+        
+        if(mobileDropdown) mobileDropdown.style.display = "inline";
+        if(desktopDropdown) desktopDropdown.style.display = "inline";
+        
+        return a=0;
+    } else {
+        // Hide both mobile and desktop profile dropdowns
+        var mobileDropdown = document.getElementById("logout_btn_mobile");
+        var desktopDropdown = document.getElementById("logout_btn_desktop");
+        
+        if(mobileDropdown) mobileDropdown.style.display = "none";
+        if(desktopDropdown) desktopDropdown.style.display = "none";
+        
+        return a=1;
+    }
+}
+
+
+
+
+
+
+
+var a;
+
+
+
+function sms_show(){
+
+
+
+if(a==1)
+
+{
+
+
+
+    // hide messages dropdown if open
+    var msg = document.getElementById("msg_show_hide");
+    if(msg){ msg.style.display = "none"; }
+    document.getElementById("sms_show_hide").style.display="inline";
+
+    return a=0;
+
+
+
+}else{
+
+
+
+    document.getElementById("sms_show_hide").style.display="none";
+
+    return a=1;
+
+}
+
+
+
+}
+
+
+
+
+// toggle messages dropdown
+var b;
+function msg_show(){
+if(b==1)
+{
+  // hide notification if open
+  var notif = document.getElementById("sms_show_hide");
+  if(notif){ notif.style.display = "none"; }
+  document.getElementById("msg_show_hide").style.display="inline";
+  return b=0;
+}else{
+  document.getElementById("msg_show_hide").style.display="none";
+  return b=1;
+}
+}
+
+var quickLinkBtn = document.getElementById("quickLinkBtn");
+if (quickLinkBtn) {
+  quickLinkBtn.addEventListener("click", function() {
+    var dropdown = document.getElementById("dropdownContent");
+    if (!dropdown) return;
+
+    if (dropdown.style.display === "block") {
+      dropdown.style.display = "none";
+    } else {
+      dropdown.style.display = "block";
+    }
+  });
+}
+
+
+</script>            </div>
+
+            <div class="right_col" role="main" style="margin-top: -80px; min-height: 1330px;">
+                <div class="row">
+
+                    <!-- Breadcrumb -->
+                    <div class="breadcrumb">
+                        <a href="dashboard.php"><i class="fa fa-home"></i> Dashboard</a>
+                        <i class="fa fa-angle-right"></i>
+                        <a href="students_reports_link.php">Students Reports</a>
+                        <i class="fa fa-angle-right"></i>
+                        <span>Analytics</span>
+                    </div>
+
+                    <!-- Top bar -->
+                    <div class="analytics-topbar">
+                        <div>
+                            <h2><i class="fa fa-chart-line"></i> Students Analytics Dashboard</h2>
+                            <div class="analytics-breadcrumb">Comprehensive insights into student data and performance metrics</div>
+                        </div>
+                        <div class="analytics-topbar-actions">
+                            <span class="session-pill"><i class="fa fa-calendar"></i> 2026-2027</span>
+                            <a href="studentsInfo_export_excel.php" class="btn-export"><i class="fa fa-download"></i> Export Report</a>
+                        </div>
+                    </div>
+
+                                        <div class="issues-banner" id="data-issues">
+                        <div class="issues-banner-left">
+                            <div class="issues-icon-badge"><i class="fa fa-exclamation-triangle"></i></div>
+                            <div>
+                                <div class="issues-banner-title">Data Issues Found (38)</div>
+                                <div class="issues-banner-sub">Some data inconsistencies were found in the system. Please review details.</div>
+                            </div>
+                        </div>
+                        <button type="button" id="dataIssuesToggleBtn" class="btn-view-details" onclick="toggleDataIssues()">
+                            View Details <i class="fa fa-chevron-down"></i>
+                        </button>
+                    </div>
+
+                    <div id="dataIssuesContent" class="issues-detail-panel" style="display:none;">
+                        <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">
+                            These students are counted in "Total Students" but are missing from class-wise reports (students_reports.php) or the Boys/Girls breakdown because their class/section or gender data is incorrect. Fix them directly from below.
+                        </p>
+
+                                                <h5 style="font-size:13px; font-weight:700; color:var(--ink); margin:12px 0 8px;">
+                            <i class="fa fa-sitemap"></i> Class/Section Mismatch (6)
+                        </h5>
+                        <div style="overflow-x:auto; margin-bottom:16px;">
+                        <table class="table table-striped" style="font-size:12px;">
+                            <thead>
+                                <tr><th>Student ID</th><th>Name</th><th>Class ID</th><th>Section ID</th><th>Issue</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                                                            <tr>
+                                    <td>607678276</td>
+                                    <td>Installment 1 ABC</td>
+                                    <td>17022</td>
+                                    <td>31370</td>
+                                    <td style="color:#e74c3c;">Invalid Class (ID: 17022)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678276#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678277</td>
+                                    <td>Installment 2 DEF</td>
+                                    <td>17022</td>
+                                    <td>31370</td>
+                                    <td style="color:#e74c3c;">Invalid Class (ID: 17022)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678277#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678278</td>
+                                    <td>Installment 3 GHK</td>
+                                    <td>17022</td>
+                                    <td>31370</td>
+                                    <td style="color:#e74c3c;">Invalid Class (ID: 17022)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678278#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678279</td>
+                                    <td>Installment 4 LMN</td>
+                                    <td>17022</td>
+                                    <td>31370</td>
+                                    <td style="color:#e74c3c;">Invalid Class (ID: 17022)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678279#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678280</td>
+                                    <td>Installment 4 OPQ</td>
+                                    <td>17022</td>
+                                    <td>31370</td>
+                                    <td style="color:#e74c3c;">Invalid Class (ID: 17022)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678280#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607657259</td>
+                                    <td>Usman Hamza</td>
+                                    <td>0</td>
+                                    <td>0</td>
+                                    <td style="color:#e74c3c;">No Class Assigned</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607657259#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                        </tbody>
+                        </table>
+                        </div>
+                        
+                                                <h5 style="font-size:13px; font-weight:700; color:var(--ink); margin:16px 0 8px;">
+                            <i class="fa fa-venus-mars"></i> Missing/Invalid Gender (32)
+                        </h5>
+                        <div style="overflow-x:auto;">
+                        <table class="table table-striped" style="font-size:12px;">
+                            <thead>
+                                <tr><th>Student ID</th><th>Name</th><th>Class</th><th>Section</th><th>Gender Value</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                                                            <tr>
+                                    <td>607618890</td>
+                                    <td>ABDUL WAHAB IZHAR UL HAQ</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618890#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618877</td>
+                                    <td>ALEENA ARSHAD ARSHAD ZAMAN</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618877#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607687825</td>
+                                    <td>Ali ASD</td>
+                                    <td>MIT</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607687825#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618881</td>
+                                    <td>AMNA NOUREEN JABIR HUSSAIN</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618881#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607726270</td>
+                                    <td>arshaia arshad</td>
+                                    <td>10TH</td>
+                                    <td>YELLOW</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607726270#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678276</td>
+                                    <td>Installment 1 ABC</td>
+                                    <td>—</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678276#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678277</td>
+                                    <td>Installment 2 DEF</td>
+                                    <td>—</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678277#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678278</td>
+                                    <td>Installment 3 GHK</td>
+                                    <td>—</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678278#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678279</td>
+                                    <td>Installment 4 LMN</td>
+                                    <td>—</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678279#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607678280</td>
+                                    <td>Installment 4 OPQ</td>
+                                    <td>—</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607678280#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618889</td>
+                                    <td>KASHAF SHEHZAD ABBASSSI SHEHZAD ABBASSI</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618889#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607733845</td>
+                                    <td>M.Ali ABC</td>
+                                    <td>Bs English</td>
+                                    <td>Semester 1</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607733845#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607733846</td>
+                                    <td>M.Jamil ABC</td>
+                                    <td>Bs English</td>
+                                    <td>Semester 1</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607733846#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618893</td>
+                                    <td>MALIK TOHEED AHMED MALIK WAJID MEHMOD</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618893#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618874</td>
+                                    <td>MOIZ NAVEED NAVED AHMED</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618874#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618882</td>
+                                    <td>MUHAMMAD AZAN MUHAMMAD TARIQ</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618882#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618879</td>
+                                    <td>MUHAMMAD FAIZAN FAREED WAHEED AHMED</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618879#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618876</td>
+                                    <td>MUHAMMAD HAMZA MUHAMAD RAFIQUE</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618876#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618886</td>
+                                    <td>MUHAMMAD QASIM  MUHAMMAD SHAHZAD</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618886#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618884</td>
+                                    <td>MUQADAS MUSTAFA GHULAM MUSTAFA</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618884#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618885</td>
+                                    <td>NOOR FATIMA HABIB UR REHMAN</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618885#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618880</td>
+                                    <td>PARSA BATOOL SYED KOSAR ABBASS</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618880#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618891</td>
+                                    <td>ROOMAN GUL AMJAD AHMED KHAN</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618891#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618887</td>
+                                    <td>SHHZAD MUKHTIAR MUKHTIAR AHMED</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618887#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618888</td>
+                                    <td>SONIA KHAN UMER FAROOQ</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618888#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607687824</td>
+                                    <td>Subhan XYZ</td>
+                                    <td>MIT</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607687824#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618883</td>
+                                    <td>SUDAISA EMAAN ZEESHAN SHABBIR</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618883#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607683340</td>
+                                    <td>Umar Arshad ABC</td>
+                                    <td>Bs English</td>
+                                    <td>Semester 1</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607683340#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607657259</td>
+                                    <td>Usman Hamza</td>
+                                    <td>—</td>
+                                    <td>—</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607657259#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618878</td>
+                                    <td>ZAHRA BATOOL MUHAMMAD TAQI</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618878#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607687823</td>
+                                    <td>Zaid Ul Hasan ABC</td>
+                                    <td>MIT</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607687823#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                            <tr>
+                                    <td>607618892</td>
+                                    <td>ZUNAIRA ALMAS SAEED RAJA SAEED AHMED</td>
+                                    <td>5TH</td>
+                                    <td>A</td>
+                                    <td style="color:#e74c3c;">(empty)</td>
+                                    <td><a href="add_student.php?97a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e197a79035043ec5e9ee517b2cf139d9e1&amp;student=607618892#sec" target="_blank" class="btn btn-xs btn-warning">Fix</a></td>
+                                </tr>
+                                                        </tbody>
+                        </table>
+                        </div>
+                                            </div>
+                    
+                    <div class="analytics-layout">
+                        <div class="main-content">
+                    <!-- Main Statistics Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card2 theme-green" style="opacity: 1; transform: translateY(0px); transition: 0.5s;">
+                            <div class="stat-card-top">
+                                <div class="stat-icon-badge"><i class="fa fa-users"></i></div>
+                                <div class="stat-label">Total Students</div>
+                            </div>
+                            <div class="stat-value">85</div>
+                            <div class="stat-info"><span class="stat-dot"></span> Active enrollment</div>
+                        </div>
+
+                        <div class="stat-card2 theme-blue" style="opacity: 1; transform: translateY(0px); transition: 0.5s;">
+                            <div class="stat-card-top">
+                                <div class="stat-icon-badge"><i class="fa fa-male"></i></div>
+                                <div class="stat-label">Boys</div>
+                            </div>
+                            <div class="stat-value">38</div>
+                            <div class="stat-info"><i class="fa fa-arrow-up"></i> 44.7% of total</div>
+                        </div>
+
+                        <div class="stat-card2 theme-pink" style="opacity: 1; transform: translateY(0px); transition: 0.5s;">
+                            <div class="stat-card-top">
+                                <div class="stat-icon-badge"><i class="fa fa-female"></i></div>
+                                <div class="stat-label">Girls</div>
+                            </div>
+                            <div class="stat-value">15</div>
+                            <div class="stat-info"><i class="fa fa-arrow-up"></i> 17.6% of total</div>
+                        </div>
+
+                        <div class="stat-card2 theme-amber" style="opacity: 1; transform: translateY(0px); transition: 0.5s;">
+                            <div class="stat-card-top">
+                                <div class="stat-icon-badge"><i class="fa fa-book"></i></div>
+                                <div class="stat-label">Total Classes</div>
+                            </div>
+                            <div class="stat-value">22</div>
+                            <div class="stat-info"><span class="stat-dot"></span> Active sections</div>
+                        </div>
+
+                        <div class="stat-card2 theme-red" style="opacity: 1; transform: translateY(0px); transition: 0.5s;">
+                            <div class="stat-card-top">
+                                <div class="stat-icon-badge"><i class="fa fa-user-times"></i></div>
+                                <div class="stat-label">Struck-Off</div>
+                            </div>
+                            <div class="stat-value">23</div>
+                            <div class="stat-info"><span class="stat-dot"></span> Inactive students</div>
+                        </div>
+
+                        <div class="stat-card2 theme-teal" style="opacity: 1; transform: translateY(0px); transition: 0.5s;">
+                            <div class="stat-card-top">
+                                <div class="stat-icon-badge"><i class="fa fa-user-plus"></i></div>
+                                <div class="stat-label">Re-Enrolled</div>
+                            </div>
+                            <div class="stat-value">1</div>
+                            <div class="stat-info"><span class="stat-dot"></span> Rejoined students</div>
+                        </div>
+
+                        <div class="stat-card2 theme-indigo" style="opacity: 1; transform: translateY(0px); transition: 0.5s;">
+                            <div class="stat-card-top">
+                                <div class="stat-icon-badge"><i class="fa fa-map-marker"></i></div>
+                                <div class="stat-label">Localities</div>
+                            </div>
+                            <div class="stat-value">3</div>
+                            <div class="stat-info"><span class="stat-dot"></span> Coverage areas</div>
+                        </div>
+
+                        <div class="stat-card2 theme-purple" style="opacity: 1; transform: translateY(0px); transition: 0.5s;">
+                            <div class="stat-card-top">
+                                <div class="stat-icon-badge"><i class="fa fa-building"></i></div>
+                                <div class="stat-label">Recent Admissions</div>
+                            </div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-info"><span class="stat-dot"></span> Last 7 days</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="chart-container">
+                        <!-- Monthly Admission Trends -->
+                        <div class="chart-card">
+                            <div class="chart-title">
+                                <span><i class="fa fa-chart-bar"></i> Monthly Admissions (2026)</span>
+                                <span class="badge-soft">This Year</span>
+                            </div>
+                            <div class="bar-chart">
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Jan</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 94.117647058824%;">
+                                            16                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Feb</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 58.823529411765%;">
+                                            10                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Mar</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 94.117647058824%;">
+                                            16                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Apr</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 100%;">
+                                            17                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">May</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 47.058823529412%;">
+                                            8                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Jun</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 29.411764705882%;">
+                                            5                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Jul</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 29.411764705882%;">
+                                            5                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Aug</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 11.764705882353%;">
+                                            2                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Sep</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 0%;">
+                                            0                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Oct</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 0%;">
+                                            0                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Nov</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 0%;">
+                                            0                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label">Dec</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill green" style="width: 0%;">
+                                            0                                        </div>
+                                    </div>
+                                </div>
+                                                            </div>
+                        </div>
+
+                        <!-- Class Head Distribution -->
+                        <div class="chart-card">
+                            <div class="chart-title"><span><i class="fa fa-sitemap"></i> Class Head Distribution</span></div>
+                                                        <div class="donut-wrap">
+                                <canvas id="classHeadDonut" width="140" height="140" style="display: block; box-sizing: border-box; height: 140px; width: 140px;"></canvas>
+                                <div class="donut-center">
+                                    <div class="num">85</div>
+                                    <div class="lbl">Total Class Heads</div>
+                                </div>
+                            </div>
+                            <div class="legend-list">
+                                                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: #f39c12;"></span>
+                                    <span class="legend-name">Unassigned</span>
+                                    <span class="legend-count">81</span>
+                                    <span class="legend-pct">95.3%</span>
+                                </div>
+                                                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: #3498db;"></span>
+                                    <span class="legend-name">Pharm-D</span>
+                                    <span class="legend-count">3</span>
+                                    <span class="legend-pct">3.5%</span>
+                                </div>
+                                                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: #27ae60;"></span>
+                                    <span class="legend-name">Modern Edu</span>
+                                    <span class="legend-count">1</span>
+                                    <span class="legend-pct">1.2%</span>
+                                </div>
+                                                            </div>
+                                                    </div>
+
+                        <!-- Class Head Share -->
+                        <div class="chart-card">
+                            <div class="chart-title"><span><i class="fa fa-chart-pie"></i> Class Head Share</span></div>
+                                                        <div class="donut-wrap">
+                                <canvas id="classHeadShareDonut" width="140" height="140" style="display: block; box-sizing: border-box; height: 140px; width: 140px;"></canvas>
+                                <div class="donut-center">
+                                    <div class="num">95.3%</div>
+                                    <div class="lbl">Unassigned</div>
+                                </div>
+                            </div>
+                            <div class="legend-list">
+                                                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: #f39c12;"></span>
+                                    <span class="legend-name">Unassigned</span>
+                                    <span class="legend-pct" style="width:auto;">95.3%</span>
+                                </div>
+                                                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: #3498db;"></span>
+                                    <span class="legend-name">Pharm-D</span>
+                                    <span class="legend-pct" style="width:auto;">3.5%</span>
+                                </div>
+                                                                <div class="legend-item">
+                                    <span class="legend-dot" style="background: #27ae60;"></span>
+                                    <span class="legend-name">Modern Edu</span>
+                                    <span class="legend-pct" style="width:auto;">1.2%</span>
+                                </div>
+                                                            </div>
+                                                    </div>
+
+                    </div>
+
+                    <!-- Demographics -->
+                    <div class="section-container">
+                        <div class="section-title">
+                            <i class="fa fa-venus-mars"></i>
+                            <span>Gender Distribution</span>
+                        </div>
+                        <div class="gender-pie">
+                            <div class="boys-segment" style="width: 44.7%;">
+                                44.7%                            </div>
+                            <div class="girls-segment" style="width: 17.6%;">
+                                17.6%                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-around; margin-top: 10px; font-size: 13px;">
+                            <div><strong>Boys:</strong> 38 (44.7%)</div>
+                            <div><strong>Girls:</strong> 15 (17.6%)</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container" style="grid-template-columns: repeat(2, 1fr);">
+                        <!-- Age Distribution -->
+                        <div class="chart-card">
+                            <div class="chart-title"><span><i class="fa fa-birthday-cake"></i> Age Distribution</span></div>
+                            <div class="bar-chart">
+                                                                <div class="bar-item">
+                                    <div class="bar-label" style="min-width:52px;">0-5 yrs</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill purple" style="width: 100%;">
+                                            82                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label" style="min-width:52px;">6-10 yrs</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill purple" style="width: 0%;">
+                                            0                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label" style="min-width:52px;">11-15 yrs</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill purple" style="width: 1.219512195122%;">
+                                            1                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label" style="min-width:52px;">16-20 yrs</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill purple" style="width: 0%;">
+                                            0                                        </div>
+                                    </div>
+                                </div>
+                                                                <div class="bar-item">
+                                    <div class="bar-label" style="min-width:52px;">20+ yrs</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill purple" style="width: 2.4390243902439%;">
+                                            2                                        </div>
+                                    </div>
+                                </div>
+                                                            </div>
+                        </div>
+
+                        <!-- Religion Distribution -->
+                        <div class="chart-card">
+                            <div class="chart-title"><span><i class="fa fa-users"></i> Religion Distribution</span></div>
+                            <div class="bar-chart">
+                                <div class="bar-item"><div class="bar-label" style="min-width:90px;">Muslim</div><div class="bar-track"><div class="bar-fill orange" style="width: 100%;">52</div></div></div><div class="bar-item"><div class="bar-label" style="min-width:90px;">Islam</div><div class="bar-track"><div class="bar-fill orange" style="width: 36.538461538462%;">19</div></div></div><div class="bar-item"><div class="bar-label" style="min-width:90px;">Not Specified</div><div class="bar-track"><div class="bar-fill orange" style="width: 26.923076923077%;">14</div></div></div>                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Withdrawal Trends -->
+                    <div class="section-container">
+                        <div class="section-title">
+                            <i class="fa fa-chart-line"></i>
+                            <span>Withdrawal Trends (2026)</span>
+                        </div>
+                        <div class="trend-grid">
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 2.1333333333333%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Jan</div>
+                                <div style="color: #e74c3c; font-weight: 700;">2</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 80%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Feb</div>
+                                <div style="color: #e74c3c; font-weight: 700;">75</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 0%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Mar</div>
+                                <div style="color: #e74c3c; font-weight: 700;">0</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 6.4%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Apr</div>
+                                <div style="color: #e74c3c; font-weight: 700;">6</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 1.0666666666667%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">May</div>
+                                <div style="color: #e74c3c; font-weight: 700;">1</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 0%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Jun</div>
+                                <div style="color: #e74c3c; font-weight: 700;">0</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 1.0666666666667%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Jul</div>
+                                <div style="color: #e74c3c; font-weight: 700;">1</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 0%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Aug</div>
+                                <div style="color: #e74c3c; font-weight: 700;">0</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 0%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Sep</div>
+                                <div style="color: #e74c3c; font-weight: 700;">0</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 0%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Oct</div>
+                                <div style="color: #e74c3c; font-weight: 700;">0</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 0%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Nov</div>
+                                <div style="color: #e74c3c; font-weight: 700;">0</div>
+                            </div>
+                                                        <div class="trend-bar">
+                                <div class="trend-value">
+                                    <div class="trend-fill" style="height: 0%;"></div>
+                                </div>
+                                <div style="font-weight: 600; color: #5a6c7d;">Dec</div>
+                                <div style="color: #e74c3c; font-weight: 700;">0</div>
+                            </div>
+                                                    </div>
+                    </div>
+                        </div>
+                        <div class="sidebar-panel">
+                            <div class="section-container">
+                                <div class="section-title">
+                                    <i class="fa fa-bolt"></i>
+                                    <span>Quick Access Reports</span>
+                                </div>
+                                <div class="quick-links sidebar">
+                                                                        <a href="#data-issues" class="quick-link2 danger">
+                                        <span class="ql-icon"><i class="fa fa-exclamation-triangle"></i></span>
+                                        <span>Data Issues (38)</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                                                        <a href="students_reports.php" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-list"></i></span>
+                                        <span>Class Wise Reports</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="manage_students.php?status=0" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-user-check"></i></span>
+                                        <span>Active Students</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="manage_students.php?status=1" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-user-times"></i></span>
+                                        <span>Struck-Off Students</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="manage_students.php?status=2" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-user-plus"></i></span>
+                                        <span>Re-Enrollment</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="annual_adm_withdrawReport.php?searchType=adms&amp;filterType=year&amp;year=2026" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-chart-bar"></i></span>
+                                        <span>Admission Trends</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="annual_adm_withdrawReport.php?searchType=withd&amp;filterType=year&amp;year=2026" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-chart-line"></i></span>
+                                        <span>Withdrawal Trends</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="locality_reports.php" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-map-marker"></i></span>
+                                        <span>Locality Reports</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="classwise_information.php" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-graduation-cap"></i></span>
+                                        <span>Class Information</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="update_student_classwise.php" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-edit"></i></span>
+                                        <span>Update Students</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="update_student_pictures.php" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-camera"></i></span>
+                                        <span>Update Pictures</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="studentsInfo_export_excel.php" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-file-excel"></i></span>
+                                        <span>Export to Excel</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                    <a href="adm_form.php" class="quick-link2">
+                                        <span class="ql-icon"><i class="fa fa-file"></i></span>
+                                        <span>Blank Admission Form</span>
+                                        <i class="fa fa-chevron-right ql-chevron"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+<script src="../vendors/jquery/dist/jqueryfile.js"></script>
+<!-- Bootstrap -->
+<script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+<!-- Custom Theme Scripts -->
+<script src="../build/js/custom.min.js"></script>
+<!-- jQuery Sparklines -->
+<script src="../vendors/jquery-sparkline/dist/jquery.sparkline.min.js"></script>    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <script>
+        function toggleDataIssues() {
+            var content = document.getElementById('dataIssuesContent');
+            var btn = document.getElementById('dataIssuesToggleBtn');
+            if (!content || !btn) return;
+            var isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            btn.innerHTML = isHidden
+                ? 'Hide Details <i class="fa fa-chevron-up"></i>'
+                : 'View Details <i class="fa fa-chevron-down"></i>';
+        }
+
+        // Smooth animations on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.stat-card2');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 50);
+            });
+        });
+
+        // ===== Class Head donut charts =====
+        const chLabels = ["Unassigned","Pharm-D","Modern Edu"];
+        const chCounts = [81,3,1];
+        const chColors = ["#f39c12","#3498db","#27ae60","#9b59b6","#95a5a6","#e74c3c","#16a085","#e91e63"];
+
+        function centerTextPlugin(mainText, subText) {
+            return {
+                id: 'centerText' + mainText + subText,
+                beforeDraw(chart) {
+                    const ctx = chart.ctx;
+                    const w = chart.chartArea.width, h = chart.chartArea.height;
+                    const left = chart.chartArea.left, top = chart.chartArea.top;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#1f2937';
+                    ctx.font = '700 18px Arial';
+                    ctx.fillText(mainText, left + w / 2, top + h / 2 - 6);
+                    ctx.restore();
+                }
+            };
+        }
+
+        if (window.Chart && chLabels.length > 0) {
+            const donutEl = document.getElementById('classHeadDonut');
+            if (donutEl) {
+                new Chart(donutEl, {
+                    type: 'doughnut',
+                    data: { labels: chLabels, datasets: [{ data: chCounts, backgroundColor: chColors, borderWidth: 2, borderColor: '#fff' }] },
+                    options: {
+                        cutout: '68%',
+                        plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                    }
+                });
+            }
+
+            const shareEl = document.getElementById('classHeadShareDonut');
+            if (shareEl) {
+                new Chart(shareEl, {
+                    type: 'doughnut',
+                    data: { labels: chLabels, datasets: [{ data: chCounts, backgroundColor: chColors, borderWidth: 2, borderColor: '#fff' }] },
+                    options: {
+                        cutout: '74%',
+                        plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                    }
+                });
+            }
+        }
+    </script>
+
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;3650377dd59a42ccbb65668736c3a93b&quot;,&quot;r&quot;:1}" crossorigin="anonymous"></script>
+
+
+</body></html>

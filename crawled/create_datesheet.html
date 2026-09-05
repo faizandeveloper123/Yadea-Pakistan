@@ -1,0 +1,875 @@
+<!DOCTYPE html><html lang="en"><head>
+
+    
+
+    <title>Create Datesheet | EduPortal</title>
+
+    
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/customizedStyling.css" rel="stylesheet">
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min1.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/style11.css" rel="stylesheet">
+    <link href="https://apps.eduportal.pk/Production/css/font-awesome-5.min.css" rel="stylesheet">
+
+    <style>
+    /* Global: neutralize legacy wrapper <div class="col-md-3 left_col"> present on 600+ pages */
+    .col-md-3.left_col { display: contents !important; width: auto !important; padding: 0 !important; margin: 0 !important; float: none !important; }
+    </style>
+<style>
+  
+.nav-container {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #eaecef;
+  /* padding: 10px 20px; */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  margin-top:15px;
+}
+
+.nav-bar {
+  display: flex;
+  gap: 1px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: center;   /* ✅ Items center mai */
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 15px;  
+  text-decoration: none;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  border: 1px solid #eaecef;
+}
+
+.nav-item:hover {
+  background: #fff4e6;
+  border-color: #ffd8b3;
+  color: #e67e22;
+}
+
+.nav-item.active {
+  background: #ff7800;
+  color: white;
+  border-color: #ff7800;
+  box-shadow: 0 3px 8px rgba(230, 126, 34, 0.3);
+}
+
+.nav-item.active i {
+  color: white;
+}
+
+.nav-item i {
+  font-size: 14px;
+  margin-right: 6px;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+}
+
+.nav-item:hover i {
+  color: #e67e22;
+}
+
+.nav-bar::-webkit-scrollbar {
+  display: none;
+}
+.nav-bar {
+  -ms-overflow-style: none;  
+  scrollbar-width: none; 
+}
+
+</style>
+   
+
+<style>
+
+
+
+.tdStyle{border-bottom:1px solid lightgray;}
+
+.thStyle{background-color:#00AFEF;color:white;}
+
+
+
+</style>
+
+  <script type="text/javascript">
+
+    
+
+
+
+function getTeachers(id,row){
+
+     // alert(id+row);   
+
+          
+
+            
+
+            if (window.XMLHttpRequest) {
+
+
+
+              // code for IE7+, Firefox, Chrome, Opera, Safari
+
+
+
+              xmlhttp=new XMLHttpRequest();
+
+
+
+            } else { // code for IE6, IE5
+
+
+
+              xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+
+
+
+            }
+
+
+
+            xmlhttp.onreadystatechange=function() {
+
+
+
+              if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+
+
+
+                document.getElementById("tech"+row).innerHTML=xmlhttp.responseText;
+
+               // alert(xmlhttp.responseText);
+
+
+
+              }
+
+
+
+            }
+
+
+
+            xmlhttp.open("GET","get_teachers.php?subc="+id,true);
+
+
+
+            xmlhttp.send();
+
+
+
+          }
+
+
+
+
+
+  </script><script type="text/javascript">
+
+  
+
+function getterm(id){
+
+//alert(id);
+
+            if (window.XMLHttpRequest) {
+
+
+
+              // code for IE7+, Firefox, Chrome, Opera, Safari
+
+
+
+              xmlhttp=new XMLHttpRequest();
+
+
+
+            } else { // code for IE6, IE5
+
+
+
+              xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+
+
+
+            }
+
+
+
+            xmlhttp.onreadystatechange=function() {
+
+
+
+              if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+
+
+
+                document.getElementById("term_id").innerHTML=xmlhttp.responseText;
+
+               //  alert(xmlhttp.responseText);
+
+
+
+              }
+
+
+
+            }
+
+
+
+            xmlhttp.open("GET","get_term.php?session_id="+id,true);
+
+
+
+            xmlhttp.send();
+
+
+
+          }
+
+
+
+
+
+          function getsections(id,rowrow){
+
+
+
+           //  alert(id+rowrow);
+
+
+
+            if (window.XMLHttpRequest) {
+
+
+
+              // code for IE7+, Firefox, Chrome, Opera, Safari
+
+
+
+              xmlhttp=new XMLHttpRequest();
+
+
+
+            } else { // code for IE6, IE5
+
+
+
+              xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+
+
+
+            }
+
+
+
+            xmlhttp.onreadystatechange=function() {
+
+
+
+              if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+
+
+
+                document.getElementById("txt_section"+rowrow).innerHTML=xmlhttp.responseText;
+
+                // alert(xmlhttp.responseText);
+
+
+
+              }
+
+
+
+            }
+
+
+
+            xmlhttp.open("GET","get_sec_datesheet.php?class_id="+id+"&row="+rowrow);
+
+
+
+            xmlhttp.send();
+
+
+
+
+
+
+
+
+
+          }
+
+
+
+</script><script src="js/ajax_functions.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css"><script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script><script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script><style type="text/css">.jqstooltip { position: absolute;left: 0px;top: 0px;visibility: hidden;background: rgb(0, 0, 0) transparent;background-color: rgba(0,0,0,0.6);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";color: white;font: 10px arial, san serif;text-align: left;white-space: nowrap;padding: 5px;border: 1px solid white;box-sizing: content-box;z-index: 10000;}.jqsfield { color: white;font: 10px arial, san serif;text-align: left;}</style></head>
+
+  
+
+
+
+  
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <body class="nav-md" style="padding:10px;">
+
+    <div class="container body">
+
+      <div class="main_container">
+
+   
+
+     
+
+            
+
+
+              
+     
+
+        <!-- page content -->
+
+          <div class="" role="main">
+
+
+
+            <a href="dashboard.php">&nbsp;&nbsp;Dashboard </a> &nbsp; <i style="" class="fa fa-angle-double-right"></i>  &nbsp; 
+
+                   
+
+          Create Date Sheet
+
+          
+
+          <div class="row" style="background-color: white;margin-left: 2px;">
+
+
+
+           <div class="alert alert-warning" id="msg" style="color:black;font-size:16px;font-weight: bold;">
+
+             <a href="#" class="close" data-dismiss="alert" aria-label="close">×</a>
+
+              <strong>Instructin!</strong> Software will automatically pick the day of each date !!!<br>To add multi subject paper in same date. Please select one or more subject from dropdown.
+
+            </div>
+
+
+
+<br>
+
+           
+
+     <h3>Create Date Sheet <span style="font-size: 16px;">  </span></h3>
+
+
+
+   
+
+
+
+    <form class="form-style-7" action="create_datesheet.php" method="Get">
+
+
+
+  
+
+              
+
+   <div class="col-md-3 col-xs-12" style="padding: 8px;">
+
+                <div class="form-group ">
+
+                  <label class="required">Session</label>
+
+ 
+
+
+
+                   <select name="session" id="session" class="form-control" onchange="getterm(this.value)">
+
+
+
+                              <option value="">Select Session</option>
+
+                       
+
+                        
+
+
+                           <option value="3">2018-2019</option>
+
+
+
+
+
+                                
+
+
+                           <option value="4">2019-2020</option>
+
+
+
+
+
+                                
+
+
+                           <option value="5">2020-2021</option>
+
+
+
+
+
+                                
+
+
+                           <option value="6">2021-2022</option>
+
+
+
+
+
+                                
+
+
+                           <option value="7">2022-2023</option>
+
+
+
+
+
+                                
+
+
+                           <option value="8">2023-2024</option>
+
+
+
+
+
+                                
+
+
+                           <option value="9">2024-2025</option>
+
+
+
+
+
+                                
+
+
+                           <option value="10">2025-2026</option>
+
+
+
+
+
+                                
+
+
+                           <option selected="" value="11">2026-2027</option>
+
+
+
+
+
+                                
+
+
+                           <option value="12">2027-2028</option>
+
+
+
+
+
+                                
+
+
+                           <option value="13">2028-2029</option>
+
+
+
+
+
+                                
+
+
+                           <option value="14">2029-2030</option>
+
+
+
+
+
+                                
+
+
+                           <option value="15">2030-2031</option>
+
+
+
+
+
+                                
+
+
+                    </select> 
+
+                </div>
+
+              </div>
+
+
+
+
+
+                <div class="col-md-2 col-xs-12" style="padding: 8px;">
+
+                <div class="form-group ">
+
+                  <label class="required">Term</label>
+
+                    <div class="select2-container chosen-multi-select inputfield form-control" id="s2id_term_id" style="width: 100%;"><a href="javascript:void(0)" onclick="return false;" class="select2-choice" tabindex="-1">   <span class="select2-chosen">Select Term</span><abbr class="select2-search-choice-close"></abbr>   <span class="select2-arrow"><b></b></span></a><input class="select2-focusser select2-offscreen" type="text" id="s2id_autogen1"><div class="select2-drop select2-display-none select2-with-searchbox">   <div class="select2-search">       <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="select2-input">   </div>   <ul class="select2-results">   </ul></div></div><select name="term_id" id="term_id" data-placeholder="Select" class="chosen-multi-select inputfield form-control select2-offscreen" tabindex="-1">
+
+                    <option value="">Select Term</option>
+
+
+
+                    
+
+
+                       <option value="15199">asa</option>
+
+
+
+                            
+
+
+                       <option value="14328">FIRST TERM</option>
+
+
+
+                            
+
+
+                       <option value="15226">Test</option>
+
+
+
+                            
+
+
+                </select>
+
+
+
+                  
+
+                </div>
+
+              </div> 
+
+
+
+
+
+              <div class="col-md-2 col-xs-12" style="padding: 8px;">
+
+                <div class="form-group ">
+
+                  <label class="required">Number Of Days</label>
+
+                    <div class="select2-container chosen-multi-select inputfield form-control" id="s2id_dayno" style="width: 100%;"><a href="javascript:void(0)" onclick="return false;" class="select2-choice" tabindex="-1">   <span class="select2-chosen">5</span><abbr class="select2-search-choice-close"></abbr>   <span class="select2-arrow"><b></b></span></a><input class="select2-focusser select2-offscreen" type="text" id="s2id_autogen2"><div class="select2-drop select2-display-none select2-with-searchbox">   <div class="select2-search">       <input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="select2-input">   </div>   <ul class="select2-results">   </ul></div></div><select name="dayno" id="dayno" data-placeholder="Select" class="chosen-multi-select inputfield form-control select2-offscreen" tabindex="-1">
+
+
+
+                    <option value="1">1</option>
+
+                    <option value="2">2</option>
+
+                    <option value="3">3</option>
+
+                    <option value="4">4</option>
+
+                    <option selected="" value="5">5</option>
+
+                    <option value="6">6</option>
+
+                    <option value="7">7</option>
+
+                    <option value="8">8</option>
+
+                    <option value="9">9</option>
+
+                    <option value="10">10</option>
+
+                    <option value="11">11</option>
+
+                    <option value="12">12</option>
+
+                    <option value="13">13</option>
+
+                    <option value="14">14</option>
+
+                    <option value="15">15</option>
+
+                    <option value="16">16</option>
+
+                    <option value="17">17</option>
+
+                    <option value="18">18</option>
+
+                    <option value="19">19</option>
+
+                    <option value="20">20</option>
+
+                    <option value="21">21</option>
+
+                    <option value="22">22</option>
+
+                    <option value="23">23</option>
+
+                    <option value="24">24</option>
+
+                    <option value="25">25</option>
+
+                    <option value="26">26</option>
+
+                    <option value="27">27</option>
+
+                    <option value="28">28</option>
+
+                    <option value="29">29</option>
+
+                    <option value="30">30</option>
+
+                                                       
+
+
+
+                  </select>
+
+
+
+                  
+
+                </div>
+
+              </div>
+
+
+
+
+
+
+
+              <div class="col-md-4 " style="padding:2px;">
+
+    
+
+        
+
+                <div class="form-group ">
+
+                   
+
+                <button id="month" type="submit" class="btn btn-primary" style="margin-top: 27px;">Search</button>
+
+              
+                </div>
+
+       
+
+              </div>
+
+             
+
+</form>
+
+  <section class="add_sub_agent" id="table_sub_agent">
+
+  <div class="container">
+
+
+
+ <div class="" style="margin-top:10px;">
+
+    
+
+      <div class="clearfix"></div>
+
+    </div>
+
+    <br>
+
+
+
+     
+
+          
+
+          
+
+
+      
+
+
+
+          
+
+          
+
+
+
+    <br><br>
+
+
+
+<div style="display:block;" class="alert alert-danger alert-dismissible">
+
+      <a href="#" class="close" data-dismiss="alert" aria-label="close">×</a>
+
+       <strong>Warning !</strong> Please select Session and Term to creat Date Sheet  !!!
+
+  </div>
+
+
+
+
+
+
+  </div>
+
+  <div class="clearfix"></div>
+
+</section>          
+
+    
+
+
+
+           
+
+          </div>
+
+        </div>
+
+
+
+           
+
+          </div>
+
+        </div>
+
+        <!-- /page content -->
+
+     
+
+  <!-- jQuery -->
+<script src="../vendors/jquery/dist/jqueryfile.js"></script>
+<!-- Bootstrap -->
+<script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+<!-- Custom Theme Scripts -->
+<script src="../build/js/custom.min.js"></script>
+<!-- jQuery Sparklines -->
+<script src="../vendors/jquery-sparkline/dist/jquery.sparkline.min.js"></script>
+
+
+
+
+   
+
+
+
+<!-- <script src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script> -->
+
+ <!-- jQuery -->
+
+    
+
+
+
+
+
+     <!-- searchable dropdown -->
+
+    
+
+    <link href="autosearch_select/select2.css" rel="stylesheet">
+
+    <link href="autosearch_select/select2-default.css" rel="stylesheet">
+
+    <script src="autosearch_select/select2.min.js"></script>
+
+    
+
+    <script>
+
+    $(function() {
+
+    $('.chosen-select').select2( { width:'100%', maximumSelectionSize: 1 } );
+
+    $(document).ready(function() {
+
+    $(".chosen-multi-select").select2( { width:'100%', } ); }); }); function slideout(){ setTimeout(function(){
+
+    $(".alert-success").fadeOut("slow", function () { });
+
+    $(".alert-danger").fadeOut("slow", function () { }); }, 4000);}
+
+
+
+    $('select').selectpicker();
+
+    </script>
+
+
+
+
+
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;3650377dd59a42ccbb65668736c3a93b&quot;,&quot;r&quot;:1}" crossorigin="anonymous"></script>
+
+
+</body></html>

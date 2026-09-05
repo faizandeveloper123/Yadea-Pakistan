@@ -26,7 +26,7 @@ while ($row = $res->fetch_assoc()) {
 }
 
 $classes = [];
-$res = db_query("SELECT class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
+$res = db_query("Select Course/Class_id, class_name FROM classes WHERE status=1 ORDER BY class_name");
 while ($row = $res->fetch_assoc()) { $classes[] = $row; }
 
 $sections = [];
@@ -155,7 +155,7 @@ include __DIR__ . '/includes/header.php';
                 <div class="row">
                     <div class="col-md-2 col-xs-12" style="padding:8px;">
                         <div class="form-group">
-                            <label class="required">Class Head</label>
+                            <label class="required">Course/Class Head</label>
                             <select name="class_head" id="class_head" class="form-control" onchange="getClassesByHead(this.value)">
                                 <option value="All">All</option>
                                 <?php foreach ($classHeads as $ch): ?>
